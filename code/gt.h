@@ -26,8 +26,14 @@ enum button {
     Button_Count
 };
 
+struct game_mouse {
+    v2i    velocity;
+    v2i    position;
+    real32 sensitivity;
+};
+
 struct game_input {
-    v2i mouse_velocity;
+    game_mouse mouse;
     union {
         game_button_state buttons[Button_Count];
         struct {
@@ -50,6 +56,7 @@ enum mode {
 };
 
 struct game_memory {
+    v2i window_center;
     v2i window_dimensions;
     b32 initialized;
     u64 permanent_storage_size;
@@ -79,6 +86,9 @@ internal void game_free(game_memory *memory);
 
 internal void *platform_alloc(u64 size);
 internal void platform_free(void *memory);
+internal void platform_show_cursor(b32 show);
+internal void platform_set_cursor_position(v2i position);
+internal void platform_get_cursor_position(v2i *position);
 
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)

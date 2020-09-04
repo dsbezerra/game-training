@@ -5,11 +5,10 @@
 global_variable WINDOWPLACEMENT global_window_position = {sizeof(global_window_position)};
 global_variable LONGLONG global_perf_count_frequency;
 global_variable bool global_running = false;
-global_variable v2i mouse_position;
-global_variable b32 lock_mouse;
 global_variable HCURSOR default_cursor;
 
 global_variable app_state state = {};
+global_variable game_input input = {};
 
 #define process_button(vk, b) \
 if (vk_code == vk) {\
@@ -31,6 +30,31 @@ platform_alloc(u64 size) {
         return 0;
     }
     return VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+}
+
+internal void
+platform_show_cursor(b32 show) {
+    if (show) {
+        SetCursor(default_cursor);
+    } else {
+        SetCursor(0);
+    }
+}
+
+internal void
+platform_set_cursor_position(v2i position) {
+    SetCursorPos(position.x, position.y);
+}
+
+internal void
+platform_get_cursor_position(v2i *position) {
+    assert(position);
+    
+    POINT point;
+    GetCursorPos(&point);
+    
+    position->x = point.x;
+    position->y = point.y;
 }
 
 internal inline LARGE_INTEGER
@@ -186,20 +210,11 @@ default_proc(HWND window,
             state.window_dimensions.x = width;
             state.window_dimensions.y = height;
             
-            if (lock_mouse) {
-                SetCursorPos(state.window_center.x, state.window_center.y);
-            }
+            input.mouse.position = state.window_center;;
             
-            mouse_position = make_v2i(state.window_center.x, state.window_center.y);
         } break;
         case WM_ACTIVATEAPP: {
-            if (wparam) {
-                lock_mouse = true;
-                SetCursor(0);
-            } else {
-                lock_mouse = false;
-                SetCursor(default_cursor);
-            }
+            
         } break;
         default: {
             result = DefWindowProcA(window, message, wparam, lparam);
@@ -217,6 +232,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
     global_perf_count_frequency = perf_count_freq_res.QuadPart;
     
     default_cursor = LoadCursorA(instance, IDC_ARROW);
+    SetCursor(default_cursor);
     
     bool sleep_is_granular = timeBeginPeriod(1) == TIMERR_NOERROR;
     
@@ -253,7 +269,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             QueryPerformanceFrequency(&frequency_counter_large);
             real32 frequency_counter = (real32) frequency_counter_large.QuadPart;
             
-            mouse_position = state.window_center;
+            input.mouse.position = state.window_center;
             
             LARGE_INTEGER last_counter;
             QueryPerformanceCounter(&last_counter);
@@ -261,8 +277,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             global_running = true;
             
             game_memory memory = {};
-            game_input input = {};
-            
             state.memory = &memory;
             
             init_draw();
@@ -324,25 +338,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                     }
                 }
                 
-                // Mouse Input
-                {
-                    POINT new_mouse_point;
-                    GetCursorPos(&new_mouse_point);
-                    
-                    v2i new_mouse_position = make_v2i(new_mouse_point.x, new_mouse_point.y);
-                    input.mouse_velocity = sub_v2i(new_mouse_position, mouse_position);
-                    
-                    if (lock_mouse) {
-                        SetCursorPos(state.window_center.x, state.window_center.y);
-                        mouse_position = state.window_center;
-                    } else {
-                        mouse_position = new_mouse_position;
-                    }
-                    
-                    SetCursor(0);
-                }
-                
                 // Game Update and render
+                memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
                 game_update_and_render(&state, &memory, &input);
                 

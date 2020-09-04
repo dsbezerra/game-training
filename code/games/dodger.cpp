@@ -22,14 +22,12 @@ init_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
 
 internal void
 init_bad_guys(dodger_state *state) {
-    
     for (u32 bad_guy_index = 0; 
          bad_guy_index < array_count(state->bad_guys);
          ++bad_guy_index) {
         dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index]; 
         init_bad_guy(state, bad_guy);
     }
-    
 }
 
 internal void
@@ -39,8 +37,8 @@ update_player(dodger_state *state, game_input *input) {
     
     v2i dim = state->world.dimensions;
     
-    real32 mouse_sensitivity = .5f;
-    v2 velocity = make_v2(mouse_sensitivity * input->mouse_velocity.x, mouse_sensitivity * input->mouse_velocity.y);
+    game_mouse mouse = input->mouse;
+    v2 velocity = make_v2(mouse.sensitivity * mouse.velocity.x, mouse.sensitivity * mouse.velocity.y);
     
     real32 speed = 2.f;
     if (is_down(Button_Left)) {
@@ -101,6 +99,7 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         
+        // Init Dodger state
         state = (dodger_state *) game_alloc(memory, megabytes(64));
         
         dodger_assets assets = {};
@@ -115,6 +114,22 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         
         init_player(state);
         init_bad_guys(state);
+        
+        // Set default mouse input values for this game
+        input->mouse.sensitivity = .5f;
+    }
+    
+    // NOTE(diego): Lock mouse to center of screen and use new position
+    // to calculate velocity and move our player with it.
+    {
+        v2i new_mouse_position;
+        platform_get_cursor_position(&new_mouse_position);
+        
+        input->mouse.velocity = sub_v2i(new_mouse_position, input->mouse.position);
+        input->mouse.position = memory->window_center;
+        
+        platform_set_cursor_position(memory->window_center);
+        platform_show_cursor(false);
     }
     
     v2i dim = memory->window_dimensions;

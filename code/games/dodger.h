@@ -25,7 +25,6 @@ struct dodger_state {
     u64 top_score;
 };
 
-
 internal void dodger_game_update_and_render(game_memory *memory, game_input *input);
 
 internal void init_world(dodger_state *state);
