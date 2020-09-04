@@ -1,6 +1,7 @@
 #include "gt.h"
 #include "gt_opengl.cpp"
 #include "gt_shader.cpp"
+#include "gt_font.cpp"
 #include "gt_draw.cpp"
 
 internal void *

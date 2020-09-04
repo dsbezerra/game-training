@@ -11,9 +11,9 @@ pushd ..\..\build
 
 REM Debug 64-bit build
 del *.pdb > NUL 2> NUL
-cl %CommonCompilerFlags% -D_CRT_SECURE_NO_WARNINGS ..\game_training\code\win32_gt.cpp -Fmwin32_gt.map /link %CommonLinkerFlags%
+cl %CommonCompilerFlags% -D_CRT_SECURE_NO_WARNINGS ..\game-training\code\win32_gt.cpp -Fmwin32_gt.map /link %CommonLinkerFlags%
 
 REM Release 64-bit build:
-REM cl %ReleaseCompilerFlags% -D_CRT_SECURE_NO_WARNINGS ..\game_training\code\win32_gt.cpp /link %CommonLinkerFlags%
+REM cl %ReleaseCompilerFlags% -D_CRT_SECURE_NO_WARNINGS ..\game-training\code\win32_gt.cpp /link %CommonLinkerFlags%
 
 popd

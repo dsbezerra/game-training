@@ -4,6 +4,7 @@
 #include "gt_math.h"
 #include "gt_opengl.h"
 #include "gt_shader.h"
+#include "gt_font.h"
 #include "gt_draw.h"
 
 struct game_sound_output_buffer;

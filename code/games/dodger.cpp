@@ -13,7 +13,7 @@ init_player(dodger_state *state) {
 internal void
 init_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
     v2i dim = state->world.dimensions;
-    v2 position = make_v2(random_real32_in_range(0.f, dim.width * 1.f), random_real32_in_range((real32) -dim.height, 0.f));
+    v2 position = make_v2(random_real32_in_range(0.f, dim.width * 1.f), random_real32_in_range((real32) -dim.height, -dim.height / 2.f));
     real32 wh = random_real32_in_range(20.f, 50.f);
     v2 size = make_v2(wh, wh);
     bad_guy->position = position;
@@ -33,7 +33,11 @@ init_bad_guys(dodger_state *state) {
 }
 
 internal void
-update_player(dodger_player *player, game_input *input) {
+update_player(dodger_state *state, game_input *input) {
+    
+    dodger_player *player = &state->player;
+    
+    v2i dim = state->world.dimensions;
     
     real32 mouse_sensitivity = .5f;
     v2 velocity = make_v2(mouse_sensitivity * input->mouse_velocity.x, mouse_sensitivity * input->mouse_velocity.y);
@@ -52,7 +56,10 @@ update_player(dodger_player *player, game_input *input) {
         velocity.y += speed;
     }
     
-    player->position = add_v2(player->position, velocity);
+    v2 new_position = add_v2(player->position, velocity);
+    new_position.x = clampf(0.f, new_position.x, ((real32) dim.width) - player->size.width);
+    new_position.y = clampf(0.f, new_position.y, ((real32) dim.height) - player->size.height);
+    player->position = new_position;
 }
 
 internal void
@@ -96,7 +103,12 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         
         state = (dodger_state *) game_alloc(memory, megabytes(64));
         
+        dodger_assets assets = {};
+        assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
+        
         dodger_world world = {};
+        
+        state->assets = assets;
         state->world = world;
         state->score = 0;
         state->top_score = 0;
@@ -105,15 +117,14 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         init_bad_guys(state);
     }
     
-    state->world.dimensions = memory->window_dimensions;
-    
-    u64 old_score = state->score;
+    v2i dim = memory->window_dimensions;
+    state->world.dimensions = dim;
     
     //
     // Update
     //
     
-    update_player(&state->player, input);
+    update_player(state, input);
     for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
         update_bad_guy(state, &state->bad_guys[bad_guy_index]);
     }
@@ -132,11 +143,8 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Draw HUD
     //
+    char buffer[256];
+    sprintf(buffer, "Top Score: %d\nScore: %d", (int) state->top_score, (int) state->score);
     
-    if (old_score != state->score) {
-        char buffer[256];
-        sprintf(buffer, "Top Score: %d\nScore: %d\n\n", (int) state->top_score, (int) state->score);
-        OutputDebugString(buffer);
-    }
-    
+    draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
 }

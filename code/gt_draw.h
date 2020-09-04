@@ -32,6 +32,10 @@ internal vertex *get_next_vertex_ptr();
 internal void immediate_vertex(v2 position, v4 color, v2 uv, real32 z_index);
 internal void immediate_quad(v2 min, v2 max, v4 color, real32 z_index);
 internal void immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 color, real32 z_index);
+internal void immediate_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color);
+
+internal void draw_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color);
+
 
 internal void set_shader(shader new_shader);
 internal void refresh_shader_transform();

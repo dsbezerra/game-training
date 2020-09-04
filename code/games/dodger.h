@@ -1,3 +1,7 @@
+struct dodger_assets {
+    loaded_font primary_font;
+};
+
 struct dodger_world {
     v2i dimensions;
 };
@@ -13,6 +17,7 @@ struct dodger_bad_guy {
 };
 
 struct dodger_state {
+    dodger_assets assets;
     dodger_world world;
     dodger_player player;
     dodger_bad_guy bad_guys[64];
@@ -28,7 +33,7 @@ internal void init_player(dodger_state *state);
 internal void init_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy);
 internal void init_bad_guys(dodger_state *state);
 
-internal void update_player(dodger_player *player);
+internal void update_player(dodger_state *state);
 internal void update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy);
 
 internal void draw_player(dodger_player *player);
