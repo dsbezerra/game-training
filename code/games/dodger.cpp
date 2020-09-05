@@ -126,9 +126,13 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         platform_get_cursor_position(&new_mouse_position);
         
         input->mouse.velocity = sub_v2i(new_mouse_position, input->mouse.position);
-        input->mouse.position = memory->window_center;
         
-        platform_set_cursor_position(memory->window_center);
+        if (input->mouse.lock) {
+            platform_set_cursor_position(memory->window_center);
+            input->mouse.position = memory->window_center;
+        } else {
+            input->mouse.position = new_mouse_position;
+        }
         platform_show_cursor(false);
     }
     

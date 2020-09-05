@@ -30,6 +30,7 @@ struct game_mouse {
     v2i    velocity;
     v2i    position;
     real32 sensitivity;
+    b32    lock;
 };
 
 struct game_input {

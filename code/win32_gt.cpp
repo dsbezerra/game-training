@@ -9,6 +9,7 @@ global_variable HCURSOR default_cursor;
 
 global_variable app_state state = {};
 global_variable game_input input = {};
+global_variable game_memory global_memory = {};
 
 #define process_button(vk, b) \
 if (vk_code == vk) {\
@@ -210,11 +211,24 @@ default_proc(HWND window,
             state.window_dimensions.x = width;
             state.window_dimensions.y = height;
             
-            input.mouse.position = state.window_center;;
+            global_memory.window_center = state.window_center;
+            global_memory.window_dimensions = state.window_dimensions;
+            
+            if (input.mouse.lock) {
+                platform_set_cursor_position(state.window_center);
+            }
+            input.mouse.position = state.window_center;
+            
             
         } break;
         case WM_ACTIVATEAPP: {
-            
+            if (wparam) {
+                input.mouse.lock = true;
+                SetCursor(0);
+            } else {
+                input.mouse.lock = false;
+                SetCursor(default_cursor);
+            }
         } break;
         default: {
             result = DefWindowProcA(window, message, wparam, lparam);
@@ -232,7 +246,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
     global_perf_count_frequency = perf_count_freq_res.QuadPart;
     
     default_cursor = LoadCursorA(instance, IDC_ARROW);
-    SetCursor(default_cursor);
     
     bool sleep_is_granular = timeBeginPeriod(1) == TIMERR_NOERROR;
     
@@ -276,8 +289,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             global_running = true;
             
-            game_memory memory = {};
-            state.memory = &memory;
+            state.memory = &global_memory;
             
             init_draw();
             
@@ -339,9 +351,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 }
                 
                 // Game Update and render
-                memory.window_center = state.window_center;
-                memory.window_dimensions = state.window_dimensions;
-                game_update_and_render(&state, &memory, &input);
+                game_update_and_render(&state, &global_memory, &input);
                 
                 // Ensure a forced frame time
                 LARGE_INTEGER work_counter = win32_get_wallclock();
