@@ -59,7 +59,10 @@ enum mode {
 struct game_memory {
     v2i window_center;
     v2i window_dimensions;
+    
     b32 initialized;
+    b32 asked_to_quit;
+    
     u64 permanent_storage_size;
     void *permanent_storage;
 };
@@ -84,6 +87,7 @@ internal void game_update_and_render(app_state *state, game_memory *memory, game
 
 internal void *game_alloc(game_memory *memory, u64 size);
 internal void game_free(game_memory *memory);
+internal void game_quit(app_state *state);
 
 internal void *platform_alloc(u64 size);
 internal void platform_free(void *memory);

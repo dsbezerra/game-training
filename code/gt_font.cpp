@@ -32,3 +32,43 @@ load_font(char *fontpath, real32 size) {
     
     return result;
 }
+
+internal real32
+get_text_width(loaded_font *font, char *text, int *line_count) {
+    real32 result = 0.f;
+    real32 w = 0.f;
+    
+    if (line_count) {
+        *line_count = 0;
+    }
+    
+    char *at = text;
+    while (*at) {
+        if (*at == '\n' && line_count) {
+            if (w > result) {
+                result = w;
+            }
+            w = .0f;
+            (*line_count)++;
+        } else if (*at >= 32 && *at < 255) {
+            w += font->cdata[*at].xadvance;
+        }
+        *at++;
+    }
+    
+    if (w > result) {
+        result = w;
+    }
+    
+    if (line_count) {
+        (*line_count)++;
+    } 
+    
+    return result;
+}
+
+
+internal real32
+get_text_width(loaded_font *font, char *text) {
+    return get_text_width(font, text, 0);
+}

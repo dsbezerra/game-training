@@ -114,12 +114,12 @@ win32_opengl_get_functions() {
 internal void
 win32_init_opengl(HWND window) {
     
-    open_gl = (opengl *) VirtualAlloc(0, sizeof(opengl), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    open_gl = (opengl *) VirtualAlloc(0, sizeof(open_gl), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
     HDC window_dc = GetDC(window);
     
     PIXELFORMATDESCRIPTOR pixel_format_descriptor = {};
-    pixel_format_descriptor.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pixel_format_descriptor.nSize = sizeof(pixel_format_descriptor);
     pixel_format_descriptor.nVersion = 1;
     pixel_format_descriptor.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
     pixel_format_descriptor.cColorBits = 32;
@@ -237,6 +237,56 @@ default_proc(HWND window,
     return result;
 }
 
+internal void
+win32_process_pending_messages(HWND window) {
+    MSG message;
+    while (PeekMessage(&message, 0, 0, 0, PM_REMOVE)) {
+        switch (message.message) {
+            case WM_QUIT: {
+                global_running = false;
+            } break;
+            
+            case WM_SYSKEYDOWN:
+            case WM_SYSKEYUP:
+            case WM_KEYDOWN:
+            case WM_KEYUP: {
+                
+                u32 vk_code = (u32) message.wParam;
+                b32 was_down = ((message.lParam & (1 << 30)) != 0);
+                b32 is_down = ((message.lParam & (1UL << 31)) == 0);
+                b32 alt_key_was_down = (message.lParam & (1 << 29));
+                
+                process_button(VK_RETURN, Button_Enter);
+                process_button(VK_ESCAPE, Button_Escape);
+                
+                process_button(VK_UP, Button_Up);
+                process_button(VK_DOWN, Button_Down);
+                process_button(VK_LEFT, Button_Left);
+                process_button(VK_RIGHT, Button_Right);
+                
+                if (was_down != is_down) {
+                    if (state.current_mode != Mode_PlayingGame) {
+                        if (vk_code == VK_ESCAPE && is_down) {
+                            global_running = false;
+                        }
+                    }
+                    if (is_down) {
+                        if (vk_code == VK_RETURN && alt_key_was_down) {
+                            win32_toggle_fullscreen(window);
+                        }
+                    }
+                }
+                
+            } break;
+            
+            default: {
+                TranslateMessage(&message);
+                DispatchMessageA(&message);
+            } break;
+        }
+    }
+}
+
 
 int CALLBACK
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int show_code) {
@@ -245,7 +295,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
     QueryPerformanceFrequency(&perf_count_freq_res);
     global_perf_count_frequency = perf_count_freq_res.QuadPart;
     
-    default_cursor = LoadCursorA(instance, IDC_ARROW);
+    default_cursor = LoadCursorA(0, IDC_ARROW);
+    SetCursor(default_cursor);
     
     bool sleep_is_granular = timeBeginPeriod(1) == TIMERR_NOERROR;
     
@@ -295,60 +346,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             while (global_running) {
                 
-                MSG message;
-                
                 for (int i = 0; i < Button_Count; i++) {
                     input.buttons[i].changed = false;
                 }
                 
-                while (PeekMessage(&message, 0, 0, 0, PM_REMOVE)) {
-                    
-                    switch (message.message) {
-                        case WM_SYSKEYDOWN:
-                        case WM_SYSKEYUP:
-                        case WM_KEYDOWN:
-                        case WM_KEYUP: {
-                            
-                            u32 vk_code = (u32) message.wParam;
-                            b32 was_down = ((message.lParam & (1 << 30)) != 0);
-                            b32 is_down = ((message.lParam & (1UL << 31)) == 0);
-                            b32 alt_key_was_down = (message.lParam & (1 << 29));
-                            
-                            process_button(VK_RETURN, Button_Enter);
-                            process_button(VK_ESCAPE, Button_Escape);
-                            
-                            process_button(VK_UP, Button_Up);
-                            process_button(VK_DOWN, Button_Down);
-                            process_button(VK_LEFT, Button_Left);
-                            process_button(VK_RIGHT, Button_Right);
-                            
-                            if (was_down != is_down) {
-                                switch (vk_code) {
-                                    
-                                    case VK_RETURN: {
-                                        if (alt_key_was_down && is_down) {
-                                            win32_toggle_fullscreen(window);
-                                        }
-                                    } break;
-                                    
-                                    case VK_F4: {
-                                        if (alt_key_was_down && is_down) {
-                                            global_running = false;
-                                        }
-                                    } break;
-                                    
-                                    default: break;
-                                }
-                            }
-                            
-                        } break;
-                        
-                        default: {
-                            TranslateMessage(&message);
-                            DispatchMessageA(&message);
-                        } break;
-                    }
-                }
+                win32_process_pending_messages(window);
                 
                 // Game Update and render
                 game_update_and_render(&state, &global_memory, &input);

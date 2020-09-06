@@ -1,5 +1,21 @@
 
 internal void
+dodger_game_restart(dodger_state *state) {
+    state->game_mode = DodgerMode_Playing;
+    state->score = 0;
+    state->top_score = 0;
+    state->quit_was_selected = false;
+    state->menu_selected_item = 0;
+    
+    //
+    // Re-init
+    //
+    
+    init_player(state);
+    init_bad_guys(state);
+}
+
+internal void
 init_player(dodger_state *state) {
     dodger_player player = {};
     
@@ -92,6 +108,77 @@ draw_bad_guy(dodger_bad_guy *bad_guy) {
 }
 
 internal void
+draw_menu(dodger_state *state) {
+    v2i dim = state->world.dimensions;
+    v4 default_color = make_color(0xffffffff);
+    v4 selected_color = make_color(0xffffff00);
+    
+    char *menu_title = "Dodger";
+    if (state->game_mode == DodgerMode_GameOver) {
+        menu_title = "Game Over";
+    }
+    real32 menu_title_width = get_text_width(&state->assets.menu_title_font, menu_title);
+    
+    real32 y = dim.height * 0.2f;
+    
+    //
+    // Title
+    //
+    //  Retry
+    //  Quit
+    //
+    
+    draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &state->assets.menu_title_font, default_color);
+    
+    char* menu_items[] = {"Retry", "Quit"};
+    if (state->quit_was_selected) {
+        menu_items[1] = "Are you sure?"; 
+    }
+    immediate_begin();
+    
+    y += dim.height * 0.25f;
+    for (int menu_item = 0; menu_item < array_count(menu_items); ++menu_item) {
+        
+        char *text = menu_items[menu_item];
+        real32 width = get_text_width(&state->assets.menu_item_font, text);
+        v4 color = default_color;
+        if (state->menu_selected_item == menu_item) {
+            color = selected_color;
+        }
+        
+        immediate_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, color, 1.f);
+        
+        y += (real32) state->assets.menu_item_font.line_height;
+    }
+    
+    immediate_flush();
+}
+
+internal void
+draw_game_view(dodger_state *state) {
+    if (state->game_mode == DodgerMode_Playing) {
+        immediate_begin();
+        draw_player(&state->player);
+        for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
+            draw_bad_guy(&state->bad_guys[bad_guy_index]);
+        }
+        immediate_flush();
+        
+        //
+        // Draw HUD
+        //
+        
+        v2i dim = state->world.dimensions;
+        char buffer[256];
+        sprintf(buffer, "Top Score: %d\nScore: %d", (int) state->top_score, (int) state->score);
+        
+        draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
+    } else {
+        draw_menu(state);
+    }
+}
+
+internal void
 dodger_game_update_and_render(game_memory *memory, game_input *input) {
     
     dodger_state *state = (dodger_state *) memory->permanent_storage;
@@ -104,9 +191,12 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         
         dodger_assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
+        assets.menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
+        assets.menu_item_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 32.f);
         
         dodger_world world = {};
         
+        state->game_mode = DodgerMode_Playing;
         state->assets = assets;
         state->world = world;
         state->score = 0;
@@ -136,34 +226,69 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         platform_show_cursor(false);
     }
     
-    v2i dim = memory->window_dimensions;
-    state->world.dimensions = dim;
+    state->world.dimensions = memory->window_dimensions;
     
     //
     // Update
     //
-    
-    update_player(state, input);
-    for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
-        update_bad_guy(state, &state->bad_guys[bad_guy_index]);
+    if (state->game_mode == DodgerMode_Playing) {
+        if (pressed(Button_Escape)) {
+            state->game_mode = DodgerMode_Menu;
+        } else {
+            update_player(state, input);
+            for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
+                update_bad_guy(state, &state->bad_guys[bad_guy_index]);
+            }
+        }
+    } else {
+        if (pressed(Button_Down)) {
+            state->menu_selected_item++;
+            if (state->menu_selected_item > 1) {
+                state->menu_selected_item = 0; // NOTE(diego): We just have two options.
+            }
+        }
+        
+        if (pressed(Button_Up)) {
+            state->menu_selected_item--;
+            if (state->menu_selected_item < 0) {
+                state->menu_selected_item = 1; // NOTE(diego): We just have two options.
+            }
+        }
+        
+        if (pressed(Button_Escape)) {
+            state->game_mode = DodgerMode_Playing;
+        }
+        
+        if (pressed(Button_Enter)) {
+            switch (state->menu_selected_item) {
+                case 0: {
+                    dodger_game_restart(state);
+                } break;
+                
+                case 1: {
+                    if (state->quit_was_selected) {
+                        memory->asked_to_quit = true;
+                    } else {
+                        state->quit_was_selected = true;
+                    }
+                } break;
+                
+                default: {
+                    assert(!"Should not happen!");
+                } break;
+            }
+        }
+        
+        if (state->quit_was_selected) {
+            if (pressed(Button_Escape)) {
+                state->quit_was_selected = false;
+            }
+        }
     }
     
     //
-    // Draw World
+    // Draw
     //
     
-    immediate_begin();
-    draw_player(&state->player);
-    for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
-        draw_bad_guy(&state->bad_guys[bad_guy_index]);
-    }
-    immediate_flush();
-    
-    //
-    // Draw HUD
-    //
-    char buffer[256];
-    sprintf(buffer, "Top Score: %d\nScore: %d", (int) state->top_score, (int) state->score);
-    
-    draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
+    draw_game_view(state);
 }

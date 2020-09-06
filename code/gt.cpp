@@ -24,6 +24,14 @@ game_free(game_memory *memory) {
     memory->permanent_storage = 0;
     memory->permanent_storage_size = 0;
     memory->initialized = false;
+    memory->asked_to_quit = false;
+}
+
+internal void
+game_quit(app_state *state, game_memory *memory) {
+    state->current_selecting_game = state->current_game;
+    state->current_mode = Mode_SelectingGame;
+    game_free(memory);
 }
 
 
@@ -122,13 +130,12 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
     if (m == Mode_SelectingGame) {
         render_mode_selecting(state);
     } else if (m == Mode_PlayingGame) {
-        
-        if (pressed(Button_Escape)) {
-            state->current_selecting_game = state->current_game;
-            state->current_mode = Mode_SelectingGame;
+        if (memory->asked_to_quit) {
+            game_quit(state, memory);
+        } else {
+            game_table[state->current_game](memory, input);
         }
         
-        game_table[state->current_game](memory, input);
     }
     immediate_flush();
 }
