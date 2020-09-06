@@ -38,9 +38,28 @@ game_quit(app_state *state, game_memory *memory) {
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
 
-void stub_game_update_and_render(game_memory *memory, game_input *input) {
-    assert(false);
-}
+//
+// Game titles
+//
+global_variable char* game_titles[] = {
+    "",
+    "Dodger",
+    "Memory Puzzle",
+};
+
+//
+// Game menu art table
+//
+void stub_menu_art(v2 min, v2 max) { assert(false); }
+void (*menu_table[])(v2 min, v2 max) = {
+    stub_menu_art,
+    dodger_menu_art,
+};
+
+// 
+// Game update and render table
+//
+void stub_game_update_and_render(game_memory *memory, game_input *input) { assert(false); }
 
 void (*game_table[])(game_memory *memory, game_input *input) = {
     stub_game_update_and_render,
@@ -92,14 +111,50 @@ update_mode_selecting(app_state *state, game_input *input) {
 
 internal void
 render_mode_selecting(app_state *state) {
-    
-    real32 selection_width = (real32) (state->window_dimensions.width / (int) (Game_Count));
-    
-    real32 x = (real32) ((int) state->current_selecting_game) * selection_width;
-    
-    v2 min = make_v2(x, 0.f);
-    v2 max = make_v2(x + selection_width, (real32) state->window_dimensions.height);
-    immediate_quad(min, max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
+    int selection_width = state->window_dimensions.width / (int) (Game_Count);
+    real32 border_width = selection_width * 0.01f;
+    for (int index = 0; index < array_count(game_titles); ++index) {
+        real32 x = (real32) index * selection_width;
+        v2 min  = make_v2(x, 0.f);
+        v2 max = make_v2(x + selection_width, (real32) state->window_dimensions.height);
+        if (index == 0) {
+            // Do nothing
+        } else {
+            if (index < array_count(menu_table)) {
+                menu_table[index](min, max);
+            }
+            if (index == (int) state->current_selecting_game) {
+                
+                v2 left_min = make_v2(min.x, min.y);
+                v2 left_max = make_v2(min.x + border_width, max.y);
+                
+                v2 right_min = make_v2(max.x - border_width, min.y);
+                v2 right_max = make_v2(max.x, max.y);
+                
+                v2 top_min = make_v2(min.x, min.y);
+                v2 top_max = make_v2(max.x, min.y + border_width);
+                
+                v2 bottom_min = make_v2(min.x, max.y - border_width);
+                v2 bottom_max = make_v2(max.x, max.y);
+                
+                immediate_begin();
+                
+                // Draw select quad
+                immediate_quad(min, max, make_v4(1.f, .0f, 1.f, .2f), 1.f);
+                
+                // Draw select borders
+                immediate_quad(left_min, left_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
+                immediate_quad(right_min, right_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
+                immediate_quad(top_min, top_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
+                immediate_quad(bottom_min, bottom_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
+                
+                immediate_flush();
+            }
+        }
+        char* title = game_titles[index];
+        real32 size = get_text_width(&state->game_title_font, title);
+        draw_text((min.x + max.x - size) / 2.f, max.height * 0.2f, (u8 *) title, &state->game_title_font, make_color(0xffffffff));
+    }
 }
 
 internal void
@@ -108,6 +163,7 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
     if (!state->initialized) {
         state->current_mode = Mode_SelectingGame;
         state->current_game = Game_None;
+        state->game_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 32.f);
         state->initialized = true;
     }
     

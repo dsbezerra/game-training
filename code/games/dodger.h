@@ -29,7 +29,7 @@ struct dodger_state {
     dodger_assets assets;
     dodger_world world;
     dodger_player player;
-    dodger_bad_guy bad_guys[64];
+    dodger_bad_guy bad_guys[32];
     
     u64 score;
     u64 top_score;
@@ -40,6 +40,7 @@ struct dodger_state {
 
 internal void dodger_game_restart(dodger_state *state);
 
+internal void dodger_menu_art(v2i min, v2i max);
 internal void dodger_game_update_and_render(game_memory *memory, game_input *input);
 
 internal void init_world(dodger_state *state);

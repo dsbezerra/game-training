@@ -3,7 +3,6 @@ internal void
 dodger_game_restart(dodger_state *state) {
     state->game_mode = DodgerMode_Playing;
     state->score = 0;
-    state->top_score = 0;
     state->quit_was_selected = false;
     state->menu_selected_item = 0;
     
@@ -94,6 +93,28 @@ update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
     }
 }
 
+internal b32
+check_for_collision(dodger_player *player, dodger_bad_guy *bad_guy) {
+    b32 result = 0;
+    
+    box player_box = box{
+        player->position.x,
+        player->position.y,
+        player->size.width,
+        player->size.height,
+    };
+    box guy_box = box{
+        bad_guy->position.x,
+        bad_guy->position.y,
+        bad_guy->size.width,
+        bad_guy->size.height,
+    };
+    
+    result = aabb_vs_aabb(player_box, guy_box);
+    
+    return result;
+}
+
 internal void
 draw_player(dodger_player *player) {
     v4 color = make_color(0xffffffff);
@@ -179,6 +200,62 @@ draw_game_view(dodger_state *state) {
 }
 
 internal void
+dodger_menu_art(v2 min, v2 max) {
+    
+    v4 background = make_color(0xff141414);
+    
+    immediate_begin();
+    
+    immediate_quad(min, max, background, 1.f);
+    
+    {
+        // Draw guys
+        {
+            // First
+            real32 width = 24.f;
+            v2 size = make_v2(width, width);
+            v2 position = make_v2(min.x + width, max.y - max.y * .5f);
+            v4 color = make_color(0xff66ff66);
+            immediate_quad(position, add_v2(position, size), color, 1.f);
+        }
+        {
+            // Second
+            real32 width = 24.f;
+            v2 size = make_v2(width, width);
+            v2 position = make_v2(max.x - width * 1.2f, max.y - max.y * .5f);
+            v4 color = make_color(0xff66ff66);
+            immediate_quad(position, add_v2(position, size), color, 1.f);
+        }
+        {
+            // Third
+            real32 width = 24.f;
+            v2 size = make_v2(width, width);
+            v2 position = make_v2(max.x - width * 1.5f, max.y - max.y * .3f);
+            v4 color = make_color(0xff66ff66);
+            immediate_quad(position, add_v2(position, size), color, 1.f);
+        }
+        {
+            // Fourth
+            real32 width = 24.f * 0.9f;
+            v2 size = make_v2(width, width);
+            v2 position = make_v2(min.x + width * 1.2f, max.y - max.y * .4f);
+            v4 color = make_color(0xff66ff66);
+            immediate_quad(position, add_v2(position, size), color, 1.f);
+        }
+    }
+    
+    {
+        // Player
+        v2 size = make_v2(24.f, 24.f);
+        v2 position = make_v2((min.x + max.x - size.width) / 2.f, (min.y + max.y - size.height) / 2.f);
+        v4 color = make_color(0xffffffff);
+        immediate_quad(position, add_v2(position, size), color, 1.f);
+    }
+    
+    immediate_flush();
+}
+
+internal void
 dodger_game_update_and_render(game_memory *memory, game_input *input) {
     
     dodger_state *state = (dodger_state *) memory->permanent_storage;
@@ -195,6 +272,7 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         assets.menu_item_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 32.f);
         
         dodger_world world = {};
+        world.dimensions = memory->window_dimensions;
         
         state->game_mode = DodgerMode_Playing;
         state->assets = assets;
@@ -237,10 +315,15 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         } else {
             update_player(state, input);
             for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
-                update_bad_guy(state, &state->bad_guys[bad_guy_index]);
+                dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index];
+                update_bad_guy(state, bad_guy);
+                if (check_for_collision(&state->player, bad_guy)) {
+                    state->game_mode = DodgerMode_GameOver;
+                    break;
+                }
             }
         }
-    } else {
+    } else if (state->game_mode == DodgerMode_Menu || state->game_mode == DodgerMode_GameOver) {
         if (pressed(Button_Down)) {
             state->menu_selected_item++;
             if (state->menu_selected_item > 1) {
@@ -256,7 +339,11 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         }
         
         if (pressed(Button_Escape)) {
-            state->game_mode = DodgerMode_Playing;
+            if (state->game_mode == DodgerMode_GameOver) {
+                memory->asked_to_quit = true;
+            } else {
+                state->game_mode = DodgerMode_Playing;
+            }
         }
         
         if (pressed(Button_Enter)) {
