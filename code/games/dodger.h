@@ -1,3 +1,14 @@
+/*
+
+ Training 1: Dodger
+ http://inventwithpython.com/blog/2012/02/20/i-need-practice-programming-49-ideas-for-game-clones-to-code/
+
+Description: Several bad guys fall from the top of the screen, and the user must avoid them. The player can be controlled with the arrow keys or more directly with the mouse. The longer the player lasts without being hit, the higher the score.
+
+Variations: Have enemies fall at different rates and be different sizes. Have enemies fall from more than one side of the game. Have power up pickups that grant invulnerability for a while, slow down bad guys, give the player a temporary "reverse bad guys" power, etc.
+
+*/
+
 enum dodger_mode {
     DodgerMode_Menu,
     DodgerMode_Playing,
