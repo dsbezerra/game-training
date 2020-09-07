@@ -134,10 +134,7 @@ draw_menu(dodger_state *state) {
     v4 default_color = make_color(0xffffffff);
     v4 selected_color = make_color(0xffffff00);
     
-    char *menu_title = "Dodger";
-    if (state->game_mode == DodgerMode_GameOver) {
-        menu_title = "Game Over";
-    }
+    char *menu_title = state->game_mode == DodgerMode_GameOver ? "Game Over" : "Dodger";
     real32 menu_title_width = get_text_width(&state->assets.menu_title_font, menu_title);
     
     real32 y = dim.height * 0.2f;
@@ -151,10 +148,8 @@ draw_menu(dodger_state *state) {
     
     draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &state->assets.menu_title_font, default_color);
     
-    char* menu_items[] = {"Retry", "Quit"};
-    if (state->quit_was_selected) {
-        menu_items[1] = "Are you sure?"; 
-    }
+    char* menu_items[] = {"Retry", state->quit_was_selected ? "Are you sure?" : "Quit"};
+    
     immediate_begin();
     
     y += dim.height * 0.25f;
@@ -191,7 +186,8 @@ draw_game_view(dodger_state *state) {
         
         v2i dim = state->world.dimensions;
         char buffer[256];
-        sprintf(buffer, "Top Score: %d\nScore: %d", (int) state->top_score, (int) state->score);
+        // TODO: Platform specific sprintf()
+        wsprintfA(buffer, "Top Score: %d\nScore: %d", (int) state->top_score, (int) state->score);
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
     } else {
@@ -209,38 +205,25 @@ dodger_menu_art(v2 min, v2 max) {
     immediate_quad(min, max, background, 1.f);
     
     {
-        // Draw guys
-        {
-            // First
-            real32 width = 24.f;
-            v2 size = make_v2(width, width);
-            v2 position = make_v2(min.x + width, max.y - max.y * .5f);
-            v4 color = make_color(0xff66ff66);
-            immediate_quad(position, add_v2(position, size), color, 1.f);
-        }
-        {
-            // Second
-            real32 width = 24.f;
-            v2 size = make_v2(width, width);
-            v2 position = make_v2(max.x - width * 1.2f, max.y - max.y * .5f);
-            v4 color = make_color(0xff66ff66);
-            immediate_quad(position, add_v2(position, size), color, 1.f);
-        }
-        {
-            // Third
-            real32 width = 24.f;
-            v2 size = make_v2(width, width);
-            v2 position = make_v2(max.x - width * 1.5f, max.y - max.y * .3f);
-            v4 color = make_color(0xff66ff66);
-            immediate_quad(position, add_v2(position, size), color, 1.f);
-        }
-        {
-            // Fourth
-            real32 width = 24.f * 0.9f;
-            v2 size = make_v2(width, width);
-            v2 position = make_v2(min.x + width * 1.2f, max.y - max.y * .4f);
-            v4 color = make_color(0xff66ff66);
-            immediate_quad(position, add_v2(position, size), color, 1.f);
+        v4 color = make_color(0xff66ff66);
+        v2 size = make_v2(24.f, 24.f);
+        dodger_bad_guy guys[] = {
+            dodger_bad_guy{make_v2(min.x + size.width * 5.f, max.y - max.y * .2f), size},
+            dodger_bad_guy{make_v2(max.x - size.width * 3.f, max.y - max.y * .5f), size},
+            dodger_bad_guy{make_v2(min.x + size.width * 1.2f, max.y - max.y * .6f), size},
+            dodger_bad_guy{make_v2(max.x - size.width * 1.2f, max.y - max.y * .6f), size},
+            dodger_bad_guy{make_v2(min.x + size.width * 1.4f, max.y - max.y * .33f), size},
+            dodger_bad_guy{make_v2(max.x - size.width * 1.4f, max.y - max.y * .33f), size},
+            dodger_bad_guy{make_v2(min.x + size.width * 1.2f, max.y - max.y * .5f), size},
+            dodger_bad_guy{make_v2(max.x - size.width * 2.9f, max.y - max.y * .8f), size},
+            dodger_bad_guy{make_v2(min.x + size.width * 1.9f, max.y - max.y * .8f), size},
+            dodger_bad_guy{make_v2(max.x - size.width * 1.55f, max.y - max.y * .12f), size},
+            dodger_bad_guy{make_v2(min.x + size.width * 8.55f, max.y - max.y * .12f), size},
+            dodger_bad_guy{make_v2(max.x - size.width * 4.11f, max.y - max.y * .2f), size},
+        };
+        for (int i = 0; i < array_count(guys); ++i) {
+            dodger_bad_guy guy = guys[i];
+            immediate_quad(guy.position, add_v2(guy.position, guy.size), color, 1.f);
         }
     }
     

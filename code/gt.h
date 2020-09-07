@@ -2,6 +2,7 @@
 #include "gt_types.h" 
 #include "gt_shared.h"
 #include "gt_math.h"
+#include "gt_platform.h"
 #include "gt_collision.h"
 #include "gt_opengl.h"
 #include "gt_shader.h"
@@ -90,12 +91,6 @@ internal void game_update_and_render(app_state *state, game_memory *memory, game
 internal void *game_alloc(game_memory *memory, u64 size);
 internal void game_free(game_memory *memory);
 internal void game_quit(app_state *state);
-
-internal void *platform_alloc(u64 size);
-internal void platform_free(void *memory);
-internal void platform_show_cursor(b32 show);
-internal void platform_set_cursor_position(v2i position);
-internal void platform_get_cursor_position(v2i *position);
 
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)

@@ -57,6 +57,31 @@ platform_get_cursor_position(v2i *position) {
     position->x = point.x;
     position->y = point.y;
 }
+internal file_contents
+plataform_read_entire_file(char *filepath) {
+    file_contents result = {};
+    
+    HANDLE file_handle = CreateFileA(filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    if (file_handle == INVALID_HANDLE_VALUE) {
+        CloseHandle(file_handle);
+        return result;
+    }
+    
+    DWORD file_size = GetFileSize(file_handle, 0);
+    result.file_size = file_size;
+    result.contents = (u8 *) VirtualAlloc(0, file_size,
+                                          MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+    
+    DWORD bytes_read;
+    if (ReadFile(file_handle, result.contents, file_size, &bytes_read, 0) && file_size == bytes_read) {
+        // Success;
+    } else {
+        assert(0);
+    }
+    
+    CloseHandle(file_handle);
+    return result;
+}
 
 internal inline LARGE_INTEGER
 win32_get_wallclock(void)
@@ -218,7 +243,6 @@ default_proc(HWND window,
                 platform_set_cursor_position(state.window_center);
             }
             input.mouse.position = state.window_center;
-            
             
         } break;
         case WM_ACTIVATEAPP: {

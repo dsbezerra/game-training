@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 
 global_variable shader global_shader;
 
@@ -7,22 +5,9 @@ internal shader_source
 parse_shader(char *filepath) {
     shader_source result = {};
     
-    u32 buffer_size;
+    file_contents file = plataform_read_entire_file(filepath);
     
-    FILE *file = fopen(filepath, "r");
-    assert(file);
-    
-    fseek(file, 0, SEEK_END);
-    buffer_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    
-    char *buffer = (char *) malloc(buffer_size + 1);
-    fread(buffer, 1, buffer_size, file);
-    fclose(file);
-    
-    buffer[buffer_size - 1] = '\0';
-    
-    char *at = buffer;
+    char *at = (char *) file.contents;
     u8 type = 0;
     
     size_t vertex_header_length = string_length("#shader vertex");
@@ -55,7 +40,7 @@ parse_shader(char *filepath) {
         }
     }
     
-    free(buffer);
+    platform_free(file.contents);
     
     return result;
 }
