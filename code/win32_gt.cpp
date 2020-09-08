@@ -9,7 +9,6 @@ global_variable HCURSOR default_cursor;
 
 global_variable app_state state = {};
 global_variable game_input input = {};
-global_variable game_memory global_memory = {};
 
 #define process_button(vk, b) \
 if (vk_code == vk) {\
@@ -236,9 +235,6 @@ default_proc(HWND window,
             state.window_dimensions.x = width;
             state.window_dimensions.y = height;
             
-            global_memory.window_center = state.window_center;
-            global_memory.window_dimensions = state.window_dimensions;
-            
             if (input.mouse.lock) {
                 platform_set_cursor_position(state.window_center);
             }
@@ -364,7 +360,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             global_running = true;
             
-            state.memory = &global_memory;
+            game_memory memory = {};
+            state.memory = &memory;
             
             init_draw();
             
@@ -377,7 +374,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 win32_process_pending_messages(window);
                 
                 // Game Update and render
-                game_update_and_render(&state, &global_memory, &input);
+                memory.window_center = state.window_center;
+                memory.window_dimensions = state.window_dimensions;
+                
+                game_update_and_render(&state, &memory, &input);
                 
                 // Ensure a forced frame time
                 LARGE_INTEGER work_counter = win32_get_wallclock();
