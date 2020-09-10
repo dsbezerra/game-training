@@ -7,13 +7,12 @@ Description: Several bad guys fall from the top of the screen, and the user must
 
 Variations: Have enemies fall at different rates and be different sizes. Have enemies fall from more than one side of the game. Have power up pickups that grant invulnerability for a while, slow down bad guys, give the player a temporary "reverse bad guys" power, etc.
 
-*/
+ TODO(diego): 
 
-enum dodger_mode {
-    DodgerMode_Menu,
-    DodgerMode_Playing,
-    DodgerMode_GameOver,
-};
+- Create images for player and bad guys.
+- Add stb_image so we can load .png images.
+
+*/
 
 struct dodger_assets {
     loaded_font primary_font;
@@ -36,7 +35,7 @@ struct dodger_bad_guy {
 };
 
 struct dodger_state {
-    dodger_mode game_mode;
+    game_mode game_mode;
     dodger_assets assets;
     dodger_world world;
     dodger_player player;

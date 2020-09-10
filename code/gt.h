@@ -16,6 +16,12 @@ struct game_button_state {
     b32 changed;
 };
 
+enum game_mode {
+    GameMode_Menu,
+    GameMode_Playing,
+    GameMode_GameOver,
+};
+
 enum button {
     Button_Escape,
     Button_Enter,

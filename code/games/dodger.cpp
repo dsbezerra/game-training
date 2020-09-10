@@ -1,7 +1,7 @@
 
 internal void
 dodger_game_restart(dodger_state *state) {
-    state->game_mode = DodgerMode_Playing;
+    state->game_mode = GameMode_Playing;
     state->score = 0;
     state->quit_was_selected = false;
     state->menu_selected_item = 0;
@@ -134,7 +134,7 @@ draw_menu(dodger_state *state) {
     v4 default_color = make_color(0xffffffff);
     v4 selected_color = make_color(0xffffff00);
     
-    char *menu_title = state->game_mode == DodgerMode_GameOver ? "Game Over" : "Dodger";
+    char *menu_title = state->game_mode == GameMode_GameOver ? "Game Over" : "Dodger";
     real32 menu_title_width = get_text_width(&state->assets.menu_title_font, menu_title);
     
     real32 y = dim.height * 0.2f;
@@ -172,7 +172,7 @@ draw_menu(dodger_state *state) {
 
 internal void
 draw_game_view(dodger_state *state) {
-    if (state->game_mode == DodgerMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         immediate_begin();
         draw_player(&state->player);
         for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
@@ -257,7 +257,7 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         dodger_world world = {};
         world.dimensions = memory->window_dimensions;
         
-        state->game_mode = DodgerMode_Playing;
+        state->game_mode = GameMode_Playing;
         state->assets = assets;
         state->world = world;
         state->score = 0;
@@ -292,21 +292,21 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Update
     //
-    if (state->game_mode == DodgerMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
-            state->game_mode = DodgerMode_Menu;
+            state->game_mode = GameMode_Menu;
         } else {
             update_player(state, input);
             for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
                 dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index];
                 update_bad_guy(state, bad_guy);
                 if (check_for_collision(&state->player, bad_guy)) {
-                    state->game_mode = DodgerMode_GameOver;
+                    state->game_mode = GameMode_GameOver;
                     break;
                 }
             }
         }
-    } else if (state->game_mode == DodgerMode_Menu || state->game_mode == DodgerMode_GameOver) {
+    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             state->menu_selected_item++;
             if (state->menu_selected_item > 1) {
@@ -322,10 +322,10 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         }
         
         if (pressed(Button_Escape)) {
-            if (state->game_mode == DodgerMode_GameOver) {
+            if (state->game_mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = DodgerMode_Playing;
+                state->game_mode = GameMode_Playing;
             }
         }
         
