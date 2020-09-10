@@ -119,7 +119,7 @@ make_v4(float x, float y, float z, float w) {
     return result;
 }
 
-internal inline v2
+inline v2
 add_v2(v2 a, v2 b) {
     v2 result = {};
     
@@ -129,7 +129,7 @@ add_v2(v2 a, v2 b) {
     return result;
 }
 
-internal inline v2i
+inline v2i
 add_v2i(v2i a, v2i b) {
     v2i result = {};
     
@@ -139,7 +139,7 @@ add_v2i(v2i a, v2i b) {
     return result;
 }
 
-internal inline v2
+inline v2
 sub_v2(v2 a, v2 b) {
     v2 result = {};
     
@@ -149,12 +149,22 @@ sub_v2(v2 a, v2 b) {
     return result;
 }
 
-internal inline v2i
+inline v2i
 sub_v2i(v2i a, v2i b) {
     v2i result = {};
     
     result.x = a.x - b.x;
     result.y = a.y - b.y;
+    
+    return result;
+}
+
+inline v2
+mul_v2(v2 a, real32 scalar) {
+    v2 result = {};
+    
+    result.x = a.x * scalar;
+    result.y = a.y * scalar;
     
     return result;
 }

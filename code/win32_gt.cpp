@@ -278,6 +278,7 @@ win32_process_pending_messages(HWND window) {
                 
                 process_button(VK_RETURN, Button_Enter);
                 process_button(VK_ESCAPE, Button_Escape);
+                process_button(VK_SPACE, Button_Space);
                 
                 process_button(VK_UP, Button_Up);
                 process_button(VK_DOWN, Button_Down);

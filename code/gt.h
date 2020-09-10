@@ -25,6 +25,7 @@ enum game_mode {
 enum button {
     Button_Escape,
     Button_Enter,
+    Button_Space,
     
     Button_Up,
     Button_Down,
@@ -48,6 +49,7 @@ struct game_input {
         struct {
             game_button_state escape;
             game_button_state enter;
+            game_button_state space;
             
             game_button_state up;
             game_button_state down;
