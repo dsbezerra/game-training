@@ -42,7 +42,6 @@ draw_donut(memory_card *card, v2 min, v2 max) {
     immediate_circle(center, radius.x * 0.15f, radius.y * 0.4f, card->color);
 }
 
-
 internal memory_card *
 get_current_selected_card(memory_puzzle_state *state) {
     int field_x = state->current_selected % array_count(state->world.field);
@@ -149,11 +148,6 @@ draw_game_view(memory_puzzle_state *state) {
         immediate_quad(bottom_min, bottom_max, color, 1.f);
     }
     
-    
-    //
-    // Draw circle test
-    //
-    
     immediate_flush();
 }
 
@@ -185,11 +179,13 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Update
     //
+    
     if (state->game_mode == GameMode_Playing) {
         
         //
         // Update field
         //
+        
         if (pressed(Button_Left)) state->current_selected--;
         if (pressed(Button_Right)) state->current_selected++;
         if (pressed(Button_Up)) state->current_selected -= array_count(state->world.field);

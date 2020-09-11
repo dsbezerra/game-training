@@ -73,6 +73,8 @@ struct game_memory {
     b32 initialized;
     b32 asked_to_quit;
     
+    real32 dt;
+    
     u64 permanent_storage_size;
     void *permanent_storage;
 };

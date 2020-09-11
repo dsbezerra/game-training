@@ -58,8 +58,8 @@ internal void init_player(dodger_state *state);
 internal void init_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy);
 internal void init_bad_guys(dodger_state *state);
 
-internal void update_player(dodger_state *state);
-internal void update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy);
+internal void update_player(dodger_state *state, game_input *input, real32 dt);
+internal void update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy, real32 dt);
 
 internal void draw_player(dodger_player *player);
 internal void draw_bad_guy(dodger_bad_guy *bad_guy);

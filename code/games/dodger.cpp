@@ -46,7 +46,7 @@ init_bad_guys(dodger_state *state) {
 }
 
 internal void
-update_player(dodger_state *state, game_input *input) {
+update_player(dodger_state *state, game_input *input, real32 dt) {
     
     dodger_player *player = &state->player;
     
@@ -55,7 +55,10 @@ update_player(dodger_state *state, game_input *input) {
     game_mouse mouse = input->mouse;
     v2 velocity = make_v2(mouse.sensitivity * mouse.velocity.x, mouse.sensitivity * mouse.velocity.y);
     
-    real32 speed = 2.f;
+    real32 speed = 100.f * dt;
+    if (is_down(Button_Space)) {
+        speed *= 2;
+    }
     if (is_down(Button_Left)) {
         velocity.x -= speed;
     }
@@ -76,9 +79,9 @@ update_player(dodger_state *state, game_input *input) {
 }
 
 internal void
-update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
+update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy, real32 dt) {
     v2 velocity = {};
-    real32 speed = 5.f;
+    real32 speed = 100.f * dt;
     
     bad_guy->position.y += speed;
     
@@ -270,6 +273,8 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         input->mouse.sensitivity = .5f;
     }
     
+    real32 dt = memory->dt;
+    
     // NOTE(diego): Lock mouse to center of screen and use new position
     // to calculate velocity and move our player with it.
     {
@@ -296,10 +301,10 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         if (pressed(Button_Escape)) {
             state->game_mode = GameMode_Menu;
         } else {
-            update_player(state, input);
+            update_player(state, input, dt);
             for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
                 dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index];
-                update_bad_guy(state, bad_guy);
+                update_bad_guy(state, bad_guy, dt);
                 if (check_for_collision(&state->player, bad_guy)) {
                     state->game_mode = GameMode_GameOver;
                     break;

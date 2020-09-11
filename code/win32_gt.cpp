@@ -331,7 +331,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
         
         int monitor_hz = 120;
         real32 app_update_hz = monitor_hz / 2.f;
-        real32 target_seconds_per_frame = 1.f / app_update_hz;
+        
+        real32 last_dt = 1.f / app_update_hz;
+        real32 target_dt = last_dt;
+        
         
         HWND window = CreateWindowExA(0,
                                       window_class.lpszClassName,
@@ -377,6 +380,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 // Game Update and render
                 memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
+                memory.dt = last_dt;
                 
                 game_update_and_render(&state, &memory, &input);
                 
@@ -385,16 +389,16 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 real32 work_seconds_elapsed = win32_get_seconds_elapsed(last_counter, work_counter);
                 
                 real32 seconds_elapsed_for_frame = work_seconds_elapsed;
-                if (seconds_elapsed_for_frame < target_seconds_per_frame) {
+                if (seconds_elapsed_for_frame < target_dt) {
                     if (sleep_is_granular) {
-                        DWORD sleep_ms = (DWORD)(1000.0f * (target_seconds_per_frame -
+                        DWORD sleep_ms = (DWORD)(1000.0f * (target_dt -
                                                             seconds_elapsed_for_frame));
                         if (sleep_ms > 0) {
                             Sleep(sleep_ms);
                         }
                     }
                     
-                    while (seconds_elapsed_for_frame < target_seconds_per_frame) {
+                    while (seconds_elapsed_for_frame < target_dt) {
                         seconds_elapsed_for_frame= win32_get_seconds_elapsed(last_counter,
                                                                              win32_get_wallclock());
                     }
@@ -406,7 +410,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 LARGE_INTEGER end_counter = win32_get_wallclock();
                 real32 ms_per_frame = 1000.0f * win32_get_seconds_elapsed(last_counter, end_counter);
                 int fps = (int) (global_perf_count_frequency / (end_counter.QuadPart - last_counter.QuadPart));
-                
+                last_dt = win32_get_seconds_elapsed(last_counter, end_counter);
                 last_counter = end_counter;
             }
             
