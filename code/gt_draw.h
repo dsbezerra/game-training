@@ -32,6 +32,12 @@ internal vertex *get_next_vertex_ptr();
 
 internal void immediate_vertex(v2 position, v4 color, v2 uv, real32 z_index);
 
+
+internal void immediate_circle(v2 center, real32 inner_radius_x, real32 inner_radius_y, real32 outer_radius_x, real32 outer_radius_y, v4 color);
+internal void immediate_circle(v2 center, real32 inner_radius, real32 outer_radius, v4 color);
+internal void immediate_circle(v2 center, v2 inner_radius, v2 outer_radius, v4 color);
+
+
 internal void immediate_circle_filled(v2 center, real32 radius_x, real32 radius_y, v4 color);
 internal void immediate_circle_filled(v2 center, real32 radius, v4 color);
 internal void immediate_circle_filled(v2 center, v2 radius, v4 color);
