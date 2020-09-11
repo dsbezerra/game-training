@@ -63,11 +63,85 @@ immediate_vertex(v2 position, v4 color, v2 uv, real32 z_index) {
     vertex *v = get_next_vertex_ptr();
     v->position.x = position.x;
     v->position.y = -position.y;
-    v->color    = color;
-    v->uv       = uv;
-    v->z_index  = z_index;
+    v->color      = color;
+    v->uv         = uv;
+    v->z_index    = z_index;
     
     immediate->num_vertices += 1;
+}
+
+internal void
+immediate_circle(v2 center, real32 inner_radius_x, real32 inner_radius_y, real32 outer_radius_x, real32 outer_radius_y, v4 color) {
+    v2 default_uv = make_v2(-1.f, -1.f);
+    
+    int amount = (int) max_real32(outer_radius_x, outer_radius_y);
+    for (int i = 0; i < amount; ++i) {
+        int next = i + 1;
+        
+        // Inner coordinates
+        real32 inner_ax = center.x + (inner_radius_x * cosf(i * TAU / amount));
+        real32 inner_ay = center.y + (inner_radius_y * sinf(i * TAU / amount));
+        real32 inner_bx = center.x + (inner_radius_x * cosf(next * TAU / amount));
+        real32 inner_by = center.y + (inner_radius_y * sinf(next * TAU / amount));
+        
+        // Outer coordinates
+        real32 outer_ax = center.x + (outer_radius_x * cosf(i * TAU / amount));
+        real32 outer_ay = center.y + (outer_radius_y * sinf(i * TAU / amount));
+        real32 outer_bx = center.x + (outer_radius_x * cosf(next * TAU / amount));
+        real32 outer_by = center.y + (outer_radius_y * sinf(next * TAU / amount));
+        
+        // Triangle made with 2 vertices in inner radius to one vertex in outer radius 
+        immediate_vertex(make_v2(inner_ax, inner_ay), color, default_uv, 1.f);
+        immediate_vertex(make_v2(inner_bx, inner_by), color, default_uv, 1.f);
+        immediate_vertex(make_v2(outer_bx, outer_by), color, default_uv, 1.f);
+        
+        // Triangle made with 2 vertices in outer radius to one vertex in inner radius
+        immediate_vertex(make_v2(outer_ax, outer_ay), color, default_uv, 1.f);
+        immediate_vertex(make_v2(outer_bx, outer_by), color, default_uv, 1.f);
+        immediate_vertex(make_v2(inner_ax, inner_ay), color, default_uv, 1.f);
+    }
+}
+
+internal void
+immediate_circle(v2 center, real32 inner_radius, real32 outer_radius, v4 color) {
+    immediate_circle(center, inner_radius, inner_radius, outer_radius, outer_radius, color);
+}
+
+internal void
+immediate_circle(v2 center, v2 inner_radius, v2 outer_radius, v4 color) {
+    immediate_circle(center, inner_radius.x, inner_radius.y, outer_radius.x, outer_radius.y, color);
+}
+
+internal void
+immediate_circle_filled(v2 center, real32 radius_x, real32 radius_y, v4 color) {
+    // NOTE(diego): To get a smooth and anti-aliased circle I guess we will 
+    // need a custom shader.
+    // https://blog.lapingames.com/draw-circle-glsl-shader/
+    v2 default_uv = make_v2(-1.f, -1.f);
+    int amount = (int) (radius_x > radius_y ? radius_x : radius_y);
+    for (int i = 0; i < amount; ++i) {
+        real32 ax = center.x + (radius_x * cosf(i * TAU / amount));
+        real32 ay = center.y + (radius_y * sinf(i * TAU / amount));
+        
+        int next = i + 1;
+        real32 bx = center.x + (radius_x * cosf(next * TAU / amount));
+        real32 by = center.y + (radius_y * sinf(next * TAU / amount));
+        
+        // Vertices to form a slice
+        immediate_vertex(center, color, default_uv, 1.f);
+        immediate_vertex(make_v2(ax, ay), color, default_uv, 1.f);
+        immediate_vertex(make_v2(bx, by), color, default_uv, 1.f);
+    }
+}
+
+internal void
+immediate_circle_filled(v2 center, v2 radius, v4 color) {
+    immediate_circle_filled(center, radius.x, radius.y, color);
+}
+
+internal void
+immediate_circle_filled(v2 center, real32 radius, v4 color) {
+    immediate_circle_filled(center, radius, radius, color);
 }
 
 internal void

@@ -1,3 +1,6 @@
+#define PI 3.14159265359f
+#define TAU 2 * PI
+
 union v2 {
     struct {
         float x, y;
@@ -187,6 +190,19 @@ internal inline real32
 safe_divide_1(real32 a, real32 b) {
     if (b == 0.f) b = 1.f;
     return a / b;
+}
+
+
+internal inline real32
+max_real32(real32 a, real32 b) {
+    if (a > b) return a; 
+    return b;
+}
+
+internal inline real32
+min_real32(real32 a, real32 b) {
+    if (a < b) return a;
+    return b;
 }
 
 inline real32

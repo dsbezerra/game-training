@@ -6,6 +6,16 @@ init_world(memory_puzzle_state *state) {
     state->world.field[0][1].flipped = true;
     state->world.field[0][1].kind = MemoryCard_Square;
     state->world.field[0][1].color = make_color(0xffffff00);
+    
+    
+    
+    state->world.field[0][4].flipped = true;
+    state->world.field[0][4].kind = MemoryCard_Donut;
+    state->world.field[0][4].color = make_color(0xff00ff00);
+    
+    state->world.field[0][8].flipped = true;
+    state->world.field[0][8].kind = MemoryCard_Eye;
+    state->world.field[0][8].color = make_color(0xff0000ff);
 }
 
 internal void
@@ -17,6 +27,21 @@ draw_square(memory_card *card, v2 min, v2 max) {
     
     immediate_quad(square_min, square_max, card->color, 1.f);
 }
+
+internal void
+draw_eye(memory_card *card, v2 min, v2 max) {
+    v2 radius = sub_v2(max, min);
+    v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+    immediate_circle_filled(center, make_v2(radius.x * 0.6f, radius.y * 0.3f), card->color);
+}
+
+internal void
+draw_donut(memory_card *card, v2 min, v2 max) {
+    v2 radius = sub_v2(max, min);
+    v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+    immediate_circle(center, radius.x * 0.15f, radius.y * 0.4f, card->color);
+}
+
 
 internal memory_card *
 get_current_selected_card(memory_puzzle_state *state) {
@@ -66,6 +91,12 @@ draw_game_view(memory_puzzle_state *state) {
             
             switch (card.kind) {
                 
+                case MemoryCard_Eye: {
+                    draw_eye(&card, min, max);
+                } break;
+                case MemoryCard_Donut: {
+                    draw_donut(&card, min, max);
+                } break;
                 case MemoryCard_Square: {
                     draw_square(&card, min, max);
                 } break;
@@ -117,6 +148,11 @@ draw_game_view(memory_puzzle_state *state) {
         immediate_quad(top_min, top_max, color, 1.f);
         immediate_quad(bottom_min, bottom_max, color, 1.f);
     }
+    
+    
+    //
+    // Draw circle test
+    //
     
     immediate_flush();
 }
