@@ -172,6 +172,18 @@ mul_v2(v2 a, real32 scalar) {
     return result;
 }
 
+inline b32
+equal_v4(v4 a, v4 b) {
+    b32 result = false;
+    
+    result = (a.x == b.x && 
+              a.y == b.y && 
+              a.z == b.z && 
+              a.w == b.w);
+    
+    return result;
+}
+
 internal int
 clamp(int min, int val, int max) {
     if (val < min) return min;
@@ -270,6 +282,11 @@ random_u32() {
     result ^= result << 5;
     random_state = result;
     return result;
+}
+
+inline b32
+random_choice(int chance) {
+    return random_u32 () % chance == 0;
 }
 
 inline int

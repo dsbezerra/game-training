@@ -39,8 +39,15 @@ struct memory_puzzle_world {
 struct memory_puzzle_state {
     game_mode game_mode;
     memory_puzzle_world world;
-    memory_card *last_flipped;
+    
+    memory_card *first_flipped;
+    memory_card *second_flipped;
+    
     s8 current_selected;
+    
+    real32 checking_cards_t;
+    real32 checking_cards_target;
+    
 };
 
 

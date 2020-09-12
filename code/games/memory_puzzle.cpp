@@ -1,21 +1,87 @@
 
+internal memory_card
+get_random_card() {
+    memory_card result = {};
+    
+    while (result.kind == MemoryCard_None) {
+        if (random_choice(1)) {
+            result.kind = MemoryCard_Donut;
+        }
+        
+        if (random_choice(2)) {
+            result.kind = MemoryCard_Square;
+        }
+        
+        if (random_choice(3)) {
+            result.kind = MemoryCard_Eye;
+        }
+        
+        if (random_choice(4)) {
+            result.kind = MemoryCard_Lines;
+        }
+    }
+    result.color = make_v4(random_real32_in_range(0.f, 1.f), random_real32_in_range(0.f, 1.f), random_real32_in_range(0.f, 1.f), 1.f);
+    
+    return result;
+}
+
+// NOTE(diego): 
+
+
+#define memory_half_puzzle(a, b) (((sizeof(a) / sizeof((a)[0])) * (sizeof(b) / sizeof((b)[0]))) / 2)
+
 internal void
 init_world(memory_puzzle_state *state) {
     state->world = {}; // Ensure zero
     
-    state->world.field[0][1].flipped = true;
-    state->world.field[0][1].kind = MemoryCard_Square;
-    state->world.field[0][1].color = make_color(0xffffff00);
+    int x_count = array_count(state->world.field);
+    int y_count = array_count(state->world.field[0]);
     
+    for (int i = 0; i < memory_half_puzzle(state->world.field, state->world.field[0]); ++i) {
+        
+        memory_card new_card = get_random_card();
+        int placed = 0;
+        while (placed < 2) {
+            int field_x = random_int_in_range(0, x_count);
+            int field_y = random_int_in_range(0, y_count);
+            
+            memory_card card_at_xy = state->world.field[field_y][field_x];
+            if (card_at_xy.kind == MemoryCard_None) {
+                state->world.field[field_y][field_x] = new_card;
+                ++placed;
+            } else {
+                // Find first available space and put it there
+                // NOTE(diego): This is pretty bad because the last card can end up side by side
+                // but it just for training. Not a commercial game by any means!!
+                memory_card *cards = (memory_card *) state->world.field;
+                for (memory_card *card = cards; card != cards + (x_count * y_count); card++) {
+                    if (card->kind == MemoryCard_None) {
+                        *card = new_card;
+                        ++placed; 
+                        break;
+                    }
+                }
+            }
+        }
+    }
     
+}
+
+internal memory_card *
+get_current_selected_card(memory_puzzle_state *state) {
+    int field_x = state->current_selected % array_count(state->world.field);
+    int field_y = state->current_selected / array_count(state->world.field);
     
-    state->world.field[0][4].flipped = true;
-    state->world.field[0][4].kind = MemoryCard_Donut;
-    state->world.field[0][4].color = make_color(0xff00ff00);
+    return &state->world.field[field_x][field_y];
+}
+
+internal b32
+flipped_cards_match(memory_card *first, memory_card *second) {
+    if (!first || !second) return false;
+    if (!first->flipped || !second->flipped) return false;
     
-    state->world.field[0][8].flipped = true;
-    state->world.field[0][8].kind = MemoryCard_Eye;
-    state->world.field[0][8].color = make_color(0xff0000ff);
+    return (first->kind == second->kind && 
+            equal_v4(first->color, second->color)); 
 }
 
 internal void
@@ -42,12 +108,25 @@ draw_donut(memory_card *card, v2 min, v2 max) {
     immediate_circle(center, radius.x * 0.15f, radius.y * 0.4f, card->color);
 }
 
-internal memory_card *
-get_current_selected_card(memory_puzzle_state *state) {
-    int field_x = state->current_selected % array_count(state->world.field);
-    int field_y = state->current_selected / array_count(state->world.field);
+internal void
+draw_lines(memory_card *card, v2 min, v2 max) {
     
-    return &state->world.field[field_x][field_y];
+    int line_count = 10;
+    
+    real32 height = max.y - min.y;
+    real32 line_height = 1.f;
+    
+    real32 advance_y = (height + line_count * line_height) / line_count;
+    real32 y_cursor = min.y;
+    
+    for (int y = 0; y < line_count - 1; y++) {
+        
+        v2 line_min = make_v2(min.x, y_cursor);
+        v2 line_max = make_v2(max.x, y_cursor + line_height);
+        immediate_quad(line_min, line_max, card->color, 1.f);
+        
+        y_cursor += advance_y;
+    }
 }
 
 internal void
@@ -99,6 +178,9 @@ draw_game_view(memory_puzzle_state *state) {
                 case MemoryCard_Square: {
                     draw_square(&card, min, max);
                 } break;
+                case MemoryCard_Lines: {
+                    draw_lines(&card, min, max);
+                } break;
                 
                 default: break;
             }
@@ -108,6 +190,7 @@ draw_game_view(memory_puzzle_state *state) {
     //
     // Draw selected indicator
     //
+    
     {
         int field_x = state->current_selected % array_count(world.field);
         int field_y = state->current_selected / array_count(world.field);
@@ -170,6 +253,7 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         init_world(state);
         
         state->game_mode = GameMode_Playing;
+        state->checking_cards_target = 1.f;
         
         memory->initialized = true;
     }
@@ -180,8 +264,9 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
     // Update
     //
     
+    real32 dt = memory->dt;
+    
     if (state->game_mode == GameMode_Playing) {
-        
         //
         // Update field
         //
@@ -194,19 +279,44 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         state->current_selected = (s8) clamp(0, state->current_selected, array_count(state->world.field) * array_count(state->world.field[0]) - 1);
         
         
-        if (pressed(Button_Space)) {
-            memory_card *card = get_current_selected_card(state);
-            if (card) {
-                card->flipped = !card->flipped;
-                if (state->last_flipped) {
-                    // TODO(diego): Compare cards
-                    state->last_flipped = 0;
+        //
+        // If we are checking for equal cards then
+        //
+        if (state->checking_cards_t > 0.f) {
+            state->checking_cards_t += dt;
+            
+            if (state->checking_cards_t > state->checking_cards_target) {
+                state->checking_cards_t = .0f;
+                
+                memory_card *first = state->first_flipped;
+                memory_card *second = state->second_flipped;
+                if (flipped_cards_match(first, second)) {
+                    // TODO(diego): Increment highscore!!
                 } else {
-                    state->last_flipped = card;
+                    first->flipped = false;
+                    second->flipped = false;
+                }
+                state->first_flipped = 0;
+                state->second_flipped = 0;
+            }
+            
+        } else {
+            if (pressed(Button_Space)) {
+                memory_card *card = get_current_selected_card(state);
+                if (card && !card->flipped) {
+                    card->flipped = !card->flipped;
+                    if (!state->first_flipped) {
+                        state->first_flipped = card;
+                    } else if (!state->second_flipped) {
+                        state->second_flipped = card;
+                    }
+                    
+                    if (state->first_flipped && state->second_flipped) {
+                        state->checking_cards_t = dt;
+                    }
                 }
             }
         }
-        
     }
     
     draw_game_view(state);
