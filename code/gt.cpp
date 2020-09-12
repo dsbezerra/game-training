@@ -54,6 +54,7 @@ void stub_menu_art(v2 min, v2 max) { assert(false); }
 void (*menu_table[])(v2 min, v2 max) = {
     stub_menu_art,
     dodger_menu_art,
+    memory_puzzle_menu_art,
 };
 
 // 

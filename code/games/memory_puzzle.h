@@ -20,6 +20,9 @@ enum memory_card_kind {
     MemoryCard_Square,
     MemoryCard_Eye,
     MemoryCard_Lines,
+    MemoryCard_Circle,
+    MemoryCard_DoubleEye,
+    MemoryCard_DoubleSquare,
     
     MemoryCard_Count,
 };
@@ -38,6 +41,7 @@ struct memory_puzzle_world {
 
 struct memory_puzzle_state {
     game_mode game_mode;
+    memory_puzzle_assets assets;
     memory_puzzle_world world;
     
     memory_card *first_flipped;
@@ -48,6 +52,11 @@ struct memory_puzzle_state {
     real32 checking_cards_t;
     real32 checking_cards_target;
     
+    u64 score;
+    u64 top_score;
+    
+    s8 menu_selected_item;
+    b32 quit_was_selected;
 };
 
 
@@ -56,7 +65,7 @@ struct memory_puzzle_state {
 //internal void dodger_menu_art(v2i min, v2i max);
 internal void memory_puzzle_game_update_and_render(game_memory *memory, game_input *input);
 
-internal void init_world(memory_puzzle_state *state);
+internal memory_puzzle_world init_world();
 
 internal void draw_game_view(memory_puzzle_state *state);
 internal void draw_game_over(memory_puzzle_state *state);
