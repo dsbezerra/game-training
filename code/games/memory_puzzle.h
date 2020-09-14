@@ -34,26 +34,30 @@ struct memory_card {
 };
 
 struct memory_puzzle_world {
-    v2i dimensions;
-    
     memory_card field[10][6];
+    v2i dimensions;
+};
+
+struct memory_puzzle_level {
+    u32 max_tries;
+    u32 tries;
 };
 
 struct memory_puzzle_state {
     game_mode game_mode;
+    
     memory_puzzle_assets assets;
     memory_puzzle_world world;
-    
-    memory_card *first_flipped;
-    memory_card *second_flipped;
+    memory_puzzle_level current_level;
     
     s8 current_selected;
+    memory_card *first_flipped;
+    memory_card *second_flipped;
     
     real32 checking_cards_t;
     real32 checking_cards_target;
     
-    u64 score;
-    u64 top_score;
+    u64 flip_count;
     
     s8 menu_selected_item;
     b32 quit_was_selected;

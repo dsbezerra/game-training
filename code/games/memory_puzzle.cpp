@@ -1,16 +1,23 @@
 
 internal void
+init_level(memory_puzzle_state *state) {
+    state->current_level = {};
+    state->current_level.max_tries = 100;
+}
+
+internal void
 memory_puzzle_game_restart(memory_puzzle_state *state) {
     state->game_mode = GameMode_Playing;
-    state->score = 0;
+    state->flip_count = 0;
     state->quit_was_selected = false;
     state->menu_selected_item = 0;
     
     //
     // Re-init
     //
-    
     state->world = init_world();
+    
+    init_level(state);
 }
 
 
@@ -126,14 +133,13 @@ init_world() {
     //     j ← random integer such that 0 ≤ j ≤ i
     //     exchange a[j] and a[i]
     //
-    
-    for (int i = size - 1; i > 0; --i) {
+    for (int i = size - 1; i >= 0; --i) {
         int j = random_int_in_range(0, size - 1);
         memory_card *first = cards + i;
         memory_card *second = cards + j;
-        memory_card *aux = first;
+        memory_card aux = *first;
         *first = *second;
-        *second = *aux;
+        *second = aux;
     }
     
     return world;
@@ -405,6 +411,21 @@ draw_game_view(memory_puzzle_state *state) {
         }
         
         immediate_flush();
+        
+        //
+        // Draw HUD
+        //
+        
+        memory_puzzle_level level = state->current_level;
+        
+        v2i dim = state->world.dimensions;
+        
+        char buffer[256];
+        // TODO: Platform specific sprintf()
+        wsprintfA(buffer, "Remaining Tries: %d", level.max_tries - level.tries);
+        
+        draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
+        
     } else {
         draw_menu(state);
     }
@@ -434,9 +455,9 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         state->game_mode = GameMode_Playing;
         state->assets = assets;
         state->checking_cards_target = 1.f;
-        state->score = 0;
-        state->top_score = 0;
+        
         state->world = init_world();
+        init_level(state);
         
         memory->initialized = true;
     }
@@ -465,7 +486,6 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
             
             state->current_selected = (s8) clamp(0, state->current_selected, array_count(state->world.field) * array_count(state->world.field[0]) - 1);
             
-            
             //
             // If we are checking for equal cards then
             //
@@ -478,8 +498,13 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                     memory_card *first = state->first_flipped;
                     memory_card *second = state->second_flipped;
                     if (flipped_cards_match(first, second)) {
-                        // TODO(diego): Increment highscore!!
+                        state->flip_count++;
                     } else {
+                        state->current_level.tries++;
+                        if (state->current_level.tries >= state->current_level.max_tries) {
+                            state->game_mode = GameMode_GameOver;
+                        }
+                        
                         first->flipped = false;
                         second->flipped = false;
                     }
@@ -553,6 +578,11 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                 state->quit_was_selected = false;
             }
         }
+    }
+    
+    // Check for winning condition then restart.
+    if (state->flip_count >= array_count(state->world.field) * array_count(state->world.field[0])) {
+        memory_puzzle_game_restart(state);
     }
     
     draw_game_view(state);
