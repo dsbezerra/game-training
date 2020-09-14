@@ -369,6 +369,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             init_draw();
             
+
             while (global_running) {
                 
                 for (int i = 0; i < Button_Count; i++) {

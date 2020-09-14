@@ -183,15 +183,38 @@ draw_donut(memory_card *card, v2 min, v2 max) {
 internal void
 draw_lines(memory_card *card, v2 min, v2 max) {
     
-    int line_count = 10;
-    
     real32 height = max.y - min.y;
     real32 line_height = 1.f;
     
-    real32 advance_y = (height + line_count * line_height) / line_count;
+    real32 line_count = 24.f;
+    
+    real32 advance_y = (height * line_height) / (line_count - 1);
     real32 y_cursor = min.y;
     
+#if 0
+    v2 default_uv = make_v2(1.f, 1.f);
+    real32 angle = -45.f;
+#endif
+    
     for (int y = 0; y < line_count - 1; y++) {
+        
+        // STUDY(diego): How to clip this properly to max min sizes...
+#if 0
+        v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+        
+        v2 top_left = rotate_v2_around(make_v2(min.x, y_cursor), center, angle);
+        v2 top_right = rotate_v2_around(make_v2(max.x, y_cursor), center, angle);
+        v2 bottom_left = rotate_v2_around(make_v2(min.x, y_cursor + line_height), center, angle);
+        v2 bottom_right = rotate_v2_around(make_v2(max.x, y_cursor + line_height), center, angle);
+        
+        immediate_vertex(top_left, card->color, default_uv, 1.f);
+        immediate_vertex(bottom_left, card->color, default_uv, 1.f);
+        immediate_vertex(bottom_right, card->color, default_uv, 1.f);
+        
+        immediate_vertex(top_right, card->color, default_uv, 1.f);
+        immediate_vertex(bottom_right, card->color, default_uv, 1.f);
+        immediate_vertex(top_left, card->color, default_uv, 1.f);
+#endif
         
         v2 line_min = make_v2(min.x, y_cursor);
         v2 line_max = make_v2(max.x, y_cursor + line_height);

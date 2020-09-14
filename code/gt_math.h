@@ -1,3 +1,5 @@
+#include "math.h"
+
 #define PI 3.14159265359f
 #define TAU 2 * PI
 
@@ -198,6 +200,16 @@ clampf(real32 min, real32 val, real32 max) {
     return val;
 }
 
+internal v2
+clamp_v2(v2 min, v2 val, v2 max) {
+    v2 result = {};
+    
+    result.x = clampf(min.x, val.x, max.x);
+    result.y = clampf(min.y, val.y, max.y);
+    
+    return result;
+}
+
 internal inline real32
 safe_divide_1(real32 a, real32 b) {
     if (b == 0.f) b = 1.f;
@@ -310,4 +322,44 @@ random_bilateral() {
 inline real32
 random_real32_in_range(real32 min, real32 max) {
     return random_unilateral() * (max - min) + min;
+}
+
+inline real32
+angle_to_radians(real32 angle) {
+    real32 result = 0.f;
+    
+    result = angle * PI / 180.f;
+    
+    return result;
+}
+
+//
+// Matrices
+//
+inline v2 rotate_v2_around(v2 a, v2 center, real32 angle) {
+    v2 result = {};
+    
+    real32 rad = angle_to_radians(angle);
+    real32 c = cosf(rad);
+    real32 s = sinf(rad);
+    
+    result.x = (a.x - center.x) * c - (a.y - center.y) * s;
+    result.y = (a.x - center.x) * s + (a.y - center.y) * c;
+    
+    result.x += center.x;
+    result.y += center.y;
+    
+    return result;
+}
+inline v2 rotate_v2(v2 a, real32 angle) {
+    v2 result = {};
+    
+    real32 rad = angle_to_radians(angle);
+    real32 cint = cosf(rad);
+    real32 sint = sinf(rad);
+    
+    result.x = cint * a.x - sint * a.y;
+    result.y = sint * a.x + cint * a.y;
+    
+    return result;
 }
