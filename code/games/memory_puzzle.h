@@ -18,10 +18,10 @@ enum memory_card_kind {
     MemoryCard_None,
     MemoryCard_Donut,
     MemoryCard_Square,
-    MemoryCard_Eye,
+    MemoryCard_Oval,
     MemoryCard_Lines,
     MemoryCard_Circle,
-    MemoryCard_DoubleEye,
+    MemoryCard_Diamond,
     MemoryCard_DoubleSquare,
     
     MemoryCard_Count,

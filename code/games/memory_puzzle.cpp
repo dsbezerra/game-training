@@ -78,20 +78,26 @@ get_random_card() {
         if (random_choice(1)) {
             result.kind = MemoryCard_Donut;
         } 
+        
         if (random_choice(2)) {
             result.kind = MemoryCard_Square;
         } 
+        
         if (random_choice(3)) {
             result.kind = MemoryCard_DoubleSquare;
         }
+        
         if (random_choice(4)) {
             result.kind = MemoryCard_Lines;
         }
         if (random_choice(5)) {
-            result.kind = MemoryCard_Eye;
+            result.kind = MemoryCard_Oval;
         }
         if (random_choice(6)) {
             result.kind = MemoryCard_Circle;
+        }
+        if (random_choice(7)) {
+            result.kind = MemoryCard_Diamond;
         }
     }
     
@@ -111,7 +117,7 @@ init_world() {
     memory_card *cards = (memory_card *) world.field;
     for (memory_card *card = cards; card != cards + size;) {
         memory_card new_card = get_random_card();
-        
+        new_card.flipped = true;
         b32 contains = false;
         for (memory_card *c = cards; c != cards + size; c++) {
             if (c->kind == new_card.kind && 
@@ -173,7 +179,7 @@ draw_square(memory_card *card, v2 min, v2 max) {
 }
 
 internal void
-draw_eye(memory_card *card, v2 min, v2 max) {
+draw_oval(memory_card *card, v2 min, v2 max) {
     v2 radius = sub_v2(max, min);
     v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle_filled(center, make_v2(radius.x * 0.6f, radius.y * 0.3f), card->color);
@@ -248,6 +254,22 @@ draw_circle(memory_card *card, v2 min, v2 max) {
     v2 radius = mul_v2(sub_v2(max, min), 0.5f);
     v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle_filled(center, radius, card->color);
+}
+
+internal void
+draw_diamond(memory_card *card, v2 min, v2 max) {
+    v2 half = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+    v2 default_uv = make_v2(-1.f, -1.f);
+    
+    // First triangle
+    immediate_vertex(make_v2(half.x, min.y), card->color, default_uv, 1.f);
+    immediate_vertex(make_v2(min.x, half.y), card->color, default_uv, 1.f);
+    immediate_vertex(make_v2(half.x, max.y), card->color, default_uv, 1.f);
+    
+    // Second triangle
+    immediate_vertex(make_v2(half.x, min.y), card->color, default_uv, 1.f);
+    immediate_vertex(make_v2(half.x, max.y), card->color, default_uv, 1.f);
+    immediate_vertex(make_v2(max.x, half.y), card->color, default_uv, 1.f);
 }
 
 internal void
@@ -342,8 +364,8 @@ draw_game_view(memory_puzzle_state *state) {
                 
                 switch (card.kind) {
                     
-                    case MemoryCard_Eye: {
-                        draw_eye(&card, min, max);
+                    case MemoryCard_Oval: {
+                        draw_oval(&card, min, max);
                     } break;
                     case MemoryCard_Donut: {
                         draw_donut(&card, min, max);
@@ -360,7 +382,9 @@ draw_game_view(memory_puzzle_state *state) {
                     case MemoryCard_Circle: {
                         draw_circle(&card, min, max);
                     } break;
-                    
+                    case MemoryCard_Diamond: {
+                        draw_diamond(&card, min, max);
+                    } break;
                     default: break;
                 }
             }
