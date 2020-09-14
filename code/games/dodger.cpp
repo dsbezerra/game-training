@@ -313,19 +313,11 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         }
     } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
-            state->menu_selected_item++;
-            if (state->menu_selected_item > 1) {
-                state->menu_selected_item = 0; // NOTE(diego): We just have two options.
-            }
+            advance_menu_choice(&state->menu_selected_item, 1);
         }
-        
         if (pressed(Button_Up)) {
-            state->menu_selected_item--;
-            if (state->menu_selected_item < 0) {
-                state->menu_selected_item = 1; // NOTE(diego): We just have two options.
-            }
+            advance_menu_choice(&state->menu_selected_item, -1);
         }
-        
         if (pressed(Button_Escape)) {
             if (state->game_mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;

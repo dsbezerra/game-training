@@ -34,6 +34,14 @@ game_quit(app_state *state, game_memory *memory) {
     game_free(memory);
 }
 
+internal void
+advance_menu_choice(s8 *current_choice, s8 delta) {
+    *current_choice += delta;
+    
+    if (*current_choice < 0) *current_choice += (s8) GameMenuItem_Count;
+    if (*current_choice >= (s8) GameMenuItem_Count) *current_choice -= (s8) GameMenuItem_Count;
+}
+
 
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"

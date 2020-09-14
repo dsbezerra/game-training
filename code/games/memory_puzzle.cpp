@@ -117,7 +117,7 @@ init_world() {
     memory_card *cards = (memory_card *) world.field;
     for (memory_card *card = cards; card != cards + size;) {
         memory_card new_card = get_random_card();
-        new_card.flipped = true;
+        
         b32 contains = false;
         for (memory_card *c = cards; c != cards + size; c++) {
             if (c->kind == new_card.kind && 
@@ -460,7 +460,6 @@ draw_game_over(memory_puzzle_state *state) {
     
 }
 
-
 internal void
 memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
     
@@ -556,19 +555,11 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         }
     } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
-            state->menu_selected_item++;
-            if (state->menu_selected_item > 1) {
-                state->menu_selected_item = 0; // NOTE(diego): We just have two options.
-            }
+            advance_menu_choice(&state->menu_selected_item, 1);
         }
-        
         if (pressed(Button_Up)) {
-            state->menu_selected_item--;
-            if (state->menu_selected_item < 0) {
-                state->menu_selected_item = 1; // NOTE(diego): We just have two options.
-            }
+            advance_menu_choice(&state->menu_selected_item, -1);
         }
-        
         if (pressed(Button_Escape)) {
             if (state->game_mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;

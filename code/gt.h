@@ -16,6 +16,13 @@ struct game_button_state {
     b32 changed;
 };
 
+enum game_menu_item {
+    GameMenuItem_Retry,
+    GameMenuItem_Quit,
+    
+    GameMenuItem_Count,
+};
+
 enum game_mode {
     GameMode_Menu,
     GameMode_Playing,
@@ -101,6 +108,8 @@ internal void game_update_and_render(app_state *state, game_memory *memory, game
 internal void *game_alloc(game_memory *memory, u64 size);
 internal void game_free(game_memory *memory);
 internal void game_quit(app_state *state);
+
+internal void advance_menu_choice(s8 *current_choice, s8 delta);
 
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)
