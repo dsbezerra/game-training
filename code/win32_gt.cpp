@@ -365,11 +365,12 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             global_running = true;
             
             game_memory memory = {};
+            
             state.memory = &memory;
             
             init_draw();
             
-
+            
             while (global_running) {
                 
                 for (int i = 0; i < Button_Count; i++) {
@@ -381,7 +382,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 // Game Update and render
                 memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
-                memory.dt = last_dt;
+                
+                time_info.dt = last_dt;
+                time_info.current_time += last_dt;
                 
                 game_update_and_render(&state, &memory, &input);
                 

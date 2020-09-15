@@ -4,6 +4,8 @@
 #include "gt_font.cpp"
 #include "gt_draw.cpp"
 
+global_variable game_time_info time_info = {};
+
 internal void *
 game_alloc(game_memory *memory, u64 size) {
     memory->permanent_storage_size = size;

@@ -46,7 +46,7 @@ init_bad_guys(dodger_state *state) {
 }
 
 internal void
-update_player(dodger_state *state, game_input *input, real32 dt) {
+update_player(dodger_state *state, game_input *input) {
     
     dodger_player *player = &state->player;
     
@@ -55,7 +55,7 @@ update_player(dodger_state *state, game_input *input, real32 dt) {
     game_mouse mouse = input->mouse;
     v2 velocity = make_v2(mouse.sensitivity * mouse.velocity.x, mouse.sensitivity * mouse.velocity.y);
     
-    real32 speed = 100.f * dt;
+    real32 speed = 100.f * time_info.dt;
     if (is_down(Button_Space)) {
         speed *= 2;
     }
@@ -79,9 +79,9 @@ update_player(dodger_state *state, game_input *input, real32 dt) {
 }
 
 internal void
-update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy, real32 dt) {
+update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
     v2 velocity = {};
-    real32 speed = 100.f * dt;
+    real32 speed = 100.f * time_info.dt;
     
     bad_guy->position.y += speed;
     
@@ -134,7 +134,9 @@ draw_bad_guy(dodger_bad_guy *bad_guy) {
 internal void
 draw_menu(dodger_state *state) {
     v2i dim = state->world.dimensions;
-    v4 default_color = make_color(0xffffffff);
+    
+    v4 white          = make_color(0xffffffff);
+    v4 default_color  = make_color(0xffaaaaaa);
     v4 selected_color = make_color(0xffffff00);
     
     char *menu_title = state->game_mode == GameMode_GameOver ? "Game Over" : "Dodger";
@@ -149,9 +151,9 @@ draw_menu(dodger_state *state) {
     //  Quit
     //
     
-    draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &state->assets.menu_title_font, default_color);
+    draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &state->assets.menu_title_font, white);
     
-    char* menu_items[] = {"Retry", state->quit_was_selected ? "Are you sure?" : "Quit"};
+    char* menu_items[] = {"Retry", state->quit_was_selected ? "Quit? Are you sure?" : "Quit"};
     
     immediate_begin();
     
@@ -255,7 +257,7 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         dodger_assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         assets.menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
-        assets.menu_item_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 32.f);
+        assets.menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
         dodger_world world = {};
         world.dimensions = memory->window_dimensions;
@@ -272,8 +274,6 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         // Set default mouse input values for this game
         input->mouse.sensitivity = .5f;
     }
-    
-    real32 dt = memory->dt;
     
     // NOTE(diego): Lock mouse to center of screen and use new position
     // to calculate velocity and move our player with it.
@@ -301,10 +301,10 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         if (pressed(Button_Escape)) {
             state->game_mode = GameMode_Menu;
         } else {
-            update_player(state, input, dt);
+            update_player(state, input);
             for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
                 dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index];
-                update_bad_guy(state, bad_guy, dt);
+                update_bad_guy(state, bad_guy);
                 if (check_for_collision(&state->player, bad_guy)) {
                     state->game_mode = GameMode_GameOver;
                     break;
@@ -346,7 +346,9 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
             }
         }
         
-        if (state->quit_was_selected) {
+        if (state->menu_selected_item != 1) {
+            state->quit_was_selected = false;
+        } else if (state->quit_was_selected) {
             if (pressed(Button_Escape)) {
                 state->quit_was_selected = false;
             }

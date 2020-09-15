@@ -9,6 +9,11 @@
 #include "gt_font.h"
 #include "gt_draw.h"
 
+struct game_time_info {
+    real32 dt;
+    real32 current_time;
+};
+
 struct game_sound_output_buffer;
 
 struct game_button_state {
@@ -79,8 +84,6 @@ struct game_memory {
     
     b32 initialized;
     b32 asked_to_quit;
-    
-    real32 dt;
     
     u64 permanent_storage_size;
     void *permanent_storage;

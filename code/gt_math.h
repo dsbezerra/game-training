@@ -280,6 +280,13 @@ lerp_color(u32 a, real32 t, u32 b) {
                       lerp(a_a, t, b_a));
 }
 
+internal inline v4 
+lerp_color(v4 a, real32 t, v4 b) {
+    return make_color(lerp(a.r, t, b.r),
+                      lerp(a.g, t, b.g),
+                      lerp(a.b, t, b.b),
+                      lerp(a.a, t, b.a));
+}
 //
 // Random
 //
@@ -391,11 +398,39 @@ ortho(real32 size, real32 aspect_ratio, real32 f, real32 n) {
 }
 
 inline mat4
+perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
+    mat4 result = identity();
+    
+    real32 q = 1.f / tanf(angle_to_radians(fov) * 0.5f);
+    real32 a = q / aspect_ratio;
+    real32 b = (n + f) / (n - f);
+    real32 c = (2.f * n * f) / (n - f);
+    
+    result.e[0 + 0 * 4] = a;
+    result.e[1 + 1 * 4] = q;
+    result.e[2 + 2 * 4] = b;
+    result.e[3 + 2 * 4] = -1.f;
+    result.e[2 + 3 * 4] = c;
+    
+    return result;
+}
+
+inline mat4
 translate(v2 pos) {
     mat4 result = identity();
     
     result.e[0 + 3 * 4] = pos.x;
     result.e[1 + 3 * 4] = pos.y;
+    
+    return result;
+}
+
+inline mat4
+scale(v2 scale) {
+    mat4 result = identity();
+    
+    result.e[0 * 0 * 4] = scale.x;
+    result.e[1 * 1 * 4] = scale.y;
     
     return result;
 }
