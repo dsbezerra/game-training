@@ -151,28 +151,37 @@ draw_menu(dodger_state *state) {
     //  Quit
     //
     
+    
     draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &state->assets.menu_title_font, white);
     
     char* menu_items[] = {"Retry", state->quit_was_selected ? "Quit? Are you sure?" : "Quit"};
-    
-    immediate_begin();
     
     y += dim.height * 0.25f;
     for (int menu_item = 0; menu_item < array_count(menu_items); ++menu_item) {
         
         char *text = menu_items[menu_item];
         real32 width = get_text_width(&state->assets.menu_item_font, text);
-        v4 color = default_color;
-        if (state->menu_selected_item == menu_item) {
-            color = selected_color;
-        }
         
-        immediate_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, color, 1.f);
+        if (state->menu_selected_item == menu_item) {
+            v4 non_white = make_color(0xffffde00);
+            
+            real32 now = cosf(time_info.current_time);
+            real32 t = cosf(now * 3);
+            t *= t;
+            
+            t = .4f + .54f * t;
+            v4 front_color = lerp_color(non_white, t, white);
+            
+            // Also draw an extra background item.
+            real32 offset = state->assets.menu_item_font.line_height / 40;
+            draw_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, selected_color);
+            draw_text((dim.width - width) / 2.f + offset, y - offset, (u8 *) text, &state->assets.menu_item_font, front_color);
+        } else {
+            draw_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, default_color);
+        }
         
         y += (real32) state->assets.menu_item_font.line_height;
     }
-    
-    immediate_flush();
 }
 
 internal void

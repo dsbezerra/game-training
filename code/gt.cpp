@@ -124,6 +124,15 @@ internal void
 render_mode_selecting(app_state *state) {
     int selection_width = state->window_dimensions.width / (int) (Game_Count);
     real32 border_width = selection_width * 0.01f;
+    
+    real32 now = time_info.current_time;
+    real32 t = cosf(now);
+    t *= t;
+    t = .4f + t;
+    
+    v4 border_color = make_v4(1.f, .0f, 1.f, .4f);
+    v4 border_color_almost_transparent = make_v4(1.f, .0f, 1.f, .2f);
+    
     for (int index = 0; index < array_count(game_titles); ++index) {
         real32 x = (real32) index * selection_width;
         v2 min  = make_v2(x, 0.f);
@@ -151,13 +160,17 @@ render_mode_selecting(app_state *state) {
                 immediate_begin();
                 
                 // Draw select quad
-                immediate_quad(min, max, make_v4(1.f, .0f, 1.f, .2f), 1.f);
+                
+                v4 a = make_v4(1.f, .0f, 1.f, .4f);
+                v4 b = make_v4(1.f, .0f, 1.f, .0f);
+                immediate_quad(min, max, lerp_color(b, t, a), 1.f);
                 
                 // Draw select borders
-                immediate_quad(left_min, left_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
-                immediate_quad(right_min, right_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
-                immediate_quad(top_min, top_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
-                immediate_quad(bottom_min, bottom_max, make_v4(1.f, .0f, 1.f, 1.f), 1.f);
+                v4 border_t_color = lerp_color(border_color, t, border_color_almost_transparent);
+                immediate_quad(left_min, left_max, border_t_color, 1.f);
+                immediate_quad(right_min, right_max, border_t_color, 1.f);
+                immediate_quad(top_min, top_max, border_t_color, 1.f);
+                immediate_quad(bottom_min, bottom_max, border_t_color, 1.f);
                 
                 immediate_flush();
             }

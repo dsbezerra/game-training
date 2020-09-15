@@ -320,13 +320,12 @@ draw_menu(memory_puzzle_state *state) {
             t *= t;
             
             t = .4f + .54f * t;
-            v4 backing_color = lerp_color(non_white, t, white);
+            v4 front_color = lerp_color(non_white, t, white);
             
             // Also draw an extra background item.
             real32 offset = state->assets.menu_item_font.line_height / 40;
-            
             draw_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, selected_color);
-            draw_text((dim.width - width) / 2.f + offset, y - offset, (u8 *) text, &state->assets.menu_item_font, backing_color);
+            draw_text((dim.width - width) / 2.f + offset, y - offset, (u8 *) text, &state->assets.menu_item_font, front_color);
         } else {
             draw_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, default_color);
         }
