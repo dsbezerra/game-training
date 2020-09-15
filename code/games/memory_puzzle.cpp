@@ -133,7 +133,7 @@ init_world() {
     }
     
     //
-    // Shuffle using Fisher–Yates shuffle 
+    // Shuffle using Fisher–Yates algorithm 
     //
     // for i from n−1 downto 1 do
     //     j ← random integer such that 0 ≤ j ≤ i
