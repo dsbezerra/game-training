@@ -182,7 +182,7 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
     
     // Draw
     glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     GLsizei width = (GLsizei) state->window_dimensions.x;
     GLsizei height = (GLsizei) state->window_dimensions.y;

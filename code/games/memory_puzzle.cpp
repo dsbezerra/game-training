@@ -449,7 +449,6 @@ draw_game_view(memory_puzzle_state *state) {
         wsprintfA(buffer, "Remaining Tries: %d", level.max_tries - level.tries);
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
-        
     } else {
         draw_menu(state);
     }

@@ -363,3 +363,39 @@ inline v2 rotate_v2(v2 a, real32 angle) {
     
     return result;
 }
+
+inline mat4
+ortho(real32 left, real32 right, real32 top, real32 bottom, real32 f, real32 n) {
+    mat4 result = identity();
+    
+	result.e[0 + 0 * 4] = 2.f / (right - left);
+	result.e[1 + 1 * 4] = 2.f / (top - bottom);
+	result.e[2 + 2 * 4] = -2.f / (f - n);
+    
+	result.e[0 + 3 * 4] = -((right + left) / (right - left));
+	result.e[1 + 3 * 4] = -((top + bottom) / (top - bottom));
+    result.e[2 + 3 * 4] = -((f + n) / (f - n));
+    
+	return result;
+}
+
+inline mat4
+ortho(real32 size, real32 aspect_ratio, real32 f, real32 n) {
+    real32 right = size * aspect_ratio;
+    real32 left = -right;
+    
+    real32 top = size;
+    real32 bottom = -top;
+    
+	return ortho(left, right, top, bottom, f, n);
+}
+
+inline mat4
+translate(v2 pos) {
+    mat4 result = identity();
+    
+    result.e[0 + 3 * 4] = pos.x;
+    result.e[1 + 3 * 4] = pos.y;
+    
+    return result;
+}

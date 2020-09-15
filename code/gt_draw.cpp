@@ -33,6 +33,11 @@ immediate_init() {
     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    
+    //glEnable(GL_MULTISAMPLE);
+	glEnable(GL_DEPTH_TEST);
+	glClearDepth(1.f);
+	glDepthFunc(GL_LEQUAL);
 }
 
 internal void
@@ -272,6 +277,8 @@ refresh_shader_transform() {
 internal void
 render_right_handed(int width, int height) {
     mat4 tm = identity();
+    
+#if 0
     tm.rc[0][0] = 2.f / width;
     tm.rc[1][1] = 2.f / height;
     
@@ -280,6 +287,19 @@ render_right_handed(int width, int height) {
     
     projection_matrix = tm;
     view_matrix       = identity();
+#endif
+    
+#if 1
+    real32 aspect_ratio = (real32) width / (real32) height;
+    
+    real32 f = 10.f;
+    real32 n = 1.f;
+    
+    real32 ortho_size = height / 2.f;
+    
+    projection_matrix = ortho(ortho_size, aspect_ratio, f, n);
+    view_matrix       = translate(make_v2(-width / 2.f, ortho_size));
+#endif 
     
     refresh_shader_transform();
 }
