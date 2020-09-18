@@ -8,6 +8,8 @@ Variations: Provide "hints" in the form of four possible matching cards after th
 
 */
 
+#define MEMORY_PUZZLE_TITLE "Memory Puzzle"
+
 struct memory_puzzle_assets {
     loaded_font primary_font;
     loaded_font menu_title_font;

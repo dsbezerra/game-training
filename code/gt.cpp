@@ -6,6 +6,9 @@
 
 global_variable game_time_info time_info = {};
 
+global_variable loaded_font menu_title_font;
+global_variable loaded_font menu_item_font;
+
 internal void *
 game_alloc(game_memory *memory, u64 size) {
     memory->permanent_storage_size = size;
@@ -44,6 +47,57 @@ advance_menu_choice(s8 *current_choice, s8 delta) {
     if (*current_choice >= (s8) GameMenuItem_Count) *current_choice -= (s8) GameMenuItem_Count;
 }
 
+internal void
+draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 quit_was_selected) {
+    
+    v4 white          = make_color(0xffffffff);
+    v4 default_color  = make_color(0xffaaaaaa);
+    v4 selected_color = make_color(0xffffff00);
+    
+    char *menu_title = mode == GameMode_GameOver ? "Game Over" : game_title;
+    real32 menu_title_width = get_text_width(&menu_title_font, menu_title);
+    
+    real32 y = dim.height * 0.2f;
+    
+    //
+    // Title
+    //
+    //  Retry
+    //  Quit
+    //
+    
+    
+    draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &menu_title_font, white);
+    
+    char* menu_items[] = {"Retry", quit_was_selected ? "Quit? Are you sure?" : "Quit"};
+    
+    y += dim.height * 0.25f;
+    for (int menu_item = 0; menu_item < array_count(menu_items); ++menu_item) {
+        
+        char *text = menu_items[menu_item];
+        real32 width = get_text_width(&menu_item_font, text);
+        
+        if (menu_selected_item == menu_item) {
+            v4 non_white = make_color(0xffffde00);
+            
+            real32 now = cosf(time_info.current_time);
+            real32 t = cosf(now * 3);
+            t *= t;
+            
+            t = .4f + .54f * t;
+            v4 front_color = lerp_color(non_white, t, white);
+            
+            // Also draw an extra background item.
+            real32 offset = menu_item_font.line_height / 40;
+            draw_text((dim.width - width) / 2.f, y, (u8 *) text, &menu_item_font, selected_color);
+            draw_text((dim.width - width) / 2.f + offset, y - offset, (u8 *) text, &menu_item_font, front_color);
+        } else {
+            draw_text((dim.width - width) / 2.f, y, (u8 *) text, &menu_item_font, default_color);
+        }
+        
+        y += (real32) menu_item_font.line_height;
+    }
+}
 
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
@@ -188,6 +242,16 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
         state->current_mode = Mode_SelectingGame;
         state->current_game = Game_None;
         state->game_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 32.f);
+        
+        // @Cleanup
+        //
+        // Pass theses inside app_state?
+        // Make app_state visible and accessible to games?
+        //
+        menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
+        menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
+        
+        
         state->initialized = true;
     }
     

@@ -14,10 +14,10 @@ Variations: Have enemies fall at different rates and be different sizes. Have en
 
 */
 
+#define DODGER_TITLE "Dodger"
+
 struct dodger_assets {
     loaded_font primary_font;
-    loaded_font menu_title_font;
-    loaded_font menu_item_font;
 };
 
 struct dodger_world {

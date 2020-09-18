@@ -132,59 +132,6 @@ draw_bad_guy(dodger_bad_guy *bad_guy) {
 }
 
 internal void
-draw_menu(dodger_state *state) {
-    v2i dim = state->world.dimensions;
-    
-    v4 white          = make_color(0xffffffff);
-    v4 default_color  = make_color(0xffaaaaaa);
-    v4 selected_color = make_color(0xffffff00);
-    
-    char *menu_title = state->game_mode == GameMode_GameOver ? "Game Over" : "Dodger";
-    real32 menu_title_width = get_text_width(&state->assets.menu_title_font, menu_title);
-    
-    real32 y = dim.height * 0.2f;
-    
-    //
-    // Title
-    //
-    //  Retry
-    //  Quit
-    //
-    
-    
-    draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &state->assets.menu_title_font, white);
-    
-    char* menu_items[] = {"Retry", state->quit_was_selected ? "Quit? Are you sure?" : "Quit"};
-    
-    y += dim.height * 0.25f;
-    for (int menu_item = 0; menu_item < array_count(menu_items); ++menu_item) {
-        
-        char *text = menu_items[menu_item];
-        real32 width = get_text_width(&state->assets.menu_item_font, text);
-        
-        if (state->menu_selected_item == menu_item) {
-            v4 non_white = make_color(0xffffde00);
-            
-            real32 now = cosf(time_info.current_time);
-            real32 t = cosf(now * 3);
-            t *= t;
-            
-            t = .4f + .54f * t;
-            v4 front_color = lerp_color(non_white, t, white);
-            
-            // Also draw an extra background item.
-            real32 offset = state->assets.menu_item_font.line_height / 40;
-            draw_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, selected_color);
-            draw_text((dim.width - width) / 2.f + offset, y - offset, (u8 *) text, &state->assets.menu_item_font, front_color);
-        } else {
-            draw_text((dim.width - width) / 2.f, y, (u8 *) text, &state->assets.menu_item_font, default_color);
-        }
-        
-        y += (real32) state->assets.menu_item_font.line_height;
-    }
-}
-
-internal void
 draw_game_view(dodger_state *state) {
     if (state->game_mode == GameMode_Playing) {
         immediate_begin();
@@ -205,7 +152,7 @@ draw_game_view(dodger_state *state) {
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
     } else {
-        draw_menu(state);
+        draw_menu(DODGER_TITLE, state->world.dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
@@ -265,8 +212,6 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         
         dodger_assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
-        assets.menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
-        assets.menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
         dodger_world world = {};
         world.dimensions = memory->window_dimensions;
