@@ -101,6 +101,7 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
 
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
+#include "games/slide_puzzle.cpp"
 
 //
 // Game titles
@@ -109,6 +110,7 @@ global_variable char* game_titles[] = {
     "",
     "Dodger",
     "Memory Puzzle",
+    "Slide Puzzle",
 };
 
 //
@@ -118,7 +120,8 @@ void stub_menu_art(v2 min, v2 max) { assert(false); }
 void (*menu_table[])(v2 min, v2 max) = {
     stub_menu_art,
     dodger_menu_art,
-    memory_puzzle_menu_art,
+    memory_puzzle_menu_art, // TODO(diego): Update menu art routine for for Memory Puzzle
+    // TODO(diego): Create menu art routine for Slide Puzzle
 };
 
 // 
@@ -130,6 +133,7 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
     stub_game_update_and_render,
     dodger_game_update_and_render,
     memory_puzzle_game_update_and_render,
+    slide_puzzle_game_update_and_render,
 };
 
 internal void

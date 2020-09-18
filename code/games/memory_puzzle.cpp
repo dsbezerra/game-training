@@ -424,8 +424,6 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         
         memory_puzzle_assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
-        assets.menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
-        assets.menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
         state->game_mode = GameMode_Playing;
         state->assets = assets;

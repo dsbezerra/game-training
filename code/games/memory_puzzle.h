@@ -12,8 +12,6 @@ Variations: Provide "hints" in the form of four possible matching cards after th
 
 struct memory_puzzle_assets {
     loaded_font primary_font;
-    loaded_font menu_title_font;
-    loaded_font menu_item_font;
 };
 
 enum memory_card_kind {
@@ -65,13 +63,7 @@ struct memory_puzzle_state {
     b32 quit_was_selected;
 };
 
-
-//internal void dodger_game_restart(dodger_state *state);
-
-//internal void dodger_menu_art(v2i min, v2i max);
-internal void memory_puzzle_game_update_and_render(game_memory *memory, game_input *input);
-
 internal memory_puzzle_world init_world();
 
 internal void draw_game_view(memory_puzzle_state *state);
-internal void draw_game_over(memory_puzzle_state *state);
+internal void memory_puzzle_game_update_and_render(game_memory *memory, game_input *input);
