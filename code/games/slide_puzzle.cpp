@@ -1,4 +1,19 @@
+
 internal void
+generate_puzzle(slide_puzzle_state *state) {
+    slide_puzzle_gen generation = {};
+    generation.number = 1;
+    generation.shuffle_t = .0f;
+    generation.shuffle_target = 1.f;
+    generation.fill_t = .0f;
+    generation.fill_target = 1.f;
+    generation.shuffle_index = SLIDE_PUZZLE_BOARD_COUNT*SLIDE_PUZZLE_BOARD_COUNT - 1;
+    generation.tile_index = 1;
+    state->mode = SlidePuzzleMode_Generating;
+    state->generation = generation;
+}
+
+internal void 
 init_puzzle(slide_puzzle_state *state) {
     // NOTE(diego): Default puzzle.
     
@@ -36,6 +51,90 @@ init_puzzle(slide_puzzle_state *state) {
         slide_puzzle_tile aux = *a;
         *a = *b;
         *b = aux;
+    }
+}
+
+internal void
+init_puzzle(slide_puzzle_state *state, b32 animated) {
+    if (animated) generate_puzzle(state);
+    else init_puzzle(state);
+}
+
+
+internal void
+slide_puzzle_game_restart(slide_puzzle_state *state) {
+    state->game_mode = GameMode_Playing;
+    
+    //
+    // Re-init
+    //
+    
+    state->mode = SlidePuzzleMode_Generating;
+    
+    state->sliding_t_rate = 10.f;
+    state->sliding_target = 1.f;
+    
+    state->swap.from_index = -1;
+    state->swap.to_index = -1;
+    
+    generate_puzzle(state);
+}
+
+
+internal void
+update_generating(slide_puzzle_state *state) {
+    
+    slide_puzzle_gen *generation = &state->generation;
+    
+    s8 len = SLIDE_PUZZLE_BOARD_COUNT*SLIDE_PUZZLE_BOARD_COUNT;
+    
+    real32 speed = 26.f;
+    
+    slide_puzzle_tile *tiles = (slide_puzzle_tile *) state->board.tiles;
+    if (generation->fill_t >= generation->fill_target) {
+        generation->fill_t -= generation->fill_target;
+        
+        slide_puzzle_tile *tile = tiles + generation->tile_index;
+        tile->id = generation->number;
+        if (generation->number < 10) {
+            tile->content[0] = generation->number + '0';
+            tile->content[1] = '\0';
+        } else if (generation->number < len + 1) {
+            int left = (int) (generation->number / 10);
+            int right = generation->number % 10;
+            tile->content[0] = (char) (left + '0');
+            tile->content[1] = (char) (right + '0');
+            tile->content[2] = '\0';
+        }
+        ++generation->tile_index;
+        ++generation->number;
+    } else if (generation->tile_index < len) {
+        generation->fill_t += time_info.dt * speed;
+    } else {
+        
+        if (generation->shuffle_t >= generation->shuffle_target) {
+            generation->shuffle_t -= generation->shuffle_target;
+            //
+            // Shuffle using Fisher–Yates algorithm 
+            //
+            // for i from n−1 downto 1 do
+            //     j ← random integer such that 0 ≤ j ≤ i
+            //     exchange a[j] and a[i]
+            //
+            int j = random_int_in_range(1, len - 1);
+            slide_puzzle_tile *a = tiles + generation->shuffle_index;
+            slide_puzzle_tile *b = tiles + j;
+            slide_puzzle_tile aux = *a;
+            *a = *b;
+            *b = aux;
+            
+            --generation->shuffle_index;
+            
+        } else if (generation->shuffle_index >= 1) {
+            generation->shuffle_t += time_info.dt * speed;
+        } else {
+            state->mode = SlidePuzzleMode_Ready;
+        }
     }
     
 }
@@ -79,7 +178,6 @@ draw_board(slide_puzzle_state *state) {
     
     v2 board_min = make_v2(start.x, start.y);
     v2 board_max = make_v2(board_min.x + board_size, board_min.y + board_size);
-    
     
     immediate_quad(board_min, board_max, make_color(0xff008200), 1.f);
     
@@ -176,6 +274,11 @@ draw_board(slide_puzzle_state *state) {
     }
     
     immediate_flush();
+    
+    
+    if (state->mode == SlidePuzzleMode_Generating) {
+        draw_text(dim.width * .05f, dim.height * 0.1f, (u8 *) "Generating puzzle...", &state->assets.generating_font, white);
+    }
 }
 
 internal void
@@ -200,20 +303,20 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         
         slide_puzzle_assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
+        assets.generating_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 42.f);
         assets.tile_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 32.f);
         
-        
         state->game_mode = GameMode_Playing;
+        state->mode = SlidePuzzleMode_Generating;
         state->assets = assets;
         
-        state->sliding_t_rate = 2.f;
+        state->sliding_t_rate = 10.f;
         state->sliding_target = 1.f;
         
         state->swap.from_index = -1;
         state->swap.to_index = -1;
         
-        
-        init_puzzle(state);
+        generate_puzzle(state);
     }
     
     state->dimensions = memory->window_dimensions;
@@ -223,50 +326,53 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
     //
     
     if (state->game_mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
-        } else {
-            
-            if (state->sliding_t == 0.f) {
-                s8 old_board_x = state->board.empty_index % SLIDE_PUZZLE_BOARD_COUNT;
-                s8 old_board_y = state->board.empty_index / SLIDE_PUZZLE_BOARD_COUNT;
-                
-                s8 new_board_x = old_board_x;
-                s8 new_board_y = old_board_y;
-                
-                if (pressed(Button_Up))
-                    ++new_board_y;
-                if (pressed(Button_Down))
-                    --new_board_y;
-                
-                if (pressed(Button_Right))
-                    --new_board_x;
-                if (pressed(Button_Left))
-                    ++new_board_x;
-                
-                b32 valid = new_board_x >= 0 && new_board_x < SLIDE_PUZZLE_BOARD_COUNT && new_board_y >= 0 && new_board_y < SLIDE_PUZZLE_BOARD_COUNT;
-                b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
-                // Check if new_empty_index is valid
-                if (valid && changed) {
-                    slide_puzzle_tile old_tile = state->board.tiles[old_board_x][old_board_y];
-                    slide_puzzle_tile new_tile = state->board.tiles[new_board_x][new_board_y];
-                    
-                    state->board.tiles[old_board_x][old_board_y] = new_tile;
-                    state->board.tiles[new_board_x][new_board_y] = old_tile;
-                    
-                    s8 new_empty_index = new_board_x + new_board_y * SLIDE_PUZZLE_BOARD_COUNT;
-                    
-                    state->swap.from_index = state->board.empty_index;
-                    state->swap.to_index = new_empty_index;
-                    state->board.empty_index = new_empty_index;
-                    state->sliding_t += time_info.dt;
-                }
+        if (state->mode == SlidePuzzleMode_Generating) {
+            update_generating(state);
+        } else if (state->mode == SlidePuzzleMode_Ready) {
+            if (pressed(Button_Escape)) {
+                state->game_mode = GameMode_Menu;
             } else {
-                state->sliding_t += time_info.dt * state->sliding_t_rate;
-                if (state->sliding_t >= state->sliding_target) {
-                    state->sliding_t = .0f;
-                    state->swap.to_index = -1;
-                    state->swap.from_index = -1;
+                if (state->sliding_t == 0.f) {
+                    s8 old_board_x = state->board.empty_index % SLIDE_PUZZLE_BOARD_COUNT;
+                    s8 old_board_y = state->board.empty_index / SLIDE_PUZZLE_BOARD_COUNT;
+                    
+                    s8 new_board_x = old_board_x;
+                    s8 new_board_y = old_board_y;
+                    
+                    if (pressed(Button_Up))
+                        ++new_board_y;
+                    if (pressed(Button_Down))
+                        --new_board_y;
+                    
+                    if (pressed(Button_Right))
+                        --new_board_x;
+                    if (pressed(Button_Left))
+                        ++new_board_x;
+                    
+                    b32 valid = new_board_x >= 0 && new_board_x < SLIDE_PUZZLE_BOARD_COUNT && new_board_y >= 0 && new_board_y < SLIDE_PUZZLE_BOARD_COUNT;
+                    b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
+                    // Check if new_empty_index is valid
+                    if (valid && changed) {
+                        slide_puzzle_tile old_tile = state->board.tiles[old_board_x][old_board_y];
+                        slide_puzzle_tile new_tile = state->board.tiles[new_board_x][new_board_y];
+                        
+                        state->board.tiles[old_board_x][old_board_y] = new_tile;
+                        state->board.tiles[new_board_x][new_board_y] = old_tile;
+                        
+                        s8 new_empty_index = new_board_x + new_board_y * SLIDE_PUZZLE_BOARD_COUNT;
+                        
+                        state->swap.from_index = state->board.empty_index;
+                        state->swap.to_index = new_empty_index;
+                        state->board.empty_index = new_empty_index;
+                        state->sliding_t += time_info.dt;
+                    }
+                } else {
+                    state->sliding_t += time_info.dt * state->sliding_t_rate;
+                    if (state->sliding_t >= state->sliding_target) {
+                        state->sliding_t = .0f;
+                        state->swap.to_index = -1;
+                        state->swap.from_index = -1;
+                    }
                 }
             }
         }
@@ -288,7 +394,7 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
         if (pressed(Button_Enter)) {
             switch (state->menu_selected_item) {
                 case 0: {
-                    //memory_puzzle_game_restart(state);
+                    slide_puzzle_game_restart(state);
                 } break;
                 
                 case 1: {

@@ -13,8 +13,16 @@ Variations: Provide "hints" in the form of four possible matching cards after th
 
 #define SLIDE_PUZZLE_BOARD_COUNT 4
 
+enum slide_puzzle_mode {
+    SlidePuzzleMode_Ready,
+    SlidePuzzleMode_Generating,
+    
+    SlidePuzzleMode_Count,
+};
+
 struct slide_puzzle_assets {
     loaded_font primary_font;
+    loaded_font generating_font;
     loaded_font tile_font;
 };
 
@@ -30,6 +38,18 @@ struct slide_puzzle_board {
     s8 solution[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
 };
 
+struct slide_puzzle_gen {
+    s8 number;
+    real32 shuffle_t;
+    real32 shuffle_target;
+    
+    real32 fill_t;
+    real32 fill_target;
+    
+    s8 shuffle_index;
+    s8 tile_index;
+};
+
 struct slide_puzzle_swap {
     s8 from_index;
     s8 to_index;
@@ -41,10 +61,13 @@ struct slide_puzzle_state {
     
     v2i dimensions;
     
+    slide_puzzle_mode mode;
+    
     real32 sliding_t;
     real32 sliding_target;
     real32 sliding_t_rate;
     
+    slide_puzzle_gen generation;
     slide_puzzle_swap swap;
     
     game_mode game_mode;
