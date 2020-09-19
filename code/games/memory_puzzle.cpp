@@ -386,7 +386,7 @@ draw_game_view(memory_puzzle_state *state) {
             v2 bottom_min = make_v2(min.x, max.y);
             v2 bottom_max = make_v2(max.x, max.y - half_stroke);
             
-            immediate_quad(left_min, left_max ,color, 1.f);
+            immediate_quad(left_min, left_max, color, 1.f);
             immediate_quad(right_min, right_max, color, 1.f);
             immediate_quad(top_min, top_max, color, 1.f);
             immediate_quad(bottom_min, bottom_max, color, 1.f);

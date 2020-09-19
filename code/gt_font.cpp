@@ -31,6 +31,17 @@ load_font(char *fontpath, real32 size) {
 }
 
 internal real32
+get_char_width(loaded_font *font, char c) {
+    real32 result = 0.f;
+    
+    if (c >= 32 && c < 255) 
+        result = font->cdata[c].xadvance;
+    
+    return result;
+}
+
+
+internal real32
 get_text_width(loaded_font *font, char *text, int *line_count) {
     real32 result = 0.f;
     real32 w = 0.f;
@@ -48,7 +59,8 @@ get_text_width(loaded_font *font, char *text, int *line_count) {
             w = .0f;
             (*line_count)++;
         } else if (*at >= 32 && *at < 255) {
-            w += font->cdata[*at].xadvance;
+            stbtt_bakedchar bc = font->cdata[*at];
+            w += bc.xadvance;
         }
         *at++;
     }

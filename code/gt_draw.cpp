@@ -167,6 +167,33 @@ immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 color, real32 z_in
 }
 
 internal void
+immediate_char(real32 x, real32 y, char c, loaded_font *font, v4 color, real32 z_index) {
+    
+    open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
+    
+    glBindTexture(GL_TEXTURE_2D, font->texture);
+    open_gl->glActiveTexture(GL_TEXTURE0);
+    
+    if (c >= 32 && c < 255) {
+        stbtt_aligned_quad q;
+        stbtt_GetBakedQuad(font->cdata, BITMAP_SIZE, BITMAP_SIZE, c - 32, &x, &y, &q, 1);
+        
+        v2 bottom_right = make_v2(q.s1, q.t0);
+        v2 bottom_left  = make_v2(q.s0, q.t0);
+        v2 top_right    = make_v2(q.s1, q.t1);
+        v2 top_left     = make_v2(q.s0, q.t1);
+        
+        immediate_vertex(make_v2(q.x0, q.y0), color, bottom_left, z_index);
+        immediate_vertex(make_v2(q.x0, q.y1), color, top_left, z_index);
+        immediate_vertex(make_v2(q.x1, q.y0), color, bottom_right, z_index);
+        
+        immediate_vertex(make_v2(q.x0, q.y1), color, top_left, z_index);
+        immediate_vertex(make_v2(q.x1, q.y1), color, top_right, z_index);
+        immediate_vertex(make_v2(q.x1, q.y0), color, bottom_right, z_index);
+    }
+}
+
+internal void
 immediate_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color, real32 z_index) {
     
     open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);

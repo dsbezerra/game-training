@@ -235,7 +235,7 @@ render_mode_selecting(app_state *state) {
         }
         char* title = game_titles[index];
         real32 size = get_text_width(&state->game_title_font, title);
-        draw_text((min.x + max.x - size) / 2.f, max.height * 0.2f, (u8 *) title, &state->game_title_font, make_color(0xffffffff));
+        draw_text((min.x + max.x - size) * .5f, max.height * 0.2f, (u8 *) title, &state->game_title_font, make_color(0xffffffff));
     }
 }
 
