@@ -19,14 +19,20 @@ struct slide_puzzle_assets {
 };
 
 struct slide_puzzle_tile {
-    s8 id; // NOTE(diego): 0 equals empty tile.
+    u8 id; // NOTE(diego): 0 equals empty tile.
     char content[4];
 };
 
 struct slide_puzzle_board {
+    u8 empty_index;
     slide_puzzle_tile tiles[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
     // NOTE(diego): Save ids in correct order.
     s8 solution[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
+};
+
+struct slide_puzzle_swap {
+    s8 from_index;
+    s8 to_index;
 };
 
 struct slide_puzzle_state {
@@ -34,6 +40,12 @@ struct slide_puzzle_state {
     slide_puzzle_board board;
     
     v2i dimensions;
+    
+    real32 sliding_t;
+    real32 sliding_target;
+    real32 sliding_t_rate;
+    
+    slide_puzzle_swap swap;
     
     game_mode game_mode;
     s8 menu_selected_item;

@@ -250,9 +250,6 @@ make_color(u32 color) {
     real32 r = (0xff & (color >> 16)) / 255.f;
     real32 g = (0xff & (color >>  8)) / 255.f;
     real32 b = (0xff & (color >>  0)) / 255.f;
-    if (a == 0.f) {
-        a = 255.f;
-    }
     return make_color(r, g, b, a);
 }
 
@@ -262,17 +259,12 @@ lerp_color(u32 a, real32 t, u32 b) {
     real32 a_r = (0xff & (a >> 16)) / 255.f;
     real32 a_g = (0xff & (a >>  8)) / 255.f;
     real32 a_b = (0xff & (a >>  0)) / 255.f;
-    if (a_a == 0.f) {
-        a_a = 255.f;
-    }
     
     real32 b_a = (0xff & (b >> 24)) / 255.f;
     real32 b_r = (0xff & (b >> 16)) / 255.f;
     real32 b_g = (0xff & (b >>  8)) / 255.f;
     real32 b_b = (0xff & (b >>  0)) / 255.f;
-    if (b_a == 0.f) {
-        b_a = 255.f;
-    }
+    
     
     return make_color(lerp(a_r, t, b_r),
                       lerp(a_g, t, b_g),
@@ -287,6 +279,17 @@ lerp_color(v4 a, real32 t, v4 b) {
                       lerp(a.b, t, b.b),
                       lerp(a.a, t, b.a));
 }
+
+internal inline v2
+lerp_v2(v2 a, real32 t, v2 b) {
+    v2 result = {};
+    
+    result.x = lerp(a.x, t, b.x);
+    result.y = lerp(a.y, t, b.y);
+    
+    return result;
+}
+
 //
 // Random
 //
@@ -358,6 +361,7 @@ inline v2 rotate_v2_around(v2 a, v2 center, real32 angle) {
     
     return result;
 }
+
 inline v2 rotate_v2(v2 a, real32 angle) {
     v2 result = {};
     
