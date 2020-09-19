@@ -3,9 +3,9 @@
 
 Training 3: Slide Puzzle
 
-Description: A board full of overturned cards. There is a pair for each card. The player flips over two cards. If they match, then they stay overturned. Otherwise they flip back. The player needs to overturn all the cards in the fewest moves to win.
+Description: A 4x4 board of numbered tiles has one missing space and is randomly set up. To win the game, the player must slide tiles over to put the tiles back in order.
 
-Variations: Provide "hints" in the form of four possible matching cards after the player flips the first one. Or, quickly overturn groups of cards at the beginning of the game.
+Variants: Instead of numbers, you can have a scrambled picture cut up into 4x4 tiles.
 
 */
 
@@ -35,7 +35,7 @@ struct slide_puzzle_board {
     u8 empty_index;
     slide_puzzle_tile tiles[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
     // NOTE(diego): Save ids in correct order.
-    s8 solution[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
+    s8 solution[SLIDE_PUZZLE_BOARD_COUNT * SLIDE_PUZZLE_BOARD_COUNT];
 };
 
 struct slide_puzzle_gen {

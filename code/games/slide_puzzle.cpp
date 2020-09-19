@@ -20,7 +20,9 @@ init_puzzle(slide_puzzle_state *state) {
     s8 len = SLIDE_PUZZLE_BOARD_COUNT*SLIDE_PUZZLE_BOARD_COUNT;
     slide_puzzle_tile *tiles = (slide_puzzle_tile *) state->board.tiles;
     
+    s8 solution_index = 0;
     s8 number = 1;
+    
     // NOTE(diego): First tile should be empty!!
     for (slide_puzzle_tile *tile = tiles + 1; tile != tiles + len; tile++) {
         tile->id = number;
@@ -34,8 +36,9 @@ init_puzzle(slide_puzzle_state *state) {
             tile->content[1] = (char) (right + '0');
             tile->content[2] = '\0';
         }
-        ++number;
+        state->board.solution[solution_index++] = number++;
     }
+    state->board.solution[solution_index] = 0;
     
     //
     // Shuffle using Fisher–Yates algorithm 
@@ -107,7 +110,7 @@ update_generating(slide_puzzle_state *state) {
             tile->content[2] = '\0';
         }
         ++generation->tile_index;
-        ++generation->number;
+        state->board.solution[tile->id - 1] = generation->number++;
     } else if (generation->tile_index < len) {
         generation->fill_t += time_info.dt * speed;
     } else {
@@ -150,18 +153,14 @@ draw_board(slide_puzzle_state *state) {
     } else {
         pad = dim.width * .001f;
     }
-    
     pad = clampf(1.f, pad, 2.f);
     
     real32 max_height = dim.height * .6f;
-    
-    
     real32 tile_size = (max_height - SLIDE_PUZZLE_BOARD_COUNT * pad) / (real32) SLIDE_PUZZLE_BOARD_COUNT;
+    real32 board_size = tile_size * SLIDE_PUZZLE_BOARD_COUNT;
     
     v2 start = make_v2((dim.width  - tile_size * SLIDE_PUZZLE_BOARD_COUNT) / 2.f,
                        (dim.height - tile_size * SLIDE_PUZZLE_BOARD_COUNT) / 2.f);
-    
-    real32 board_size = tile_size * SLIDE_PUZZLE_BOARD_COUNT;
     
     //
     // Draw tiles
@@ -333,39 +332,57 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                 state->game_mode = GameMode_Menu;
             } else {
                 if (state->sliding_t == 0.f) {
-                    s8 old_board_x = state->board.empty_index % SLIDE_PUZZLE_BOARD_COUNT;
-                    s8 old_board_y = state->board.empty_index / SLIDE_PUZZLE_BOARD_COUNT;
-                    
-                    s8 new_board_x = old_board_x;
-                    s8 new_board_y = old_board_y;
-                    
-                    if (pressed(Button_Up))
-                        ++new_board_y;
-                    if (pressed(Button_Down))
-                        --new_board_y;
-                    
-                    if (pressed(Button_Right))
-                        --new_board_x;
-                    if (pressed(Button_Left))
-                        ++new_board_x;
-                    
-                    b32 valid = new_board_x >= 0 && new_board_x < SLIDE_PUZZLE_BOARD_COUNT && new_board_y >= 0 && new_board_y < SLIDE_PUZZLE_BOARD_COUNT;
-                    b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
-                    // Check if new_empty_index is valid
-                    if (valid && changed) {
-                        slide_puzzle_tile old_tile = state->board.tiles[old_board_x][old_board_y];
-                        slide_puzzle_tile new_tile = state->board.tiles[new_board_x][new_board_y];
-                        
-                        state->board.tiles[old_board_x][old_board_y] = new_tile;
-                        state->board.tiles[new_board_x][new_board_y] = old_tile;
-                        
-                        s8 new_empty_index = new_board_x + new_board_y * SLIDE_PUZZLE_BOARD_COUNT;
-                        
-                        state->swap.from_index = state->board.empty_index;
-                        state->swap.to_index = new_empty_index;
-                        state->board.empty_index = new_empty_index;
-                        state->sliding_t += time_info.dt;
+                    //
+                    // Check for winning condition
+                    //
+                    b32 solved = true;
+                    for (s8 solution_index = 0; solution_index < SLIDE_PUZZLE_BOARD_COUNT * SLIDE_PUZZLE_BOARD_COUNT; ++solution_index) {
+                        s8 board_x = solution_index % SLIDE_PUZZLE_BOARD_COUNT;
+                        s8 board_y = solution_index / SLIDE_PUZZLE_BOARD_COUNT;
+                        if (state->board.tiles[board_x][board_y].id != state->board.solution[solution_index]) {
+                            solved = false;
+                            break;
+                        }
                     }
+                    
+                    if (!solved) {
+                        s8 old_board_x = state->board.empty_index % SLIDE_PUZZLE_BOARD_COUNT;
+                        s8 old_board_y = state->board.empty_index / SLIDE_PUZZLE_BOARD_COUNT;
+                        
+                        s8 new_board_x = old_board_x;
+                        s8 new_board_y = old_board_y;
+                        
+                        if (pressed(Button_Up))
+                            ++new_board_y;
+                        if (pressed(Button_Down))
+                            --new_board_y;
+                        
+                        if (pressed(Button_Right))
+                            --new_board_x;
+                        if (pressed(Button_Left))
+                            ++new_board_x;
+                        
+                        b32 valid = new_board_x >= 0 && new_board_x < SLIDE_PUZZLE_BOARD_COUNT && new_board_y >= 0 && new_board_y < SLIDE_PUZZLE_BOARD_COUNT;
+                        b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
+                        // Check if new_empty_index is valid
+                        if (valid && changed) {
+                            slide_puzzle_tile old_tile = state->board.tiles[old_board_x][old_board_y];
+                            slide_puzzle_tile new_tile = state->board.tiles[new_board_x][new_board_y];
+                            
+                            state->board.tiles[old_board_x][old_board_y] = new_tile;
+                            state->board.tiles[new_board_x][new_board_y] = old_tile;
+                            
+                            s8 new_empty_index = new_board_x + new_board_y * SLIDE_PUZZLE_BOARD_COUNT;
+                            
+                            state->swap.from_index = state->board.empty_index;
+                            state->swap.to_index = new_empty_index;
+                            state->board.empty_index = new_empty_index;
+                            state->sliding_t += time_info.dt;
+                        }
+                    } else {
+                        state->game_mode = GameMode_Menu;
+                    }
+                    
                 } else {
                     state->sliding_t += time_info.dt * state->sliding_t_rate;
                     if (state->sliding_t >= state->sliding_target) {
