@@ -75,9 +75,14 @@ struct slide_puzzle_state {
     b32 quit_was_selected;
 };
 
+internal void generate_puzzle(slide_puzzle_state *state);
 internal void init_puzzle(slide_puzzle_state *state);
+internal void init_puzzle(slide_puzzle_state *state, b32 animated);
+
+internal void update_generating(slide_puzzle_state *state);
 
 internal void draw_board(slide_puzzle_state *state);
-
 internal void draw_game_view(slide_puzzle_state *state);
+
+internal void slide_puzzle_game_restart(slide_puzzle_state *state);
 internal void slide_puzzle_game_update_and_render(game_memory *memory, game_input *input);

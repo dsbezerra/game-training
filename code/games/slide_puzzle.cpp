@@ -63,27 +63,6 @@ init_puzzle(slide_puzzle_state *state, b32 animated) {
     else init_puzzle(state);
 }
 
-
-internal void
-slide_puzzle_game_restart(slide_puzzle_state *state) {
-    state->game_mode = GameMode_Playing;
-    
-    //
-    // Re-init
-    //
-    
-    state->mode = SlidePuzzleMode_Generating;
-    
-    state->sliding_t_rate = 10.f;
-    state->sliding_target = 1.f;
-    
-    state->swap.from_index = -1;
-    state->swap.to_index = -1;
-    
-    generate_puzzle(state);
-}
-
-
 internal void
 update_generating(slide_puzzle_state *state) {
     
@@ -287,6 +266,25 @@ draw_game_view(slide_puzzle_state *state) {
     } else {
         draw_menu(SLIDE_PUZZLE_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
+}
+
+internal void
+slide_puzzle_game_restart(slide_puzzle_state *state) {
+    state->game_mode = GameMode_Playing;
+    
+    //
+    // Re-init
+    //
+    
+    state->mode = SlidePuzzleMode_Generating;
+    
+    state->sliding_t_rate = 10.f;
+    state->sliding_target = 1.f;
+    
+    state->swap.from_index = -1;
+    state->swap.to_index = -1;
+    
+    generate_puzzle(state);
 }
 
 internal void
