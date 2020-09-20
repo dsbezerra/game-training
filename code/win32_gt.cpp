@@ -5,6 +5,7 @@
 global_variable WINDOWPLACEMENT global_window_position = {sizeof(global_window_position)};
 global_variable LONGLONG global_perf_count_frequency;
 global_variable bool global_running = false;
+global_variable HWND global_window;
 global_variable HCURSOR default_cursor;
 
 global_variable app_state state = {};
@@ -52,6 +53,7 @@ platform_get_cursor_position(v2i *position) {
     
     POINT point;
     GetCursorPos(&point);
+    ScreenToClient(global_window, &point);
     
     position->x = point.x;
     position->y = point.y;
@@ -266,6 +268,16 @@ win32_process_pending_messages(HWND window) {
                 global_running = false;
             } break;
             
+            case WM_LBUTTONDOWN: {
+                input.buttons[Button_Mouse1].is_down = true;
+                input.buttons[Button_Mouse1].changed = true;
+            } break;
+            
+            case WM_LBUTTONUP: {
+                input.buttons[Button_Mouse1].is_down = false;
+                input.buttons[Button_Mouse1].changed = true;
+            } break;
+            
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP:
             case WM_KEYDOWN:
@@ -336,18 +348,19 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
         real32 target_dt = last_dt;
         
         
-        HWND window = CreateWindowExA(0,
-                                      window_class.lpszClassName,
-                                      "Game Training",
-                                      WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                      CW_USEDEFAULT,
-                                      CW_USEDEFAULT,
-                                      960,
-                                      540,
-                                      0,
-                                      0,
-                                      instance,
-                                      0);
+        global_window = CreateWindowExA(0,
+                                        window_class.lpszClassName,
+                                        "Game Training",
+                                        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                                        CW_USEDEFAULT,
+                                        CW_USEDEFAULT,
+                                        960,
+                                        540,
+                                        0,
+                                        0,
+                                        instance,
+                                        0);
+        HWND window = global_window;
         if (window) {
             HDC window_dc = GetDC(window);
             

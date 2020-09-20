@@ -269,6 +269,14 @@ draw_game_view(slide_puzzle_state *state) {
 }
 
 internal void
+slide_puzzle_menu_art(v2 min, v2 max) {
+    v4 background = make_color(0xff172e56);
+    immediate_begin();
+    immediate_quad(min, max, background, 1.f);
+    immediate_flush();
+}
+
+internal void
 slide_puzzle_game_restart(slide_puzzle_state *state) {
     state->game_mode = GameMode_Playing;
     

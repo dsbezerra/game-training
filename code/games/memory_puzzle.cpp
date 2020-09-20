@@ -20,7 +20,6 @@ memory_puzzle_game_restart(memory_puzzle_state *state) {
     init_level(state);
 }
 
-
 internal v4
 get_random_card_color() {
     real32 t = random_real32_in_range(0.f, 2.f);

@@ -124,7 +124,6 @@ draw_player(dodger_player *player) {
     immediate_quad(player->position, add_v2(player->position, player->size), color, 1.f);
 }
 
-
 internal void
 draw_bad_guy(dodger_bad_guy *bad_guy) {
     v4 color = make_color(0xff66ff66);

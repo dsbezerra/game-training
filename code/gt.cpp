@@ -102,6 +102,7 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
 #include "games/slide_puzzle.cpp"
+#include "games/simon.cpp"
 
 //
 // Game titles
@@ -111,6 +112,7 @@ global_variable char* game_titles[] = {
     "Dodger",
     "Memory Puzzle",
     "Slide Puzzle",
+    "Simon",
 };
 
 //
@@ -121,7 +123,8 @@ void (*menu_table[])(v2 min, v2 max) = {
     stub_menu_art,
     dodger_menu_art,
     memory_puzzle_menu_art, // TODO(diego): Update menu art routine for for Memory Puzzle
-    // TODO(diego): Create menu art routine for Slide Puzzle
+    slide_puzzle_menu_art,
+    simon_menu_art,
 };
 
 // 
@@ -134,6 +137,7 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
     dodger_game_update_and_render,
     memory_puzzle_game_update_and_render,
     slide_puzzle_game_update_and_render,
+    simon_game_update_and_render,
 };
 
 internal void
@@ -180,7 +184,7 @@ update_mode_selecting(app_state *state, game_input *input) {
 
 internal void
 render_mode_selecting(app_state *state) {
-    int selection_width = state->window_dimensions.width / (int) (Game_Count);
+    int selection_width = state->window_dimensions.width / 4;
     real32 border_width = selection_width * 0.01f;
     
     real32 now = time_info.current_time;
@@ -191,10 +195,28 @@ render_mode_selecting(app_state *state) {
     v4 border_color = make_v4(1.f, .0f, 1.f, .4f);
     v4 border_color_almost_transparent = make_v4(1.f, .0f, 1.f, .2f);
     
+    real32 offset = (real32) (selection_width * (int) state->current_selecting_game);
+    mat4 translation = translate(make_v2(-offset + state->window_dimensions.width * .5f, .0f));
+    
+#if 0
+    real32 tCos = cosf(time_info.current_time);
+    tCos *= tCos;
+    tCos = .95f + .05f * tCos;
+    mat4 center = translate(make_v2(state->window_dimensions.width * 0.5f - offset, .0f));
+    view_matrix = view_matrix * center * scale(make_v2(tCos, tCos));
+#endif
+    
+#if 1
+    view_matrix = view_matrix * translation;
+#endif
+    
+    refresh_shader_transform();
+    
     for (int index = 0; index < array_count(game_titles); ++index) {
         real32 x = (real32) index * selection_width;
         v2 min  = make_v2(x, 0.f);
         v2 max = make_v2(x + selection_width, (real32) state->window_dimensions.height);
+        
         if (index == 0) {
             // Do nothing
         } else {

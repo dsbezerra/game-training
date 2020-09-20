@@ -433,8 +433,30 @@ inline mat4
 scale(v2 scale) {
     mat4 result = identity();
     
-    result.e[0 * 0 * 4] = scale.x;
-    result.e[1 * 1 * 4] = scale.y;
+    result.e[0 + 0 * 4] = scale.x;
+    result.e[1 + 1 * 4] = scale.y;
+    
+    return result;
+}
+
+//
+// Matrices operations
+//
+internal mat4
+operator*(mat4 a, mat4 b) {
+    // NOTE(casey): This is written to be instructive, not optimal!
+    mat4 result = {};
+    
+    // NOTE(casey): Rows (of A) 
+    for(int r = 0; r <= 3; ++r) {
+        // NOTE(casey): Column (of B)
+        for(int c = 0; c <= 3; ++c) {
+            // NOTE(casey): Columns of A, rows of B!
+            for(int i = 0; i <= 3; ++i) {
+                result.rc[r][c] += a.rc[r][i] * b.rc[i][c];
+            }
+        }
+    }
     
     return result;
 }
