@@ -269,13 +269,13 @@ win32_process_pending_messages(HWND window) {
             } break;
             
             case WM_LBUTTONDOWN: {
-                input.buttons[Button_Mouse1].is_down = true;
                 input.buttons[Button_Mouse1].changed = true;
+                input.buttons[Button_Mouse1].is_down = true;
             } break;
             
             case WM_LBUTTONUP: {
-                input.buttons[Button_Mouse1].is_down = false;
                 input.buttons[Button_Mouse1].changed = true;
+                input.buttons[Button_Mouse1].is_down = false;
             } break;
             
             case WM_SYSKEYDOWN:
@@ -386,8 +386,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             while (global_running) {
                 
-                for (int i = 0; i < Button_Count; i++) {
-                    input.buttons[i].changed = false;
+                for (int button_index = 0; button_index < Button_Count; ++button_index) {
+                    input.buttons[button_index].changed = false;
                 }
                 
                 win32_process_pending_messages(window);

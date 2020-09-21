@@ -77,15 +77,12 @@ get_random_card() {
         if (random_choice(1)) {
             result.kind = MemoryCard_Donut;
         } 
-        
         if (random_choice(2)) {
             result.kind = MemoryCard_Square;
         } 
-        
         if (random_choice(3)) {
             result.kind = MemoryCard_DoubleSquare;
         }
-        
         if (random_choice(4)) {
             result.kind = MemoryCard_Lines;
         }

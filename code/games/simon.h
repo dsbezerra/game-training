@@ -33,20 +33,33 @@ struct simon_state {
     v2i mouse_position;
     
     simon_mode mode;
-    simon_button_color pattern[4];
+    simon_button_color pattern[6];
+    
     
     u8 displaying_index;
+    u8 displaying_count;
+    u8 player_index;
+    
     simon_button_color hovering_button;
     
     real32 flashing_t;
-    real32 flashing_target;
+    real32 flashing_t_target;
+    real32 flashing_dt;
+    
+    game_mode game_mode;
+    s8 menu_selected_item;
+    b32 quit_was_selected;
 };
 
+internal simon_button_color random_button();
 internal void init_pattern(simon_state *state);
+internal void advance_pattern(simon_state *state);
 
+internal b32 is_inside_button(v2 offset, real32 pad, real32 button_size, v2i mouse_p, simon_button_color button);
 internal void update_hovering_button(simon_state *state);
 
 internal void draw_game_view(simon_state *state);
 
+internal void simon_menu_art(v2 min, v2 max);
 internal void simon_game_restart(simon_state *state);
 internal void simon_game_update_and_render(game_memory *memory, game_input *input);
