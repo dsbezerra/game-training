@@ -143,6 +143,7 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
     memory_puzzle_game_update_and_render,
     slide_puzzle_game_update_and_render,
     simon_game_update_and_render,
+    nibbles_game_update_and_render,
 };
 
 internal void
