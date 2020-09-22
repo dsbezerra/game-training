@@ -14,8 +14,8 @@ make_entity(nibbles_entity_kind kind, u8 x, u8 y) {
 internal void
 init_board(nibbles_state *state) {
     nibbles_entity apple = make_entity(NibblesEntity_Apple, 14, NIBBLES_WORLD_Y_COUNT / 2);
-    nibbles_entity snake_head = make_entity(NibblesEntity_SnakeHead, 6, NIBBLES_WORLD_Y_COUNT / 2);
-    nibbles_entity snake_tail = make_entity(NibblesEntity_SnakeTail, 5, NIBBLES_WORLD_Y_COUNT / 2);
+    nibbles_entity snake_head = make_entity(NibblesEntity_Snake, 6, NIBBLES_WORLD_Y_COUNT / 2);
+    nibbles_entity snake_tail = make_entity(NibblesEntity_Snake, 5, NIBBLES_WORLD_Y_COUNT / 2);
     
     // Set entities
     u8 snake_index = 0;
@@ -39,6 +39,20 @@ init_game(nibbles_state *state) {
     init_board(state);
 }
 
+internal b32
+is_occupied(nibbles_state *state, u8 x, u8 y) {
+    b32 result = false;
+    
+    for (int snake_index = 0; snake_index < state->snake_length; ++snake_index) {
+        if (state->snake[snake_index].x == x && state->snake[snake_index].y == y) {
+            result = true;
+            break;
+        }
+    }
+    
+    return result;
+}
+
 internal void
 advance_snake(nibbles_state *state) {
     
@@ -59,13 +73,16 @@ advance_snake(nibbles_state *state) {
     head->x += advance_x;
     head->y += advance_y;
     
-    // TODO(diego): Check if new head x and y are within the world bounds
+    if (head->x > NIBBLES_WORLD_X_COUNT || head->x < 0 || 
+        head->y > NIBBLES_WORLD_Y_COUNT || head->y < 0) {
+        state->game_mode = GameMode_GameOver;
+    }
     if (state->apple.kind != NibblesEntity_None) {
         if (head->x == state->apple.x && head->y == state->apple.y) {
             state->apple.kind = NibblesEntity_None;
             nibbles_entity *last = &state->snake[state->snake_length - 1];
-            last->kind = NibblesEntity_SnakeBody;
-            state->snake[state->snake_length++] = make_entity(NibblesEntity_SnakeBody, last->x, last->y);
+            last->kind = NibblesEntity_Snake;
+            state->snake[state->snake_length++] = make_entity(NibblesEntity_Snake, last->x, last->y);
             state->last_eaten_apple_time = time_info.current_time;
         }
     }
@@ -219,9 +236,16 @@ nibbles_game_update_and_render(game_memory *memory, game_input *input) {
                 }
             }
             
-            if (state->apple.kind == NibblesEntity_None && (time_info.current_time - state->last_eaten_apple_time) > 2.f) {
-                // TODO(diego): Check if spawn position is already occupied by snake
-                state->apple = make_entity(NibblesEntity_Apple, (u8) random_int_in_range(0, NIBBLES_WORLD_X_COUNT), (u8) random_int_in_range(0, NIBBLES_WORLD_Y_COUNT));
+            if (state->apple.kind == NibblesEntity_None && (time_info.current_time - state->last_eaten_apple_time) > .5f) {
+                while (1) {
+                    u8 spawn_x = (u8) random_int_in_range(0, NIBBLES_WORLD_X_COUNT);
+                    u8 spawn_y = (u8) random_int_in_range(0, NIBBLES_WORLD_Y_COUNT);
+                    if (!is_occupied(state, spawn_x, spawn_y)) {
+                        state->apple = make_entity(NibblesEntity_Apple, spawn_x, spawn_y);
+                        break;
+                    }
+                }
+                
             }
             
             if (state->step_t >= state->step_t_target) {

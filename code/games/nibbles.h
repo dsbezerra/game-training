@@ -24,9 +24,7 @@ enum nibbles_entity_kind {
     NibblesEntity_None,
     
     NibblesEntity_Apple,
-    NibblesEntity_SnakeHead,
-    NibblesEntity_SnakeBody,
-    NibblesEntity_SnakeTail,
+    NibblesEntity_Snake,
     
     NibblesEntity_Count,
 };
