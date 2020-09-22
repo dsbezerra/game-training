@@ -33,8 +33,7 @@ init_game(nibbles_state *state) {
     state->step_t_target = 1.f;
     state->step_dt = 12.f;
     
-    state->moving_axis = NIBBLES_MOVING_AXIS_X;
-    state->moving_direction = NIBBLES_MOVING_DIRECTION_POSITIVE;
+    state->direction = NibblesSnakeDirection_Right;
     
     init_board(state);
 }
@@ -43,7 +42,7 @@ internal b32
 is_occupied(nibbles_state *state, u8 x, u8 y) {
     b32 result = false;
     
-    for (int snake_index = 0; snake_index < state->snake_length; ++snake_index) {
+    for (int snake_index = 1; snake_index < state->snake_length; ++snake_index) {
         if (state->snake[snake_index].x == x && state->snake[snake_index].y == y) {
             result = true;
             break;
@@ -56,38 +55,38 @@ is_occupied(nibbles_state *state, u8 x, u8 y) {
 internal void
 advance_snake(nibbles_state *state) {
     
-    u8 advance_x = 0;
-    u8 advance_y = 0;
-    
-    if (state->moving_axis == NIBBLES_MOVING_AXIS_X) {
-        advance_x = 1 * state->moving_direction;
-    } else if (state->moving_axis == NIBBLES_MOVING_AXIS_Y) {
-        advance_y = 1 * state->moving_direction;
-    }
-    
     nibbles_entity *head = &state->snake[0];
     
+    s8 new_head_x = head->x;
+    s8 new_head_y = head->y;
+    
+    switch (state->direction) {
+        case NibblesSnakeDirection_Up: {
+            new_head_y -= 1;
+        } break;
+        case NibblesSnakeDirection_Down: {
+            new_head_y += 1;
+        } break;
+        case NibblesSnakeDirection_Left: {
+            new_head_x -= 1;
+        } break;
+        case NibblesSnakeDirection_Right: {
+            new_head_x += 1;
+        } break;
+        default: {
+            assert(!"Should not happen!");
+        } break;
+    }
+    
+    // Store old as previous so we can make the rest of the snake parts
+    // follow the head.
     u8 last_part_x = head->x;
     u8 last_part_y = head->y;
     
-    head->x += advance_x;
-    head->y += advance_y;
+    head->x = new_head_x;
+    head->y = new_head_y;
     
-    if (head->x > NIBBLES_WORLD_X_COUNT || head->x < 0 || 
-        head->y > NIBBLES_WORLD_Y_COUNT || head->y < 0) {
-        state->game_mode = GameMode_GameOver;
-    }
-    if (state->apple.kind != NibblesEntity_None) {
-        if (head->x == state->apple.x && head->y == state->apple.y) {
-            state->apple.kind = NibblesEntity_None;
-            nibbles_entity *last = &state->snake[state->snake_length - 1];
-            last->kind = NibblesEntity_Snake;
-            state->snake[state->snake_length++] = make_entity(NibblesEntity_Snake, last->x, last->y);
-            state->last_eaten_apple_time = time_info.current_time;
-        }
-    }
-    
-    // Skip head
+    // Loop through all snake parts and update each one to previous part position
     for (int snake_index = 1; snake_index < state->snake_length; ++snake_index) {
         nibbles_entity *part = &state->snake[snake_index];
         u8 part_x = part->x;
@@ -100,6 +99,23 @@ advance_snake(nibbles_state *state) {
         last_part_y = part_y;
     }
     
+    // Check if new position is valid
+    if (is_occupied(state, head->x, head->y) || 
+        head->x > NIBBLES_WORLD_X_COUNT || head->x < 0 || 
+        head->y > NIBBLES_WORLD_Y_COUNT || head->y < 0) {
+        state->game_mode = GameMode_GameOver;
+        return;
+    }
+    
+    // Check if new position has an apple
+    if (state->apple.kind != NibblesEntity_None) {
+        if (head->x == state->apple.x && head->y == state->apple.y) {
+            state->apple.kind = NibblesEntity_None;
+            nibbles_entity *last = &state->snake[state->snake_length - 1];
+            state->snake[state->snake_length++] = make_entity(NibblesEntity_Snake, last->x, last->y);
+            state->last_eaten_apple_time = time_info.current_time;
+        }
+    }
 }
 
 internal void
@@ -212,44 +228,33 @@ nibbles_game_update_and_render(game_memory *memory, game_input *input) {
         if (pressed(Button_Escape)) {
             state->game_mode = GameMode_Menu;
         } else {
-            b32 changed = false;
-            u8 moving_axis = state->moving_axis;
-            s8 moving_direction = state->moving_direction;
             
-            if (moving_axis == NIBBLES_MOVING_AXIS_X) {
-                if (pressed(Button_Up)) {
-                    state->moving_axis = NIBBLES_MOVING_AXIS_Y;
-                    state->moving_direction = NIBBLES_MOVING_DIRECTION_NEGATIVE;
-                }
-                if (pressed(Button_Down)) {
-                    state->moving_axis = NIBBLES_MOVING_AXIS_Y;
-                    state->moving_direction = NIBBLES_MOVING_DIRECTION_POSITIVE;
-                }
-            } else if (moving_axis == NIBBLES_MOVING_AXIS_Y) {
-                if (pressed(Button_Right)) {
-                    state->moving_axis = NIBBLES_MOVING_AXIS_X;
-                    state->moving_direction = NIBBLES_MOVING_DIRECTION_POSITIVE;
-                }
-                if (pressed(Button_Left)) {
-                    state->moving_axis = NIBBLES_MOVING_AXIS_X;
-                    state->moving_direction = NIBBLES_MOVING_DIRECTION_NEGATIVE;
-                }
+            nibbles_snake_direction direction = state->direction;
+            
+            if (pressed(Button_Left) && state->direction != NibblesSnakeDirection_Right) {
+                state->direction = NibblesSnakeDirection_Left;
+            } else if (pressed(Button_Right) && state->direction != NibblesSnakeDirection_Left) {
+                state->direction = NibblesSnakeDirection_Right;
+            } else if (pressed(Button_Up) && state->direction != NibblesSnakeDirection_Down) {
+                state->direction = NibblesSnakeDirection_Up;
+            } else if (pressed(Button_Down) && state->direction != NibblesSnakeDirection_Up) {
+                state->direction = NibblesSnakeDirection_Down;
             }
-            
             if (state->apple.kind == NibblesEntity_None && (time_info.current_time - state->last_eaten_apple_time) > .5f) {
                 while (1) {
-                    u8 spawn_x = (u8) random_int_in_range(0, NIBBLES_WORLD_X_COUNT);
-                    u8 spawn_y = (u8) random_int_in_range(0, NIBBLES_WORLD_Y_COUNT);
+                    u8 spawn_x = (u8) random_int_in_range(1, NIBBLES_WORLD_X_COUNT - 1);
+                    u8 spawn_y = (u8) random_int_in_range(1, NIBBLES_WORLD_Y_COUNT - 1);
                     if (!is_occupied(state, spawn_x, spawn_y)) {
-                        state->apple = make_entity(NibblesEntity_Apple, spawn_x, spawn_y);
+                        state->apple.kind = NibblesEntity_Apple;
+                        state->apple.x = spawn_x;
+                        state->apple.y = spawn_y;
                         break;
                     }
                 }
-                
             }
             
-            if (state->step_t >= state->step_t_target) {
-                state->step_t -= state->step_t_target;
+            if (state->step_t >= state->step_t_target || direction != state->direction) {
+                state->step_t = .0f;
                 advance_snake(state);
             }
             

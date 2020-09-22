@@ -14,11 +14,13 @@ Variants: Add walls to the level, instead of just a blank rectangle. Add power u
 #define NIBBLES_WORLD_X_COUNT 32
 #define NIBBLES_WORLD_Y_COUNT 16
 
-#define NIBBLES_MOVING_AXIS_X 0
-#define NIBBLES_MOVING_AXIS_Y 1
-
-#define NIBBLES_MOVING_DIRECTION_NEGATIVE -1
-#define NIBBLES_MOVING_DIRECTION_POSITIVE  1
+enum nibbles_snake_direction {
+    NibblesSnakeDirection_None,
+    NibblesSnakeDirection_Up,
+    NibblesSnakeDirection_Down,
+    NibblesSnakeDirection_Left,
+    NibblesSnakeDirection_Right,
+};
 
 enum nibbles_entity_kind {
     NibblesEntity_None,
@@ -40,10 +42,9 @@ struct nibbles_state {
     
     u8 snake_length;
     nibbles_entity snake[NIBBLES_WORLD_Y_COUNT * NIBBLES_WORLD_X_COUNT];
-    nibbles_entity apple;
+    nibbles_snake_direction direction;
     
-    s8 moving_direction;
-    u8 moving_axis;
+    nibbles_entity apple;
     
     real32 last_eaten_apple_time;
     
