@@ -9,6 +9,8 @@ global_variable game_time_info time_info = {};
 global_variable loaded_font menu_title_font;
 global_variable loaded_font menu_item_font;
 
+global_variable real32 global_press_t = .0f;
+
 internal void *
 game_alloc(game_memory *memory, u64 size) {
     memory->permanent_storage_size = size;
@@ -103,6 +105,7 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
 #include "games/memory_puzzle.cpp"
 #include "games/slide_puzzle.cpp"
 #include "games/simon.cpp"
+#include "games/nibbles.cpp"
 
 //
 // Game titles
@@ -113,6 +116,7 @@ global_variable char* game_titles[] = {
     "Memory Puzzle",
     "Slide Puzzle",
     "Simon",
+    "Nibbles",
 };
 
 //
@@ -125,6 +129,7 @@ void (*menu_table[])(v2 min, v2 max) = {
     memory_puzzle_menu_art, // TODO(diego): Update menu art routine for for Memory Puzzle
     slide_puzzle_menu_art,
     simon_menu_art,
+    nibbles_menu_art,
 };
 
 // 
@@ -149,6 +154,7 @@ advance_game(app_state *state, int value) {
         new_game = (int) Game_None;
     }
     state->current_selecting_game = (game) new_game;
+    global_press_t = .0f;
 }
 
 // TODO(diego): Add sound
@@ -160,11 +166,23 @@ game_output_sound(game_sound_output_buffer *sound_buffer) {
 internal void
 update_mode_selecting(app_state *state, game_input *input) {
     
+    real32 press_t_target = 0.2f;
+    
     if (pressed(Button_Left)) {
         advance_game(state, -1);
+    } else if (is_down(Button_Left)) {
+        if (global_press_t >= press_t_target) {
+            advance_game(state, -1);
+        }
+        global_press_t += time_info.dt;
     }
     if (pressed(Button_Right)) {
         advance_game(state, 1);
+    } else if (is_down(Button_Right)) {
+        if (global_press_t >= press_t_target) {
+            advance_game(state, 1);
+        }
+        global_press_t += time_info.dt;
     }
     if (pressed(Button_Enter)) {
         if (state->current_selecting_game > Game_None && state->current_selecting_game < Game_Count) {
