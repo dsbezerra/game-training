@@ -1,7 +1,7 @@
 /* date = September 21st 2020 11:08 pm */
 /*
 
-Training 4: Nibbles
+Training 5: Nibbles
 
 Description: A worm or snake constantly moves around the board. The player controls the direction the "head" of the worm moves, and the worm must try to eat apples that randomly appear. Eating an apply causes the worm to grow in length. The game ends if the worm crashes into the edge of the board or into itself.
 
@@ -57,6 +57,15 @@ struct nibbles_state {
     b32 quit_was_selected;
 };
 
+internal nibbles_entity make_entity(nibbles_entity_kind kind, u8 x, u8 y);
+internal void init_board(nibbles_state *state);
+internal void init_game(nibbles_state *state);
+internal b32 is_occupied(nibbles_state *state, u8 x, u8 y);
+internal void advance_snake(nibbles_state *state);
+
+internal void draw_apple(nibbles_state *state, nibbles_entity *apple);
+internal void draw_snake(nibbles_state *state);
+internal void draw_board(nibbles_state *state);
 internal void draw_game_view(nibbles_state *state);
 
 internal void nibbles_menu_art(v2 min, v2 max);

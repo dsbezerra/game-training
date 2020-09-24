@@ -106,6 +106,7 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
 #include "games/slide_puzzle.cpp"
 #include "games/simon.cpp"
 #include "games/nibbles.cpp"
+#include "games/tetris.cpp"
 
 //
 // Game titles
@@ -117,6 +118,7 @@ global_variable char* game_titles[] = {
     "Slide Puzzle",
     "Simon",
     "Nibbles",
+    "Tetris",
 };
 
 //
@@ -130,6 +132,7 @@ void (*menu_table[])(v2 min, v2 max) = {
     slide_puzzle_menu_art,
     simon_menu_art,
     nibbles_menu_art,
+    tetris_menu_art,
 };
 
 // 
@@ -144,6 +147,7 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
     slide_puzzle_game_update_and_render,
     simon_game_update_and_render,
     nibbles_game_update_and_render,
+    tetris_game_update_and_render,
 };
 
 internal void
