@@ -211,12 +211,7 @@ is_valid_position(tetris_state *state, s8 x, s8 y, s8 adx, s8 ady) {
     if (ady != 0 && (y < 0 || y >= TETRIS_GRID_Y_COUNT))
         return false;
     
-    s8 test_x = adx != 0 ? x : 0;
-    s8 test_y = ady != 0 ? y : 0;
-    if (state->grid[test_y][test_x].placed)
-        return false;
-    
-    return true;
+    return !state->grid[y][x].placed;
 }
 
 internal b32
@@ -349,14 +344,37 @@ rotate_T(tetris_piece *piece) {
 internal tetris_piece
 rotate_S(tetris_piece *piece) {
     tetris_piece rotated = *piece;
-    // TODO(diego): Implement.
+    if (rotated.rotation == TetrisPieceRotation_0) {
+        rotated.blocks[0].y += 1;
+        rotated.blocks[1].x += 1;
+        rotated.blocks[2].x += 1; rotated.blocks[2].y -= 2;
+        rotated.blocks[3].y -= 1;
+        rotated.rotation = TetrisPieceRotation_1;
+    } else if (rotated.rotation == TetrisPieceRotation_1) {
+        rotated.blocks[0].y -= 2;
+        rotated.blocks[1].x -= 1; rotated.blocks[1].y -= 1;
+        rotated.blocks[2].x -= 1; rotated.blocks[2].y += 1;
+        rotated.rotation = TetrisPieceRotation_0;
+    }
     return rotated;
 }
 
 internal tetris_piece
 rotate_Z(tetris_piece *piece) {
     tetris_piece rotated = *piece;
-    // TODO(diego): Implement.
+    if (rotated.rotation == TetrisPieceRotation_0) {
+        rotated.blocks[0].y += 1;
+        rotated.blocks[1].x -= 1;
+        rotated.blocks[2].x -= 1; rotated.blocks[2].y -= 2;
+        rotated.blocks[3].y -= 1;
+        rotated.rotation = TetrisPieceRotation_1;
+    } else if (rotated.rotation == TetrisPieceRotation_1) {
+        rotated.blocks[0].y -= 1;
+        rotated.blocks[1].x += 1;
+        rotated.blocks[2].x += 1; rotated.blocks[2].y += 2;
+        rotated.blocks[3].y += 1;
+        rotated.rotation = TetrisPieceRotation_0;
+    }
     return rotated;
 }
 
@@ -382,11 +400,11 @@ rotate_L(tetris_piece *piece) {
         rotated.rotation = TetrisPieceRotation_3;
     } else if (rotated.rotation == TetrisPieceRotation_3) {
         rotated.blocks[0].x += 2; rotated.blocks[0].y -= 1;
-        rotated.blocks[1].x += 1; rotated.blocks[1].y += 1;
+        rotated.blocks[1].x += 1;
+        rotated.blocks[2].y += 1;
         rotated.blocks[3].x += 1; rotated.blocks[3].y += 2;
         rotated.rotation = TetrisPieceRotation_0;
     }
-    
     return rotated;
 }
 
@@ -450,9 +468,8 @@ move_piece(tetris_state *state, tetris_move_direction direction = TetrisMoveDire
     
     tetris_piece *piece = &state->current_piece;
     
-    // Check if we can move. If we can update min and max.
-    if (direction == TetrisMoveDirection_Left && !is_move_allowed(state, -1, 0)) return;
-    if (direction == TetrisMoveDirection_Right && !is_move_allowed(state, 1, 0)) return;
+    if (direction == TetrisMoveDirection_Left  && !is_move_allowed(state, -1, 0)) return;
+    if (direction == TetrisMoveDirection_Right && !is_move_allowed(state,  1, 0)) return;
     
     if (direction == TetrisMoveDirection_Down && current_will_land(state)) {
         b32 game_over = place_piece(state);
