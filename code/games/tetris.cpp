@@ -156,6 +156,8 @@ init_game(tetris_state *state) {
     state->move_t = .0f;
     state->move_t_target = 1.f;
     state->move_dt = 2.f;
+    state->score = 0;
+    state->level = 1;
     
     // Clear grid
     for (int y = 0; y < TETRIS_GRID_Y_COUNT; ++y) {
@@ -228,6 +230,7 @@ place_piece(tetris_state *state) {
     
     // Check for complete rows and move all blocks one row below for each complete line
     s8 y = TETRIS_GRID_Y_COUNT - 1;
+    u8 cleared = 0;
     while (y >= 0) {
         if (is_row_complete(state, y)) {
             for (int yy = y; yy > 0; --yy) {
@@ -238,10 +241,13 @@ place_piece(tetris_state *state) {
             for (int x = 0; x < TETRIS_GRID_X_COUNT; ++x) {
                 state->grid[0][x].placed = false;
             }
+            cleared++;
         } else {
             y--;
         }
     }
+    
+    state->score += cleared;
     
     spawn_piece(state, false);
     
@@ -455,11 +461,9 @@ rotate_piece(tetris_state *state) {
         default: { /* No-op */ } break;
     }
     
-    
     if (is_piece_position_valid(state, &rotated)) {
         *piece = rotated;
     }
-    
 }
 
 internal void
@@ -468,8 +472,10 @@ move_piece(tetris_state *state, tetris_move_direction direction = TetrisMoveDire
     
     tetris_piece *piece = &state->current_piece;
     
-    if (direction == TetrisMoveDirection_Left  && !is_move_allowed(state, -1, 0)) return;
-    if (direction == TetrisMoveDirection_Right && !is_move_allowed(state,  1, 0)) return;
+    if (direction == TetrisMoveDirection_Left  && !is_move_allowed(state, -1, 0))
+        return;
+    if (direction == TetrisMoveDirection_Right && !is_move_allowed(state,  1, 0))
+        return;
     
     if (direction == TetrisMoveDirection_Down && current_will_land(state)) {
         b32 game_over = place_piece(state);
@@ -577,6 +583,8 @@ draw_current_piece(tetris_state *state) {
 
 internal void
 draw_next_piece(tetris_state *state) {
+    immediate_begin();
+    
     real32 width  = state->dimensions.width  * .7f;
     real32 height = state->dimensions.height * .7f;
     
@@ -586,7 +594,7 @@ draw_next_piece(tetris_state *state) {
     }
     
     real32 start_x = width  * .9f;
-    real32 start_y = height * .5f;
+    real32 start_y = height * .62f;
     
     for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
         tetris_block block = state->next_piece.blocks[block_index];
@@ -594,16 +602,46 @@ draw_next_piece(tetris_state *state) {
         v2 max = make_v2(min.x + block_size, min.y + block_size);
         immediate_quad(min, max, state->next_piece.color, 1.f);
     }
+    
+    immediate_flush();
+}
+
+internal void
+draw_hud(tetris_state *state) {
+    draw_next_piece(state);
+    
+    real32 width  = state->dimensions.width  * .7f;
+    real32 height = state->dimensions.height * .7f;
+    
+    real32 start_x = width  * .9f;
+    real32 y_cursor = height * .2f;
+    
+    v4 white = make_color(0xffffffff);
+    
+    char score[256];
+    wsprintf(score, "Score: %d", state->score);
+    draw_text(start_x, y_cursor, (u8 *) score, &state->assets.hud_font, white);
+    
+    y_cursor += state->assets.hud_font.line_height * 2.f;
+    
+    char level[256];
+    wsprintf(level, "Level: %d", state->level);
+    draw_text(start_x, y_cursor, (u8 *) level, &state->assets.hud_font, white);
+    
+    y_cursor = height * .5f;
+    draw_text(start_x, y_cursor, (u8 *) "Next:", &state->assets.hud_font, white);
 }
 
 internal void
 draw_game_view(tetris_state *state) {
     if (state->game_mode == GameMode_Playing) {
+        
         immediate_begin();
         draw_current_piece(state);
-        draw_next_piece(state);
         draw_grid(state);
         immediate_flush();
+        
+        draw_hud(state);
     } else {
         draw_menu(TETRIS_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
@@ -633,6 +671,7 @@ tetris_game_update_and_render(game_memory *memory, game_input *input) {
         
         state = (tetris_state *) game_alloc(memory, megabytes(12));
         state->assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 12.f);
+        state->assets.hud_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         
         init_game(state);
     }

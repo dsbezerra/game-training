@@ -56,6 +56,7 @@ struct tetris_piece {
 
 struct tetris_assets {
     loaded_font primary_font;
+    loaded_font hud_font;
 };
 
 struct tetris_state {
@@ -68,6 +69,9 @@ struct tetris_state {
     tetris_piece current_piece;
     tetris_piece next_piece;
     
+    u64 score;
+    u8 level; // Not used.
+    
     real32 move_t;
     real32 move_t_target;
     real32 move_dt;
@@ -78,8 +82,35 @@ struct tetris_state {
 };
 
 internal void init_game(tetris_state *state);
+internal b32 current_will_land(tetris_state *state);
 
+internal b32 is_piece_position_valid(tetris_state *state, tetris_piece *piece);
+internal b32 is_valid_position(tetris_state *state, s8 x, s8 y, s8 adx, s8 ady);
+internal b32 is_move_allowed(tetris_state *state, s8 x, s8 y);
+internal b32 is_inside_grid(s8 x, s8 y);
+internal b32 is_row_complete(tetris_state *state, s8 row);
+
+internal tetris_piece rotate_I(tetris_piece *piece);
+internal tetris_piece rotate_T(tetris_piece *piece);
+internal tetris_piece rotate_S(tetris_piece *piece);
+internal tetris_piece rotate_Z(tetris_piece *piece);
+internal tetris_piece rotate_L(tetris_piece *piece);
+internal tetris_piece rotate_J(tetris_piece *piece);
+
+internal tetris_piece make_piece(tetromino kind, s8 offset);
+internal tetris_piece random_piece();
+
+internal void rotate_piece(tetris_state *state);
+internal void spawn_piece(tetris_state *state, b32 make_current);
+internal void move_piece(tetris_state *state, tetris_move_direction direction);
+internal b32 place_piece(tetris_state *state);
+
+internal void draw_grid(tetris_state *state);
+internal void draw_current_piece(tetris_state *state);
+internal void draw_next_piece(tetris_state *state);
+internal void draw_hud(tetris_state *state);
 internal void draw_game_view(tetris_state *state);
+
 internal void tetris_menu_art(v2 min, v2 max);
 internal void tetris_game_restart(tetris_state *state);
 internal void tetris_game_update_and_render(game_memory *memory, game_input *input);
