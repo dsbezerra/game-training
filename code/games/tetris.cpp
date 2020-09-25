@@ -604,32 +604,6 @@ draw_game_view(tetris_state *state) {
         draw_next_piece(state);
         draw_grid(state);
         immediate_flush();
-        
-        // Draw current piece numbers
-        v2i dim = state->dimensions;
-        
-        real32 width  = dim.width  * .7f;
-        real32 height = dim.height * .7f;
-        
-        real32 block_size = width / (real32) TETRIS_GRID_X_COUNT;
-        if (width > dim.height) {
-            block_size = (real32) height / (real32) TETRIS_GRID_Y_COUNT;
-        }
-        
-        v2 start = make_v2((dim.width - block_size * TETRIS_GRID_X_COUNT) / 2.f, dim.height - height);
-        
-        for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-            tetris_block block = state->current_piece.blocks[block_index];
-            v2 min = make_v2(block.x * block_size, block.y * block_size);
-            v2 max = make_v2(min.x + block_size, min.y + block_size);
-            min = add_v2(min, start);
-            max = add_v2(max, start);
-            
-            char buf[2];
-            wsprintf(buf, "%d", block_index);
-            draw_text(min.x + block_size / 2.f, min.y + block_size / 2.f, (u8*) buf, &state->assets.primary_font, make_color(0xffffffff));
-        }
-        
     } else {
         draw_menu(TETRIS_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
