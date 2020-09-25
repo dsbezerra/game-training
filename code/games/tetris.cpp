@@ -290,33 +290,27 @@ rotate_I(tetris_piece *piece) {
     tetris_piece rotated = *piece;
     
     if (rotated.rotation == TetrisPieceRotation_0) {
-        u8 x = rotated.blocks[0].x;
-        u8 y = rotated.blocks[1].y;
+        rotated.blocks[0].x = rotated.blocks[0].x;
+        rotated.blocks[1].x = rotated.blocks[0].x + 1;
+        rotated.blocks[2].x = rotated.blocks[0].x + 2;
+        rotated.blocks[3].x = rotated.blocks[0].x + 3;
         
-        rotated.blocks[0].x = x;
-        rotated.blocks[1].x = x + 1;
-        rotated.blocks[2].x = x + 2;
-        rotated.blocks[3].x = x + 3;
-        
-        rotated.blocks[0].y = y;
-        rotated.blocks[1].y = y;
-        rotated.blocks[2].y = y;
-        rotated.blocks[3].y = y;
+        rotated.blocks[0].y = rotated.blocks[1].y;
+        rotated.blocks[1].y = rotated.blocks[1].y;
+        rotated.blocks[2].y = rotated.blocks[1].y;
+        rotated.blocks[3].y = rotated.blocks[1].y;
         
         rotated.rotation = TetrisPieceRotation_1;
     } else if (rotated.rotation == TetrisPieceRotation_1) {
-        u8 x = rotated.blocks[1].x;
-        u8 y = rotated.blocks[0].y;
+        rotated.blocks[0].x = rotated.blocks[1].x;
+        rotated.blocks[1].x = rotated.blocks[1].x;
+        rotated.blocks[2].x = rotated.blocks[1].x;
+        rotated.blocks[3].x = rotated.blocks[1].x;
         
-        rotated.blocks[0].x = x;
-        rotated.blocks[1].x = x;
-        rotated.blocks[2].x = x;
-        rotated.blocks[3].x = x;
-        
-        rotated.blocks[0].y = y;
-        rotated.blocks[1].y = y + 1;
-        rotated.blocks[2].y = y + 2;
-        rotated.blocks[3].y = y + 3;
+        rotated.blocks[0].y = rotated.blocks[0].y;
+        rotated.blocks[1].y = rotated.blocks[0].y + 1;
+        rotated.blocks[2].y = rotated.blocks[0].y + 2;
+        rotated.blocks[3].y = rotated.blocks[0].y + 3;
         
         rotated.rotation = TetrisPieceRotation_0;
     }
@@ -327,37 +321,102 @@ rotate_I(tetris_piece *piece) {
 internal tetris_piece
 rotate_T(tetris_piece *piece) {
     tetris_piece rotated = *piece;
-    // TODO(diego): Implement.
-    return rotated;
-}
-
-internal tetris_piece
-rotate_SZ(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
-    // TODO(diego): Implement.
-    return rotated;
-}
-
-internal tetris_piece
-rotate_LJ(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
     if (rotated.rotation == TetrisPieceRotation_0) {
-        u8 y = rotated.blocks[1].y;
-        u8 x = rotated.blocks[0].x;
-        
-        rotated.blocks[0].y = y;
-        rotated.blocks[1].y = y;
-        rotated.blocks[2].y = y;
-        rotated.blocks[3].y = y + 1;
-        
-        rotated.blocks[0].x = x + 2;
-        rotated.blocks[1].x = x + 1;
-        rotated.blocks[2].x = x;
-        rotated.blocks[3].x = x;
-        
+        rotated.blocks[1].x = rotated.blocks[2].x;
+        rotated.blocks[1].y += 1;
         rotated.rotation = TetrisPieceRotation_1;
     } else if (rotated.rotation == TetrisPieceRotation_1) {
-        // TODO(diego): Implement.
+        rotated.blocks[0].x -= 1;
+        rotated.blocks[0].y = rotated.blocks[2].y;
+        rotated.rotation = TetrisPieceRotation_2;
+    } else if (rotated.rotation == TetrisPieceRotation_2) {
+        rotated.blocks[1].y -= 2;
+        rotated.blocks[3].x -= 1;
+        rotated.blocks[3].y += 1;
+        rotated.rotation = TetrisPieceRotation_3;
+    } else if (rotated.rotation == TetrisPieceRotation_3) {
+        rotated.blocks[0].x += 1;
+        rotated.blocks[0].y -= 1;
+        rotated.blocks[1].x -= 1;
+        rotated.blocks[1].y += 1;
+        rotated.blocks[3].x += 1;
+        rotated.blocks[3].y -= 1;
+        rotated.rotation = TetrisPieceRotation_0;
+    }
+    return rotated;
+}
+
+internal tetris_piece
+rotate_S(tetris_piece *piece) {
+    tetris_piece rotated = *piece;
+    // TODO(diego): Implement.
+    return rotated;
+}
+
+internal tetris_piece
+rotate_Z(tetris_piece *piece) {
+    tetris_piece rotated = *piece;
+    // TODO(diego): Implement.
+    return rotated;
+}
+
+internal tetris_piece
+rotate_L(tetris_piece *piece) {
+    tetris_piece rotated = *piece;
+    if (rotated.rotation == TetrisPieceRotation_0) {
+        rotated.blocks[0].x += 2; rotated.blocks[0].y += 1;
+        rotated.blocks[1].x += 1;
+        rotated.blocks[2].y -= 1;
+        rotated.blocks[3].x -= 1;
+        rotated.rotation = TetrisPieceRotation_1;
+    } else if (rotated.rotation == TetrisPieceRotation_1) {
+        rotated.blocks[0].x -= 1;
+        rotated.blocks[1].y -= 1;
+        rotated.blocks[2].x += 1; rotated.blocks[2].y -= 2;
+        rotated.blocks[3].y -= 3;
+        rotated.rotation = TetrisPieceRotation_2;
+    } else if (rotated.rotation == TetrisPieceRotation_2) {
+        rotated.blocks[0].x -= 3; rotated.blocks[0].y -= 1;
+        rotated.blocks[1].x -= 2;
+        rotated.blocks[2].x -= 1; rotated.blocks[2].y += 1;
+        rotated.rotation = TetrisPieceRotation_3;
+    } else if (rotated.rotation == TetrisPieceRotation_3) {
+        rotated.blocks[0].x += 2; rotated.blocks[0].y -= 1;
+        rotated.blocks[1].x += 1; rotated.blocks[1].y += 1;
+        rotated.blocks[3].x += 1; rotated.blocks[3].y += 2;
+        rotated.rotation = TetrisPieceRotation_0;
+    }
+    
+    return rotated;
+}
+
+internal tetris_piece
+rotate_J(tetris_piece *piece) {
+    tetris_piece rotated = *piece;
+    if (rotated.rotation == TetrisPieceRotation_0) {
+        rotated.blocks[0].x += 1; rotated.blocks[0].y += 2;
+        rotated.blocks[1].y += 1;
+        rotated.blocks[2].x -= 1;
+        rotated.blocks[3].y -= 1;
+        rotated.rotation = TetrisPieceRotation_1;
+    } else if (rotated.rotation == TetrisPieceRotation_1) {
+        rotated.blocks[0].x -= 2;
+        rotated.blocks[1].x -= 1; rotated.blocks[1].y -= 1;
+        rotated.blocks[2].y -= 2;
+        rotated.blocks[3].x += 1; rotated.blocks[3].y -= 1;
+        rotated.rotation = TetrisPieceRotation_2;
+    } else if (rotated.rotation == TetrisPieceRotation_2) {
+        rotated.blocks[0].x -= 1; rotated.blocks[0].y -= 2;
+        rotated.blocks[1].y -= 1;
+        rotated.blocks[2].x += 1;
+        rotated.blocks[3].y += 1;
+        rotated.rotation = TetrisPieceRotation_3;
+    } else if (rotated.rotation == TetrisPieceRotation_3) {
+        rotated.blocks[0].x += 2; rotated.blocks[0].y -= 1;
+        rotated.blocks[1].x += 1;
+        rotated.blocks[2].y += 1;
+        rotated.blocks[3].x -= 1;
+        rotated.rotation = TetrisPieceRotation_0;
     }
     
     return rotated;
@@ -371,18 +430,11 @@ rotate_piece(tetris_state *state) {
     switch (piece->kind) {
         case Tetromino_I: rotated = rotate_I(piece); break;
         case Tetromino_T: rotated = rotate_T(piece); break;
-        case Tetromino_S:
-        case Tetromino_Z: {
-            rotated = rotate_SZ(piece);
-        } break;
-        case Tetromino_L:
-        case Tetromino_J: {
-            rotated = rotate_LJ(piece); 
-        } break;
-        
-        default: {
-            // No-op
-        } break;
+        case Tetromino_S: rotated = rotate_S(piece); break;
+        case Tetromino_Z: rotated = rotate_Z(piece); break;
+        case Tetromino_L: rotated = rotate_L(piece); break;
+        case Tetromino_J: rotated = rotate_J(piece); break;
+        default: { /* No-op */ } break;
     }
     
     
@@ -535,6 +587,32 @@ draw_game_view(tetris_state *state) {
         draw_next_piece(state);
         draw_grid(state);
         immediate_flush();
+        
+        // Draw current piece numbers
+        v2i dim = state->dimensions;
+        
+        real32 width  = dim.width  * .7f;
+        real32 height = dim.height * .7f;
+        
+        real32 block_size = width / (real32) TETRIS_GRID_X_COUNT;
+        if (width > dim.height) {
+            block_size = (real32) height / (real32) TETRIS_GRID_Y_COUNT;
+        }
+        
+        v2 start = make_v2((dim.width - block_size * TETRIS_GRID_X_COUNT) / 2.f, dim.height - height);
+        
+        for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
+            tetris_block block = state->current_piece.blocks[block_index];
+            v2 min = make_v2(block.x * block_size, block.y * block_size);
+            v2 max = make_v2(min.x + block_size, min.y + block_size);
+            min = add_v2(min, start);
+            max = add_v2(max, start);
+            
+            char buf[2];
+            wsprintf(buf, "%d", block_index);
+            draw_text(min.x + block_size / 2.f, min.y + block_size / 2.f, (u8*) buf, &state->assets.primary_font, make_color(0xffffffff));
+        }
+        
     } else {
         draw_menu(TETRIS_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
@@ -563,6 +641,7 @@ tetris_game_update_and_render(game_memory *memory, game_input *input) {
         memory->initialized = true;
         
         state = (tetris_state *) game_alloc(memory, megabytes(12));
+        state->assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 12.f);
         
         init_game(state);
     }

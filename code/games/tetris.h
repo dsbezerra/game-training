@@ -54,8 +54,14 @@ struct tetris_piece {
     v4 color;
 };
 
+struct tetris_assets {
+    loaded_font primary_font;
+};
+
 struct tetris_state {
     v2i dimensions;
+    
+    tetris_assets assets;
     
     tetris_block grid[TETRIS_GRID_Y_COUNT][TETRIS_GRID_X_COUNT];
     
