@@ -1,8 +1,9 @@
 #include "gt.h"
+#include "gt_font.cpp"
 #include "gt_opengl.cpp"
 #include "gt_shader.cpp"
-#include "gt_font.cpp"
 #include "gt_draw.cpp"
+#include "gt_profiler.cpp"
 
 global_variable game_time_info time_info = {};
 

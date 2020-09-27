@@ -1,12 +1,13 @@
 
-#include "gt_types.h" 
+#include "gt_types.h"
 #include "gt_shared.h"
 #include "gt_math.h"
-#include "gt_platform.h"
-#include "gt_collision.h"
 #include "gt_opengl.h"
 #include "gt_shader.h"
 #include "gt_font.h"
+#include "gt_platform.h"
+#include "gt_profiler.h"
+#include "gt_collision.h"
 #include "gt_draw.h"
 
 struct game_time_info {

@@ -48,12 +48,22 @@ typedef real64 f64;
 #define assert(expr)
 #endif
 
-#if DEVELOPMENT
-#define invalid_code_path assert(0)
-#endif
-
 #define kilobytes(value) ((value) * 1024)
 #define megabytes(value) (kilobytes(value) * 1024)
 #define gigabytes(value) (megabytes(value) * 1024)
 
 #define array_count(array) (sizeof(array) / sizeof((array)[0]))
+
+#define invalid_default_case default: { assert(0); }
+#define invalid_code_path assert(0);
+
+inline void
+zero_size(void* mem, u64 size) {
+    u8* dest = (u8*)mem;
+    for (u64 i = 0; i < size; i++) {
+        *dest++ = 0;
+    }
+}
+
+#define zero_array(a) zero_size(a, sizeof(a))
+#define zero_struct(s) zero_size(&(s), sizeof(s))

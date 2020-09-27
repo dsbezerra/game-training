@@ -7,6 +7,7 @@ global_variable LONGLONG global_perf_count_frequency;
 global_variable bool global_running = false;
 global_variable HWND global_window;
 global_variable HCURSOR default_cursor;
+global_variable b32 global_lock_fps = true;
 
 global_variable app_state state = {};
 global_variable game_input input = {};
@@ -84,6 +85,14 @@ plataform_read_entire_file(char *filepath) {
     return result;
 }
 
+internal inline real32
+win32_get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
+{
+    real32 result = ((real32) (end.QuadPart - start.QuadPart) /
+                     (real32) global_perf_count_frequency);
+    return result;
+}
+
 internal inline LARGE_INTEGER
 win32_get_wallclock(void)
 {
@@ -92,12 +101,20 @@ win32_get_wallclock(void)
     return result;
 }
 
-internal inline real32
-win32_get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
-{
-    real32 result = ((real32) (end.QuadPart - start.QuadPart) /
-                     (real32) global_perf_count_frequency);
-    return result;
+inline real32
+platform_seconds_elapsed(u64 last_counter) {
+    LARGE_INTEGER current_counter;
+    QueryPerformanceCounter(&current_counter);
+    
+    LARGE_INTEGER start;
+    start.QuadPart = last_counter;
+    return win32_get_seconds_elapsed(start, current_counter);
+}
+
+internal u64
+platform_get_perf_counter() {
+    LARGE_INTEGER result = win32_get_wallclock();
+    return result.QuadPart;
 }
 
 internal void
@@ -297,6 +314,12 @@ win32_process_pending_messages(HWND window) {
                 process_button(VK_LEFT, Button_Left);
                 process_button(VK_RIGHT, Button_Right);
                 
+                if (vk_code == 0x55) {
+                    if (was_down && !is_down) {
+                        global_lock_fps = !global_lock_fps;
+                    }
+                }
+                
                 if (was_down != is_down) {
                     if (state.current_mode != Mode_PlayingGame) {
                         if (vk_code == VK_ESCAPE && is_down) {
@@ -386,11 +409,16 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             while (global_running) {
                 
+                begin_profiler();
+                
+                begin_profiling(ProfilerItem_Input);
                 for (int button_index = 0; button_index < Button_Count; ++button_index) {
                     input.buttons[button_index].changed = false;
                 }
                 
                 win32_process_pending_messages(window);
+                
+                end_profiling(ProfilerItem_Input);
                 
                 // Game Update and render
                 memory.window_center = state.window_center;
@@ -401,26 +429,29 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 
                 game_update_and_render(&state, &memory, &input);
                 
-                // Ensure a forced frame time
-                LARGE_INTEGER work_counter = win32_get_wallclock();
-                real32 work_seconds_elapsed = win32_get_seconds_elapsed(last_counter, work_counter);
+                render_profiler(state.window_dimensions, last_dt);
                 
-                real32 seconds_elapsed_for_frame = work_seconds_elapsed;
-                if (seconds_elapsed_for_frame < target_dt) {
-                    if (sleep_is_granular) {
-                        DWORD sleep_ms = (DWORD)(1000.0f * (target_dt -
-                                                            seconds_elapsed_for_frame));
-                        if (sleep_ms > 0) {
-                            Sleep(sleep_ms);
+                // Ensure a forced frame time
+                if (global_lock_fps) {
+                    LARGE_INTEGER work_counter = win32_get_wallclock();
+                    real32 work_seconds_elapsed = win32_get_seconds_elapsed(last_counter, work_counter);
+                    
+                    real32 seconds_elapsed_for_frame = work_seconds_elapsed;
+                    if (seconds_elapsed_for_frame < target_dt) {
+                        if (sleep_is_granular) {
+                            DWORD sleep_ms = (DWORD)(1000.0f * (target_dt -
+                                                                seconds_elapsed_for_frame));
+                            if (sleep_ms > 0) {
+                                Sleep(sleep_ms);
+                            }
+                        }
+                        
+                        while (seconds_elapsed_for_frame < target_dt) {
+                            seconds_elapsed_for_frame= win32_get_seconds_elapsed(last_counter,
+                                                                                 win32_get_wallclock());
                         }
                     }
-                    
-                    while (seconds_elapsed_for_frame < target_dt) {
-                        seconds_elapsed_for_frame= win32_get_seconds_elapsed(last_counter,
-                                                                             win32_get_wallclock());
-                    }
                 }
-                
                 SwapBuffers(window_dc);
                 
                 // Get the frame time
