@@ -1,6 +1,6 @@
 #if PROFILER
 
-#include <stdio.h>
+#include <stdio.h> // For sprintf
 
 global_variable profiling_data global_back_profiling_data[ProfilerItem_Count];
 global_variable profiling_data global_writing_profiling_data[ProfilerItem_Count];
