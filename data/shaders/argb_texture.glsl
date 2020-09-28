@@ -33,7 +33,7 @@ void main() {
   else {
     vec4 sample = texture(ftex, out_uv);
     if (out_z_index < 0.0) { // @Hack to make the same shader work for text and textures.
-      frag_color = vec4(out_color.xyz, sample.a);
+      frag_color = vec4(out_color.xyz, sample.r);
     } else {
       frag_color = sample;
     }

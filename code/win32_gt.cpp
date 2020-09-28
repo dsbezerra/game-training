@@ -9,6 +9,9 @@ global_variable HWND global_window;
 global_variable HCURSOR default_cursor;
 global_variable b32 global_lock_fps = true;
 
+global_variable wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
+global_variable wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
+
 global_variable app_state state = {};
 global_variable game_input input = {};
 
@@ -155,55 +158,6 @@ win32_opengl_get_functions() {
     opengl_get_function(wglSwapIntervalEXT);
 }
 
-
-internal void
-win32_init_opengl(HWND window) {
-    
-    open_gl = (opengl *) VirtualAlloc(0, sizeof(open_gl), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-    
-    HDC window_dc = GetDC(window);
-    
-    PIXELFORMATDESCRIPTOR pixel_format_descriptor = {};
-    pixel_format_descriptor.nSize = sizeof(pixel_format_descriptor);
-    pixel_format_descriptor.nVersion = 1;
-    pixel_format_descriptor.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-    pixel_format_descriptor.cColorBits = 32;
-    pixel_format_descriptor.cAlphaBits = 8;
-    
-    int pixel_format_index = ChoosePixelFormat(window_dc, &pixel_format_descriptor);
-    
-    PIXELFORMATDESCRIPTOR suggested_pixel_format = {};
-    if (DescribePixelFormat(window_dc, pixel_format_index,
-                            sizeof(suggested_pixel_format), &suggested_pixel_format)) {
-        if (SetPixelFormat(window_dc, pixel_format_index, &suggested_pixel_format)) {
-            HGLRC gl_rc = wglCreateContext(window_dc);
-            if (wglMakeCurrent(window_dc, gl_rc)) {
-                win32_opengl_get_functions();
-                open_gl->wglSwapIntervalEXT(1);
-                open_gl->info = opengl_get_info();
-            } else {
-                invalid_code_path;
-            }
-        } else {
-            invalid_code_path;
-        }
-        
-    } else {
-        invalid_code_path;
-    }
-    
-    ReleaseDC(window, window_dc);
-}
-
-internal void
-win32_free_opengl() {
-    if (!open_gl) {
-        return;
-    }
-    
-    VirtualFree(open_gl, 0, MEM_RELEASE);
-}
-
 internal void
 win32_toggle_fullscreen(HWND window) {
     // This follow Raymund Chen's "How do I switch a window between normal and fullscreen
@@ -279,6 +233,131 @@ default_proc(HWND window,
         } break;
     }
     return result;
+}
+
+// TODO(diego): Watch handmade hero 475
+internal void
+win32_set_pixel_format(HDC window_dc) {
+    int suggested_pixel_format_index = 0;
+    GLuint extended_pick = 0;
+    if (wglChoosePixelFormatARB) {
+        int int_attr_list[] = {
+            WGL_DRAW_TO_WINDOW_ARB, GL_TRUE, // 0
+            WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB, // 1
+            WGL_SUPPORT_OPENGL_ARB, GL_TRUE, // 2
+            WGL_DOUBLE_BUFFER_ARB, GL_TRUE, // 3
+            WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB, // 4
+            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, GL_TRUE, // 5
+            0,
+        };
+        
+        wglChoosePixelFormatARB(window_dc, int_attr_list, 0, 1,
+                                &suggested_pixel_format_index, &extended_pick);
+    }
+    
+    if (!extended_pick) {
+        PIXELFORMATDESCRIPTOR desired_pixel_format = {};
+        desired_pixel_format.nSize = sizeof(desired_pixel_format);
+        desired_pixel_format.nVersion = 1;
+        desired_pixel_format.iPixelType = PFD_TYPE_RGBA;
+        desired_pixel_format.dwFlags = PFD_SUPPORT_OPENGL|PFD_DRAW_TO_WINDOW|PFD_DOUBLEBUFFER;
+        desired_pixel_format.cColorBits = 32;
+        desired_pixel_format.cAlphaBits = 8;
+        desired_pixel_format.cDepthBits = 24;
+        desired_pixel_format.iLayerType = PFD_MAIN_PLANE;
+        
+        suggested_pixel_format_index = ChoosePixelFormat(window_dc, &desired_pixel_format);
+    }
+    
+    PIXELFORMATDESCRIPTOR suggested_pixel_format;
+    DescribePixelFormat(window_dc, suggested_pixel_format_index,
+                        sizeof(suggested_pixel_format), &suggested_pixel_format);
+    SetPixelFormat(window_dc, suggested_pixel_format_index, &suggested_pixel_format);
+}
+
+// TODO(diego): Watch handmade hero 475
+internal void
+win32_load_wgl_extensions() {
+    
+    WNDCLASSA window_class = {};
+    
+    window_class.lpfnWndProc = default_proc;
+    window_class.hInstance = GetModuleHandle(0);
+    window_class.lpszClassName = "GTWGLLoader";
+    
+    if (RegisterClassA(&window_class)) {
+        HWND window = CreateWindowExA(
+                                      0,
+                                      window_class.lpszClassName,
+                                      "Game Training",
+                                      0,
+                                      CW_USEDEFAULT,
+                                      CW_USEDEFAULT,
+                                      CW_USEDEFAULT,
+                                      CW_USEDEFAULT,
+                                      0,
+                                      0,
+                                      window_class.hInstance,
+                                      0);
+        
+        HDC window_dc = GetDC(window);
+        win32_set_pixel_format(window_dc);
+        HGLRC opengl_rc = wglCreateContext(window_dc);
+        if (wglMakeCurrent(window_dc, opengl_rc)) {
+            wglChoosePixelFormatARB =
+                (wgl_choose_pixel_format_arb *) wglGetProcAddress("wglChoosePixelFormatARB");
+            wglCreateContextAttribsARB =
+                (wgl_create_context_attribs_arb *) wglGetProcAddress("wglCreateContextAttribsARB");
+            wglMakeCurrent(0, 0);
+        }
+        wglDeleteContext(opengl_rc);
+        ReleaseDC(window, window_dc);
+        DestroyWindow(window);
+    }
+}
+
+internal void
+win32_init_opengl(HWND window) {
+    
+    open_gl = (opengl *) VirtualAlloc(0, sizeof(open_gl), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    
+    HDC window_dc = GetDC(window);
+    win32_load_wgl_extensions();
+    win32_set_pixel_format(window_dc);
+    
+    HGLRC gl_rc = 0;
+    // TODO(diego): Watch handmade hero 245
+    if (wglCreateContextAttribsARB) {
+        int attribs[] = {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+            0,
+        };
+        gl_rc = wglCreateContextAttribsARB(window_dc, 0, attribs);
+    } else {
+        gl_rc = wglCreateContext(window_dc);
+    }
+    if (wglMakeCurrent(window_dc, gl_rc)) {
+        win32_opengl_get_functions();
+        open_gl->wglSwapIntervalEXT(1);
+        open_gl->info = opengl_get_info();
+        
+    } else {
+        invalid_code_path;
+    }
+    
+    ReleaseDC(window, window_dc);
+}
+
+internal void
+win32_free_opengl() {
+    if (!open_gl) {
+        return;
+    }
+    
+    VirtualFree(open_gl, 0, MEM_RELEASE);
 }
 
 internal void

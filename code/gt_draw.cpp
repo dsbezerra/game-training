@@ -327,20 +327,19 @@ refresh_shader_transform() {
 
 internal void
 render_right_handed(int width, int height) {
+    
 #if 0
     mat4 tm = identity();
     
     tm.rc[0][0] = 2.f / width;
     tm.rc[1][1] = 2.f / height;
     
-    tm.rc[3][0] = -1.f;
-    tm.rc[3][1] = 1.f;
+    tm.rc[3][0] = -10.f;
+    tm.rc[3][1] = 10.f;
     
     projection_matrix = tm;
     view_matrix       = identity();
-#endif
-    
-#if 1
+#else 
     real32 aspect_ratio = (real32) width / (real32) height;
     
     real32 f = 10.f;
@@ -350,7 +349,7 @@ render_right_handed(int width, int height) {
     
     projection_matrix = ortho(ortho_size, aspect_ratio, f, n);
     view_matrix       = translate(make_v2(-width / 2.f, ortho_size));
-#endif 
+#endif
     
     refresh_shader_transform();
 }
