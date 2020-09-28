@@ -327,9 +327,9 @@ refresh_shader_transform() {
 
 internal void
 render_right_handed(int width, int height) {
+#if 0
     mat4 tm = identity();
     
-#if 0
     tm.rc[0][0] = 2.f / width;
     tm.rc[1][1] = 2.f / height;
     
