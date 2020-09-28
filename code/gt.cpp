@@ -102,6 +102,31 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
     }
 }
 
+inline GLint
+load_menu_art(char *filename) {
+    u32 texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_set_flip_vertically_on_load(true);
+    // load and generate the texture
+    int width, height, nrChannels;
+    u8 *data = stbi_load(filename, &width, &height, &nrChannels, 4);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        //glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else { invalid_code_path; }
+    
+    stbi_image_free(data);
+    
+    return texture;
+}
+
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
 #include "games/slide_puzzle.cpp"
@@ -125,8 +150,8 @@ global_variable char* game_titles[] = {
 //
 // Game menu art table
 //
-void stub_menu_art(v2 min, v2 max) { assert(false); }
-void (*menu_table[])(v2 min, v2 max) = {
+void stub_menu_art(app_state *state, v2 min, v2 max) { assert(false); }
+void (*menu_table[])(app_state *state, v2 min, v2 max) = {
     stub_menu_art,
     dodger_menu_art,
     memory_puzzle_menu_art, // TODO(diego): Update menu art routine for for Memory Puzzle
@@ -208,19 +233,23 @@ update_mode_selecting(app_state *state, game_input *input) {
 
 internal void
 render_mode_selecting(app_state *state) {
-    int selection_width = state->window_dimensions.width / 4;
-    real32 border_width = selection_width * 0.01f;
+    real32 selection_width = max(250.f, state->window_dimensions.width / 4.f);
+    real32 selection_height = selection_width * 16.f / 9.f;
+    
+    real32 remaining = state->window_dimensions.height - selection_height;
+    
+    real32 border_width = selection_width * 0.02f;
     
     real32 now = time_info.current_time;
     real32 t = cosf(now);
     t *= t;
     t = .4f + t;
     
-    v4 border_color = make_v4(1.f, .0f, 1.f, .4f);
-    v4 border_color_almost_transparent = make_v4(1.f, .0f, 1.f, .2f);
+    v4 border_color = make_v4(1.f, 1.0f, 1.f, .4f);
+    v4 border_color_almost_transparent = make_v4(1.f, 1.0f, 1.f, .2f);
     
     real32 offset = (real32) (selection_width * (int) state->current_selecting_game);
-    mat4 translation = translate(make_v2(-offset + state->window_dimensions.width * .5f, .0f));
+    mat4 translation = translate(make_v2(-offset + state->window_dimensions.width * .5f, -remaining * .5f));
     
 #if 0
     real32 tCos = cosf(time_info.current_time);
@@ -239,21 +268,15 @@ render_mode_selecting(app_state *state) {
     for (int index = 0; index < array_count(game_titles); ++index) {
         real32 x = (real32) index * selection_width;
         v2 min  = make_v2(x, 0.f);
-        v2 max = make_v2(x + selection_width, (real32) state->window_dimensions.height);
+        v2 max = make_v2(x + selection_width, selection_height);
         
         if (index == 0) {
             // Do nothing
         } else {
             if (index < array_count(menu_table)) {
-                menu_table[index](min, max);
+                menu_table[index](state, min, max);
             }
             if (index == (int) state->current_selecting_game) {
-                
-                v2 left_min = make_v2(min.x, min.y);
-                v2 left_max = make_v2(min.x + border_width, max.y);
-                
-                v2 right_min = make_v2(max.x - border_width, min.y);
-                v2 right_max = make_v2(max.x, max.y);
                 
                 v2 top_min = make_v2(min.x, min.y);
                 v2 top_max = make_v2(max.x, min.y + border_width);
@@ -261,12 +284,18 @@ render_mode_selecting(app_state *state) {
                 v2 bottom_min = make_v2(min.x, max.y - border_width);
                 v2 bottom_max = make_v2(max.x, max.y);
                 
+                v2 left_min = make_v2(min.x, top_max.y);
+                v2 left_max = make_v2(min.x + border_width, bottom_min.y);
+                
+                v2 right_min = make_v2(max.x - border_width, top_max.y);
+                v2 right_max = make_v2(max.x, bottom_min.y);
+                
                 immediate_begin();
                 
                 // Draw select quad
                 
-                v4 a = make_v4(1.f, .0f, 1.f, .4f);
-                v4 b = make_v4(1.f, .0f, 1.f, .0f);
+                v4 a = make_v4(1.f, 1.0f, 1.f, .2f);
+                v4 b = make_v4(1.f, 1.0f, 1.f, .0f);
                 immediate_quad(min, max, lerp_color(b, t, a), 1.f);
                 
                 // Draw select borders
@@ -279,9 +308,18 @@ render_mode_selecting(app_state *state) {
                 immediate_flush();
             }
         }
+        
         char* title = game_titles[index];
         real32 size = get_text_width(&state->game_title_font, title);
-        draw_text((min.x + max.x - size) * .5f, max.height * 0.2f, (u8 *) title, &state->game_title_font, make_color(0xffffffff));
+        
+        v4 text_color = make_color(0xffffffff);
+        v4 backing_color = make_color(0xff111111);
+        
+        real32 text_x = (min.x + max.x - size) * .5f;
+        real32 text_y = max.height * 0.2f; 
+        
+        draw_text(text_x + 2.f, text_y + 2.f, (u8 *) title, &state->game_title_font, backing_color);
+        draw_text(text_x, text_y, (u8 *) title, &state->game_title_font, text_color);
     }
 }
 
@@ -301,6 +339,12 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
         menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
         menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
+        state->menu_art.dodger = load_menu_art("./data/menu_arts/dodger.png");
+        state->menu_art.memory_puzzle = load_menu_art("./data/menu_arts/memory_puzzle.png");
+        state->menu_art.slide_puzzle = load_menu_art("./data/menu_arts/slide_puzzle.png");
+        state->menu_art.tetris = load_menu_art("./data/menu_arts/tetris.png");
+        state->menu_art.simon = load_menu_art("./data/menu_arts/simon.png");
+        state->menu_art.nibbles = load_menu_art("./data/menu_arts/nibbles.png");
         
         state->initialized = true;
     }

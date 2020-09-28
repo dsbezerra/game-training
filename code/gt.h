@@ -10,12 +10,27 @@
 #include "gt_collision.h"
 #include "gt_draw.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_NO_FAILURE_STRINGS
+#define STBI_ASSERT assert
+#include "stb/stb_image.h"
+
 struct game_time_info {
     real32 dt;
     real32 current_time;
 };
 
 struct game_sound_output_buffer;
+
+struct game_menu_art {
+    GLuint dodger;
+    GLuint memory_puzzle;
+    GLuint slide_puzzle;
+    GLuint simon;
+    GLuint nibbles;
+    GLuint tetris;
+};
 
 struct game_button_state {
     b32 is_down;
@@ -104,6 +119,8 @@ struct app_state {
     game current_game;
     game current_selecting_game;
     
+    game_menu_art menu_art;
+    
     b32 initialized;
     
     loaded_font game_title_font;
@@ -118,6 +135,8 @@ internal void game_free(game_memory *memory);
 internal void game_quit(app_state *state);
 
 internal void advance_menu_choice(s8 *current_choice, s8 delta);
+
+internal GLint load_menu_art(char *filename);
 
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)

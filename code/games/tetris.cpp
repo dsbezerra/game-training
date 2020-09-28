@@ -648,10 +648,10 @@ draw_game_view(tetris_state *state) {
 }
 
 internal void
-tetris_menu_art(v2 min, v2 max) {
+tetris_menu_art(app_state *state, v2 min, v2 max) {
     v4 background = make_color(0xff5a1c5f);
     immediate_begin();
-    immediate_quad(min, max, background, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.tetris, 1.f);
     immediate_flush();
 }
 

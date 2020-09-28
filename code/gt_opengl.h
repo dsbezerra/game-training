@@ -28,6 +28,12 @@
 #define GL_TEXTURE0                       0x84C0
 #define GL_TEXTURE1                       0x84C1
 
+//
+// Other
+//
+#define GL_GPU_MEM_INFO_TOTAL_AVAILABLE_MEM_NVX   0x9048
+#define GL_GPU_MEM_INFO_CURRENT_AVAILABLE_MEM_NVX 0x9049
+
 typedef char GLchar;
 
 typedef void type_glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
@@ -72,6 +78,11 @@ struct opengl_info {
     char *vendor;
     char *renderer;
     char *version;
+};
+
+struct opengl_memory_info {
+    GLint total_memory_in_kb;
+    GLint current_available_memory_in_kb;
 };
 
 struct opengl {

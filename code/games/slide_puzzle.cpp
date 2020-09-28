@@ -269,10 +269,10 @@ draw_game_view(slide_puzzle_state *state) {
 }
 
 internal void
-slide_puzzle_menu_art(v2 min, v2 max) {
+slide_puzzle_menu_art(app_state *state, v2 min, v2 max) {
     v4 background = make_color(0xff172e56);
     immediate_begin();
-    immediate_quad(min, max, background, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.slide_puzzle, 1.f);
     immediate_flush();
 }
 

@@ -42,6 +42,8 @@ internal void immediate_circle_filled(v2 center, real32 radius_x, real32 radius_
 internal void immediate_circle_filled(v2 center, real32 radius, v4 color);
 internal void immediate_circle_filled(v2 center, v2 radius, v4 color);
 
+internal void immediate_textured_quad(v2 min, v2 max, u32 texture, real32 z_index);
+
 internal void immediate_quad(v2 min, v2 max, v4 color, real32 z_index);
 internal void immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 color, real32 z_index);
 

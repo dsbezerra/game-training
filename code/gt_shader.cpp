@@ -1,4 +1,3 @@
-
 global_variable shader global_shader;
 
 internal shader_source
@@ -125,9 +124,9 @@ delete_shaders(int n, ...) {
     va_end(ap);
 }
 
-internal void
-init_shaders() {
-    shader_source source = parse_shader("./data/shaders/argb_texture.glsl");
+internal shader
+load_shader(char *filepath) {
+    shader_source source = parse_shader(filepath);
     shader result = {};
     
     int vertex_shader = compile_shader(GL_VERTEX_SHADER, source.vertex);
@@ -144,5 +143,10 @@ init_shaders() {
     result.uv_loc       = 2;
     result.z_index_loc  = 3;
     
-    global_shader = result;
+    return result;
+}
+
+internal void
+init_shaders() {
+    global_shader = load_shader("./data/shaders/argb_texture.glsl");
 }

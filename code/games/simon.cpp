@@ -214,10 +214,9 @@ draw_game_view(simon_state *state) {
 } 
 
 internal void
-simon_menu_art(v2 min, v2 max) {
-    v4 background = make_color(0xff56505f);
+simon_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_quad(min, max, background, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.simon, 1.f);
     immediate_flush();
 }
 

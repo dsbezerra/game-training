@@ -166,6 +166,30 @@ immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 color, real32 z_in
     immediate_vertex(make_v2(x1, y0), color, default_uv, z_index);
 }
 
+
+internal void
+immediate_textured_quad(v2 min, v2 max, u32 texture, real32 z_index) {
+    
+    open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
+    
+    glBindTexture(GL_TEXTURE_2D, texture);
+    open_gl->glActiveTexture(GL_TEXTURE0);
+    
+    v2 bottom_right = make_v2(1.f, .0f);
+    v2 bottom_left  = make_v2(.0f, .0f);
+    v2 top_right    = make_v2(1.f, 1.f);
+    v2 top_left     = make_v2(.0f, 1.f);
+    
+    v4 color = make_color(0xffffffff);
+    immediate_vertex(make_v2(min.x, max.y), color, bottom_left, z_index);
+    immediate_vertex(make_v2(max.x, max.y), color, bottom_right, z_index);
+    immediate_vertex(make_v2(min.x, min.y), color, top_left, z_index);
+    
+    immediate_vertex(make_v2(min.x, min.y), color, top_left, z_index);
+    immediate_vertex(make_v2(max.x, min.y), color, top_right, z_index);
+    immediate_vertex(make_v2(max.x, max.y), color, bottom_right, z_index);
+}
+
 internal void
 immediate_char(real32 x, real32 y, char c, loaded_font *font, v4 color, real32 z_index) {
     
@@ -279,7 +303,7 @@ immediate_flush() {
 internal void
 draw_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color) {
     immediate_begin();
-    immediate_text(x, y, text, font, color, 1.f);
+    immediate_text(x, y, text, font, color, -5.f);
     immediate_flush();
 }
 
@@ -320,7 +344,7 @@ render_right_handed(int width, int height) {
     real32 aspect_ratio = (real32) width / (real32) height;
     
     real32 f = 10.f;
-    real32 n = 1.f;
+    real32 n = -10.f;
     
     real32 ortho_size = height / 2.f;
     

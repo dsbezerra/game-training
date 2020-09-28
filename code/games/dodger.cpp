@@ -156,12 +156,13 @@ draw_game_view(dodger_state *state) {
 }
 
 internal void
-dodger_menu_art(v2 min, v2 max) {
+dodger_menu_art(app_state *state, v2 min, v2 max) {
     
     v4 background = make_color(0xff141414);
     
     immediate_begin();
     
+#if 0
     immediate_quad(min, max, background, 1.f);
     
     {
@@ -194,6 +195,9 @@ dodger_menu_art(v2 min, v2 max) {
         v4 color = make_color(0xffffffff);
         immediate_quad(position, add_v2(position, size), color, 1.f);
     }
+#endif
+    
+    immediate_textured_quad(min, max, state->menu_art.dodger, 1.f);
     
     immediate_flush();
 }

@@ -10,13 +10,11 @@ uniform mat4 projection;
 uniform mat4 view;
 out vec4 out_color;
 out vec2 out_uv;
-out float out_z_index;
 
 void main() {
   gl_Position = projection * view * vec4(position, -z_index, 1.0);
   out_color = color;
   out_uv = uv;
-  out_z_index = z_index;
 }
 
 #shader fragment
@@ -25,17 +23,12 @@ void main() {
 out vec4 frag_color;
 in vec4 out_color;
 in vec2 out_uv;
-in float out_z_index;
 uniform sampler2D ftex;
 
 void main() {
   if (out_uv.x < 0 && out_uv.y < 0) frag_color = out_color;
   else {
     vec4 sample = texture(ftex, out_uv);
-    if (out_z_index < 0.0) { // @Hack to make the same shader work for text and textures.
-      frag_color = vec4(out_color.xyz, sample.a);
-    } else {
-      frag_color = sample;
-    }
- }
+    frag_color = vec4(sample.r, sample.r, sample.r, sample.r);
+  }
 }

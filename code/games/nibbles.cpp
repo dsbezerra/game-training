@@ -189,10 +189,9 @@ draw_game_view(nibbles_state *state) {
 } 
 
 internal void
-nibbles_menu_art(v2 min, v2 max) {
-    v4 background = make_color(0xff5a105f);
+nibbles_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_quad(min, max, background, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.nibbles, 1.f);
     immediate_flush();
 }
 

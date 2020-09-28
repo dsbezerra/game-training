@@ -54,7 +54,9 @@ platform_get_cursor_position(v2i *position) {
     
     POINT point;
     GetCursorPos(&point);
-    ScreenToClient(global_window, &point);
+    
+    // @Cleanup commenting this makes Dodger works, but breaks Simon mouse position.
+    // ScreenToClient(global_window, &point);
     
     position->x = point.x;
     position->y = point.y;
@@ -254,9 +256,12 @@ default_proc(HWND window,
             state.window_dimensions.x = width;
             state.window_dimensions.y = height;
             
+            // @Cleanup fix this for Dodger.
+#if 0
             if (input.mouse.lock) {
                 platform_set_cursor_position(state.window_center);
             }
+#endif 
             input.mouse.position = state.window_center;
             
         } break;

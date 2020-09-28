@@ -269,12 +269,9 @@ draw_diamond(memory_card *card, v2 min, v2 max) {
 }
 
 internal void
-memory_puzzle_menu_art(v2 min, v2 max) {
-    v4 background = make_color(0xff141414);
-    
+memory_puzzle_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_quad(min, max, background, 1.f);
-    
+    immediate_textured_quad(min, max, state->menu_art.memory_puzzle, 1.f);
     immediate_flush();
 }
 

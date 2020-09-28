@@ -22,8 +22,12 @@ render_profiler(v2i dim, real32 dt) {
     v2 p = make_v2(20.f, 40.f);
     v4 color = make_color(0xffaa55);
     
+    opengl_memory_info memory_info = opengl_get_memory_info();
+    
+    GLint usage = memory_info.total_memory_in_kb - memory_info.current_available_memory_in_kb;
+    
     char buf[256];
-    sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms", dim.width, dim.height, dt * 1000.f);
+    sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms\nGPU Memory: using %dMB of %dMB", dim.width, dim.height, dt * 1000.f, usage / 1024, memory_info.total_memory_in_kb / 1024);
     
     render_right_handed(dim.width, dim.height);
     
