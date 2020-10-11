@@ -10,7 +10,6 @@ Variations: Have enemies fall at different rates and be different sizes. Have en
  TODO(diego): 
 
 - Create images for player and bad guys.
-- Add stb_image so we can load .png images.
 
 */
 

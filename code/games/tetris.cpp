@@ -684,8 +684,6 @@ tetris_game_update_and_render(game_memory *memory, game_input *input) {
         if (pressed(Button_Escape)) {
             state->game_mode = GameMode_Menu;
         } else {
-            // TODO(diego): Implement update
-            
             if (pressed(Button_Left)) {
                 move_piece(state, TetrisMoveDirection_Left);
             }

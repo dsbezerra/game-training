@@ -154,7 +154,7 @@ void stub_menu_art(app_state *state, v2 min, v2 max) { assert(false); }
 void (*menu_table[])(app_state *state, v2 min, v2 max) = {
     stub_menu_art,
     dodger_menu_art,
-    memory_puzzle_menu_art, // TODO(diego): Update menu art routine for for Memory Puzzle
+    memory_puzzle_menu_art,
     slide_puzzle_menu_art,
     simon_menu_art,
     nibbles_menu_art,
