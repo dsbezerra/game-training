@@ -58,7 +58,7 @@ get_next_vertex_ptr() {
 }
 
 internal void
-immediate_vertex(v2 position, v4 color, v2 uv, real32 z_index) {
+immediate_vertex(v3 position, v4 color, v2 uv, real32 z_index) {
     
     if (immediate->num_vertices >= MAX_VERTICES) {
 		immediate_flush();
@@ -68,6 +68,7 @@ immediate_vertex(v2 position, v4 color, v2 uv, real32 z_index) {
     vertex *v = get_next_vertex_ptr();
     v->position.x = position.x;
     v->position.y = -position.y;
+    v->position.z = position.z;
     v->color      = color;
     v->uv         = uv;
     v->z_index    = z_index;
@@ -96,14 +97,14 @@ immediate_circle(v2 center, real32 inner_radius_x, real32 inner_radius_y, real32
         real32 outer_by = center.y + (outer_radius_y * sinf(next * TAU / amount));
         
         // Triangle made with 2 vertices in inner radius to one vertex in outer radius 
-        immediate_vertex(make_v2(inner_ax, inner_ay), color, default_uv, 1.f);
-        immediate_vertex(make_v2(inner_bx, inner_by), color, default_uv, 1.f);
-        immediate_vertex(make_v2(outer_bx, outer_by), color, default_uv, 1.f);
+        immediate_vertex(make_v3(inner_ax, inner_ay, 1.f), color, default_uv, 1.f);
+        immediate_vertex(make_v3(inner_bx, inner_by, 1.f), color, default_uv, 1.f);
+        immediate_vertex(make_v3(outer_bx, outer_by, 1.f), color, default_uv, 1.f);
         
         // Triangle made with 2 vertices in outer radius to one vertex in inner radius
-        immediate_vertex(make_v2(outer_ax, outer_ay), color, default_uv, 1.f);
-        immediate_vertex(make_v2(outer_bx, outer_by), color, default_uv, 1.f);
-        immediate_vertex(make_v2(inner_ax, inner_ay), color, default_uv, 1.f);
+        immediate_vertex(make_v3(outer_ax, outer_ay, 1.f), color, default_uv, 1.f);
+        immediate_vertex(make_v3(outer_bx, outer_by, 1.f), color, default_uv, 1.f);
+        immediate_vertex(make_v3(inner_ax, inner_ay, 1.f), color, default_uv, 1.f);
     }
 }
 
@@ -133,9 +134,9 @@ immediate_circle_filled(v2 center, real32 radius_x, real32 radius_y, v4 color) {
         real32 by = center.y + (radius_y * sinf(next * TAU / amount));
         
         // Vertices to form a slice
-        immediate_vertex(center, color, default_uv, 1.f);
-        immediate_vertex(make_v2(ax, ay), color, default_uv, 1.f);
-        immediate_vertex(make_v2(bx, by), color, default_uv, 1.f);
+        immediate_vertex(make_v3(center.x, center.y, 1.f), color, default_uv, 1.f);
+        immediate_vertex(make_v3(ax, ay, 1.f), color, default_uv, 1.f);
+        immediate_vertex(make_v3(bx, by, 1.f), color, default_uv, 1.f);
     }
 }
 
@@ -157,13 +158,13 @@ immediate_quad(v2 min, v2 max, v4 color, real32 z_index) {
 internal void
 immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 color, real32 z_index) {
     v2 default_uv = make_v2(-1.f, -1.f);
-    immediate_vertex(make_v2(x0, y0), color, default_uv, z_index);
-    immediate_vertex(make_v2(x0, y1), color, default_uv, z_index);
-    immediate_vertex(make_v2(x1, y0), color, default_uv, z_index);
+    immediate_vertex(make_v3(x0, y0, 1.f), color, default_uv, z_index);
+    immediate_vertex(make_v3(x0, y1, 1.f), color, default_uv, z_index);
+    immediate_vertex(make_v3(x1, y0, 1.f), color, default_uv, z_index);
     
-    immediate_vertex(make_v2(x0, y1), color, default_uv, z_index);
-    immediate_vertex(make_v2(x1, y1), color, default_uv, z_index);
-    immediate_vertex(make_v2(x1, y0), color, default_uv, z_index);
+    immediate_vertex(make_v3(x0, y1, 1.f), color, default_uv, z_index);
+    immediate_vertex(make_v3(x1, y1, 1.f), color, default_uv, z_index);
+    immediate_vertex(make_v3(x1, y0, 1.f), color, default_uv, z_index);
 }
 
 
@@ -181,13 +182,13 @@ immediate_textured_quad(v2 min, v2 max, u32 texture, real32 z_index) {
     v2 top_left     = make_v2(.0f, 1.f);
     
     v4 color = make_color(0xffffffff);
-    immediate_vertex(make_v2(min.x, max.y), color, bottom_left, z_index);
-    immediate_vertex(make_v2(max.x, max.y), color, bottom_right, z_index);
-    immediate_vertex(make_v2(min.x, min.y), color, top_left, z_index);
+    immediate_vertex(make_v3(min.x, max.y, 1.f), color, bottom_left, z_index);
+    immediate_vertex(make_v3(max.x, max.y, 1.f), color, bottom_right, z_index);
+    immediate_vertex(make_v3(min.x, min.y, 1.f), color, top_left, z_index);
     
-    immediate_vertex(make_v2(min.x, min.y), color, top_left, z_index);
-    immediate_vertex(make_v2(max.x, min.y), color, top_right, z_index);
-    immediate_vertex(make_v2(max.x, max.y), color, bottom_right, z_index);
+    immediate_vertex(make_v3(min.x, min.y, 1.f), color, top_left, z_index);
+    immediate_vertex(make_v3(max.x, min.y, 1.f), color, top_right, z_index);
+    immediate_vertex(make_v3(max.x, max.y, 1.f), color, bottom_right, z_index);
 }
 
 internal void
@@ -207,13 +208,13 @@ immediate_char(real32 x, real32 y, char c, loaded_font *font, v4 color, real32 z
         v2 top_right    = make_v2(q.s1, q.t1);
         v2 top_left     = make_v2(q.s0, q.t1);
         
-        immediate_vertex(make_v2(q.x0, q.y0), color, bottom_left, z_index);
-        immediate_vertex(make_v2(q.x0, q.y1), color, top_left, z_index);
-        immediate_vertex(make_v2(q.x1, q.y0), color, bottom_right, z_index);
+        immediate_vertex(make_v3(q.x0, q.y0, 1.f), color, bottom_left, z_index);
+        immediate_vertex(make_v3(q.x0, q.y1, 1.f), color, top_left, z_index);
+        immediate_vertex(make_v3(q.x1, q.y0, 1.f), color, bottom_right, z_index);
         
-        immediate_vertex(make_v2(q.x0, q.y1), color, top_left, z_index);
-        immediate_vertex(make_v2(q.x1, q.y1), color, top_right, z_index);
-        immediate_vertex(make_v2(q.x1, q.y0), color, bottom_right, z_index);
+        immediate_vertex(make_v3(q.x0, q.y1, 1.f), color, top_left, z_index);
+        immediate_vertex(make_v3(q.x1, q.y1, 1.f), color, top_right, z_index);
+        immediate_vertex(make_v3(q.x1, q.y0, 1.f), color, bottom_right, z_index);
     }
 }
 
@@ -237,13 +238,13 @@ immediate_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color, real32
             v2 top_right    = make_v2(q.s1, q.t1);
             v2 top_left     = make_v2(q.s0, q.t1);
             
-            immediate_vertex(make_v2(q.x0, q.y0), color, bottom_left, z_index);
-            immediate_vertex(make_v2(q.x0, q.y1), color, top_left, z_index);
-            immediate_vertex(make_v2(q.x1, q.y0), color, bottom_right, z_index);
+            immediate_vertex(make_v3(q.x0, q.y0, 1.f), color, bottom_left, z_index);
+            immediate_vertex(make_v3(q.x0, q.y1, 1.f), color, top_left, z_index);
+            immediate_vertex(make_v3(q.x1, q.y0, 1.f), color, bottom_right, z_index);
             
-            immediate_vertex(make_v2(q.x0, q.y1), color, top_left, z_index);
-            immediate_vertex(make_v2(q.x1, q.y1), color, top_right, z_index);
-            immediate_vertex(make_v2(q.x1, q.y0), color, bottom_right, z_index);
+            immediate_vertex(make_v3(q.x0, q.y1, 1.f), color, top_left, z_index);
+            immediate_vertex(make_v3(q.x1, q.y1, 1.f), color, top_right, z_index);
+            immediate_vertex(make_v3(q.x1, q.y0, 1.f), color, bottom_right, z_index);
             
         } else if (*text == '\n') {
             y += font->line_height;
@@ -277,16 +278,16 @@ immediate_flush() {
     GLint uv_loc = immediate->current_shader.uv_loc;
     GLint z_index_loc = immediate->current_shader.z_index_loc;
     
-    open_gl->glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
+    open_gl->glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
     open_gl->glEnableVertexAttribArray(position_loc);
     
-    open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*) sizeof(v2));
+    open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*) sizeof(v3));
     open_gl->glEnableVertexAttribArray(color_loc);
     
-    open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v2) + sizeof(v4)));
+    open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v3) + sizeof(v4)));
     open_gl->glEnableVertexAttribArray(uv_loc);
     
-    open_gl->glVertexAttribPointer(z_index_loc, 1, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v2) + sizeof(v4) + sizeof(v2)));
+    open_gl->glVertexAttribPointer(z_index_loc, 1, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v3) + sizeof(v4) + sizeof(v2)));
     open_gl->glEnableVertexAttribArray(z_index_loc);
     
     glDrawArrays(GL_TRIANGLES, 0, immediate->num_vertices);

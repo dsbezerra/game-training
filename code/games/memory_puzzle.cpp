@@ -258,14 +258,14 @@ draw_diamond(memory_card *card, v2 min, v2 max) {
     v2 default_uv = make_v2(-1.f, -1.f);
     
     // First triangle
-    immediate_vertex(make_v2(half.x, min.y), card->color, default_uv, 1.f);
-    immediate_vertex(make_v2(min.x, half.y), card->color, default_uv, 1.f);
-    immediate_vertex(make_v2(half.x, max.y), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(half.x, min.y, 1.f), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(min.x, half.y, 1.f), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(half.x, max.y, 1.f), card->color, default_uv, 1.f);
     
     // Second triangle
-    immediate_vertex(make_v2(half.x, min.y), card->color, default_uv, 1.f);
-    immediate_vertex(make_v2(half.x, max.y), card->color, default_uv, 1.f);
-    immediate_vertex(make_v2(max.x, half.y), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(half.x, min.y, 1.f), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(half.x, max.y, 1.f), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(max.x, half.y, 1.f), card->color, default_uv, 1.f);
 }
 
 internal void
