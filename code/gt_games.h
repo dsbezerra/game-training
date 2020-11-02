@@ -4,6 +4,7 @@
 #include "games/simon.h"
 #include "games/nibbles.h"
 #include "games/tetris.h"
+#include "games/katamari.h"
 
 enum game {
     Game_None,
@@ -13,6 +14,7 @@ enum game {
     Game_Simon,
     Game_Nibbles,
     Game_Tetris,
+    Game_Katamari,
     
     Game_Count,
 };

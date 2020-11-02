@@ -8,10 +8,10 @@
 #include "gt_platform.h"
 #include "gt_profiler.h"
 #include "gt_collision.h"
+#include "gt_camera.h"
 #include "gt_draw.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
 #define STBI_NO_FAILURE_STRINGS
 #define STBI_ASSERT assert
 #include "stb/stb_image.h"
@@ -131,7 +131,7 @@ internal void game_output_sound(game_sound_output_buffer *sound_buffer);
 internal void game_update_and_render(app_state *state, game_memory *memory, game_input *input);
 
 internal void *game_alloc(game_memory *memory, u64 size);
-internal void game_free(game_memory *memory);
+internal void game_free(game_memory *memory, game current_game);
 internal void game_quit(app_state *state);
 
 internal void advance_menu_choice(s8 *current_choice, s8 delta);

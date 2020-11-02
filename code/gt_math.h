@@ -346,7 +346,8 @@ angle_to_radians(real32 angle) {
 //
 // Matrices
 //
-inline v2 rotate_v2_around(v2 a, v2 center, real32 angle) {
+inline
+v2 rotate_around(v2 a, v2 center, real32 angle) {
     v2 result = {};
     
     real32 rad = angle_to_radians(angle);
@@ -362,7 +363,8 @@ inline v2 rotate_v2_around(v2 a, v2 center, real32 angle) {
     return result;
 }
 
-inline v2 rotate_v2(v2 a, real32 angle) {
+inline
+v2 rotate(v2 a, real32 angle) {
     v2 result = {};
     
     real32 rad = angle_to_radians(angle);
@@ -371,6 +373,25 @@ inline v2 rotate_v2(v2 a, real32 angle) {
     
     result.x = cint * a.x - sint * a.y;
     result.y = sint * a.x + cint * a.y;
+    
+    return result;
+}
+
+internal mat4
+operator*(mat4 a, mat4 b) {
+    // NOTE(casey): This is written to be instructive, not optimal!
+    mat4 result = {};
+    
+    // NOTE(casey): Rows (of A) 
+    for(int r = 0; r <= 3; ++r) {
+        // NOTE(casey): Column (of B)
+        for(int c = 0; c <= 3; ++c) {
+            // NOTE(casey): Columns of A, rows of B!
+            for(int i = 0; i <= 3; ++i) {
+                result.rc[r][c] += a.rc[r][i] * b.rc[i][c];
+            }
+        }
+    }
     
     return result;
 }
@@ -430,6 +451,17 @@ translate(v2 pos) {
 }
 
 inline mat4
+translate(v3 pos) {
+    mat4 result = identity();
+    
+    result.e[0 + 3 * 4] = pos.x;
+    result.e[1 + 3 * 4] = pos.y;
+    result.e[2 + 3 * 4] = pos.z;
+    
+    return result;
+}
+
+inline mat4
 scale(v2 scale) {
     mat4 result = identity();
     
@@ -439,23 +471,68 @@ scale(v2 scale) {
     return result;
 }
 
-//
-// Matrices operations
-//
-internal mat4
-operator*(mat4 a, mat4 b) {
-    // NOTE(casey): This is written to be instructive, not optimal!
-    mat4 result = {};
+// NOTE(diego): Not tested.
+inline mat4
+x_rotation(real32 angle)
+{
+    real32 c = cosf(angle);
+    real32 s = sinf(angle);
     
-    // NOTE(casey): Rows (of A) 
-    for(int r = 0; r <= 3; ++r) {
-        // NOTE(casey): Column (of B)
-        for(int c = 0; c <= 3; ++c) {
-            // NOTE(casey): Columns of A, rows of B!
-            for(int i = 0; i <= 3; ++i) {
-                result.rc[r][c] += a.rc[r][i] * b.rc[i][c];
-            }
-        }
+    mat4 result = identity();
+    
+    result.rc[1][1] = c;
+    result.rc[1][2] = -s;
+    result.rc[2][1] = s;
+    result.rc[2][2] = c;
+    
+    return result;
+}
+
+// NOTE(diego): Not tested.
+inline mat4
+y_rotation(real32 angle) {
+    real32 c = cosf(angle);
+    real32 s = sinf(angle);
+    
+    mat4 result = identity();
+    
+    result.rc[0][0] = c;
+    result.rc[0][2] = s;
+    result.rc[2][0] = -s;
+    result.rc[2][2] = c;
+    
+    return result;
+}
+
+// NOTE(diego): Not tested.
+inline mat4
+z_rotation(real32 angle) {
+    real32 c = cosf(angle);
+    real32 s = sinf(angle);
+    
+    mat4 result = identity();
+    
+    result.rc[0][0] = c;
+    result.rc[0][1] = -s;
+    result.rc[1][0] = s;
+    result.rc[1][1] = c;
+    
+    return result;
+}
+
+// NOTE(diego): Not tested.
+inline mat4
+rotation(real32 angle, v3 axis) {
+    mat4 result = identity();
+    
+    if (axis.x > 0.f) {
+        result = result * x_rotation(angle * axis.x);
+    }
+    if (axis.y > 0.f) {
+        result = result * y_rotation(angle * axis.y);
+    }
+    if (axis.z > 0.f) {
+        result = result * z_rotation(angle * axis.z);
     }
     
     return result;

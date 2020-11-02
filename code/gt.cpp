@@ -12,44 +12,6 @@ global_variable loaded_font menu_item_font;
 
 global_variable real32 global_press_t = .0f;
 
-internal void *
-game_alloc(game_memory *memory, u64 size) {
-    memory->permanent_storage_size = size;
-    memory->permanent_storage = platform_alloc(size);
-    memory->initialized = true;
-    return memory->permanent_storage;
-}
-
-internal void
-game_free(game_memory *memory) {
-    if (!memory) {
-        return;
-    }
-    
-    if (memory->permanent_storage) {
-        platform_free(memory->permanent_storage);
-    }
-    memory->permanent_storage = 0;
-    memory->permanent_storage_size = 0;
-    memory->initialized = false;
-    memory->asked_to_quit = false;
-}
-
-internal void
-game_quit(app_state *state, game_memory *memory) {
-    state->current_selecting_game = state->current_game;
-    state->current_mode = Mode_SelectingGame;
-    game_free(memory);
-}
-
-internal void
-advance_menu_choice(s8 *current_choice, s8 delta) {
-    *current_choice += delta;
-    
-    if (*current_choice < 0) *current_choice += (s8) GameMenuItem_Count;
-    if (*current_choice >= (s8) GameMenuItem_Count) *current_choice -= (s8) GameMenuItem_Count;
-}
-
 internal void
 draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 quit_was_selected) {
     
@@ -103,7 +65,7 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
 }
 
 inline GLint
-load_menu_art(char *filename) {
+load_texture(char *filename) {
     u32 texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -133,18 +95,20 @@ load_menu_art(char *filename) {
 #include "games/simon.cpp"
 #include "games/nibbles.cpp"
 #include "games/tetris.cpp"
+#include "games/katamari.cpp"
 
 //
 // Game titles
 //
 global_variable char* game_titles[] = {
     "",
-    "Dodger",
-    "Memory Puzzle",
-    "Slide Puzzle",
-    "Simon",
-    "Nibbles",
-    "Tetris",
+    DODGER_TITLE,
+    MEMORY_PUZZLE_TITLE,
+    SLIDE_PUZZLE_TITLE,
+    SIMON_TITLE,
+    NIBBLES_TITLE,
+    TETRIS_TITLE,
+    KATAMARI_DAMACY_TITLE,
 };
 
 //
@@ -159,13 +123,28 @@ void (*menu_table[])(app_state *state, v2 min, v2 max) = {
     simon_menu_art,
     nibbles_menu_art,
     tetris_menu_art,
+    katamari_menu_art,
+};
+
+//
+// Game custom free table
+// 
+void stub_game_free(game_memory *memory) { assert(false); }
+void (*game_free_table[])(game_memory *memory) = {
+    0, // None
+    0, // Dodger
+    0, // Memory Puzzle 
+    0, // Slide Puzzle
+    0, // Simon
+    0, // Nibbles
+    0, // Tetris
+    katamari_game_free,
 };
 
 // 
 // Game update and render table
 //
 void stub_game_update_and_render(game_memory *memory, game_input *input) { assert(false); }
-
 void (*game_table[])(game_memory *memory, game_input *input) = {
     stub_game_update_and_render,
     dodger_game_update_and_render,
@@ -174,7 +153,49 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
     simon_game_update_and_render,
     nibbles_game_update_and_render,
     tetris_game_update_and_render,
+    katamari_game_update_and_render,
 };
+
+internal void *
+game_alloc(game_memory *memory, u64 size) {
+    memory->permanent_storage_size = size;
+    memory->permanent_storage = platform_alloc(size);
+    memory->initialized = true;
+    return memory->permanent_storage;
+}
+
+internal void
+game_free(game_memory *memory, game current_game) {
+    if (!memory) {
+        return;
+    }
+    
+    if (memory->permanent_storage) {
+        if (game_free_table[current_game]) {
+            game_free_table[current_game](memory);
+        }
+        platform_free(memory->permanent_storage);
+    }
+    memory->permanent_storage = 0;
+    memory->permanent_storage_size = 0;
+    memory->initialized = false;
+    memory->asked_to_quit = false;
+}
+
+internal void
+game_quit(app_state *state, game_memory *memory) {
+    state->current_selecting_game = state->current_game;
+    state->current_mode = Mode_SelectingGame;
+    game_free(memory, state->current_game);
+}
+
+internal void
+advance_menu_choice(s8 *current_choice, s8 delta) {
+    *current_choice += delta;
+    
+    if (*current_choice < 0) *current_choice += (s8) GameMenuItem_Count;
+    if (*current_choice >= (s8) GameMenuItem_Count) *current_choice -= (s8) GameMenuItem_Count;
+}
 
 internal void
 advance_game(app_state *state, int value) {
@@ -220,7 +241,7 @@ update_mode_selecting(app_state *state, game_input *input) {
             if (state->current_selecting_game != state->current_game) {
                 state->current_game = state->current_selecting_game;
                 state->current_selecting_game = Game_None;
-                game_free(state->memory);
+                game_free(state->memory, state->current_game);
             }
             state->current_mode = Mode_PlayingGame;
         }
@@ -238,7 +259,7 @@ render_mode_selecting(app_state *state) {
     
     real32 remaining = state->window_dimensions.height - selection_height;
     
-    real32 border_width = selection_width * 0.02f;
+    real32 border_width = selection_width * 0.012f;
     
     real32 now = time_info.current_time;
     real32 t = cosf(now);
@@ -257,56 +278,49 @@ render_mode_selecting(app_state *state) {
     tCos = .95f + .05f * tCos;
     mat4 center = translate(make_v2(state->window_dimensions.width * 0.5f - offset, .0f));
     view_matrix = view_matrix * center * scale(make_v2(tCos, tCos));
-#endif
-    
-#if 1
+#else
     view_matrix = view_matrix * translation;
 #endif
     
     refresh_shader_transform();
     
-    for (int index = 0; index < array_count(game_titles); ++index) {
+    for (int index = 1; index < array_count(game_titles); ++index) {
         real32 x = (real32) index * selection_width;
         v2 min  = make_v2(x, 0.f);
         v2 max = make_v2(x + selection_width, selection_height);
         
-        if (index == 0) {
-            // Do nothing
-        } else {
-            if (index < array_count(menu_table)) {
-                menu_table[index](state, min, max);
-            }
-            if (index == (int) state->current_selecting_game) {
-                
-                v2 top_min = make_v2(min.x, min.y);
-                v2 top_max = make_v2(max.x, min.y + border_width);
-                
-                v2 bottom_min = make_v2(min.x, max.y - border_width);
-                v2 bottom_max = make_v2(max.x, max.y);
-                
-                v2 left_min = make_v2(min.x, top_max.y);
-                v2 left_max = make_v2(min.x + border_width, bottom_min.y);
-                
-                v2 right_min = make_v2(max.x - border_width, top_max.y);
-                v2 right_max = make_v2(max.x, bottom_min.y);
-                
-                immediate_begin();
-                
-                // Draw select quad
-                
-                v4 a = make_v4(1.f, 1.0f, 1.f, .2f);
-                v4 b = make_v4(1.f, 1.0f, 1.f, .0f);
-                immediate_quad(min, max, lerp_color(b, t, a), 1.f);
-                
-                // Draw select borders
-                v4 border_t_color = lerp_color(border_color, t, border_color_almost_transparent);
-                immediate_quad(left_min, left_max, border_t_color, 1.f);
-                immediate_quad(right_min, right_max, border_t_color, 1.f);
-                immediate_quad(top_min, top_max, border_t_color, 1.f);
-                immediate_quad(bottom_min, bottom_max, border_t_color, 1.f);
-                
-                immediate_flush();
-            }
+        if (index < array_count(menu_table)) {
+            menu_table[index](state, min, max);
+        }
+        if (index == (int) state->current_selecting_game) {
+            v2 top_min = make_v2(min.x, min.y);
+            v2 top_max = make_v2(max.x, min.y + border_width);
+            
+            v2 bottom_min = make_v2(min.x, max.y - border_width);
+            v2 bottom_max = make_v2(max.x, max.y);
+            
+            v2 left_min = make_v2(min.x, top_max.y);
+            v2 left_max = make_v2(min.x + border_width, bottom_min.y);
+            
+            v2 right_min = make_v2(max.x - border_width, top_max.y);
+            v2 right_max = make_v2(max.x, bottom_min.y);
+            
+            immediate_begin();
+            
+            // Draw select quad
+            
+            v4 a = make_v4(1.f, 1.0f, 1.f, .2f);
+            v4 b = make_v4(1.f, 1.0f, 1.f, .0f);
+            immediate_quad(min, max, lerp_color(b, t, a), 1.f);
+            
+            // Draw select borders
+            v4 border_t_color = lerp_color(border_color, t, border_color_almost_transparent);
+            immediate_quad(left_min, left_max, border_t_color, 1.f);
+            immediate_quad(right_min, right_max, border_t_color, 1.f);
+            immediate_quad(top_min, top_max, border_t_color, 1.f);
+            immediate_quad(bottom_min, bottom_max, border_t_color, 1.f);
+            
+            immediate_flush();
         }
         
         char* title = game_titles[index];
@@ -333,18 +347,18 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
         
         // @Cleanup
         //
-        // Pass theses inside app_state?
+        // Pass these inside app_state?
         // Make app_state visible and accessible to games?
         //
         menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
         menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
-        state->menu_art.dodger = load_menu_art("./data/menu_arts/dodger.png");
-        state->menu_art.memory_puzzle = load_menu_art("./data/menu_arts/memory_puzzle.png");
-        state->menu_art.slide_puzzle = load_menu_art("./data/menu_arts/slide_puzzle.png");
-        state->menu_art.tetris = load_menu_art("./data/menu_arts/tetris.png");
-        state->menu_art.simon = load_menu_art("./data/menu_arts/simon.png");
-        state->menu_art.nibbles = load_menu_art("./data/menu_arts/nibbles.png");
+        state->menu_art.dodger = load_texture("./data/menu_arts/dodger.png");
+        state->menu_art.memory_puzzle = load_texture("./data/menu_arts/memory_puzzle.png");
+        state->menu_art.slide_puzzle = load_texture("./data/menu_arts/slide_puzzle.png");
+        state->menu_art.simon = load_texture("./data/menu_arts/simon.png");
+        state->menu_art.nibbles = load_texture("./data/menu_arts/nibbles.png");
+        state->menu_art.tetris = load_texture("./data/menu_arts/tetris.png");
         
         state->initialized = true;
     }
@@ -373,8 +387,6 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
         } else {
             game_table[state->current_game](memory, input);
         }
-        
+        immediate_flush();
     }
-    immediate_flush();
 }
-

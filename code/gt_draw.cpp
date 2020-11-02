@@ -36,7 +36,6 @@ immediate_init() {
     
     //glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
-	glClearDepth(1.f);
 	glDepthFunc(GL_LEQUAL);
 }
 

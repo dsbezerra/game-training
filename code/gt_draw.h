@@ -51,6 +51,7 @@ internal void immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 colo
 internal void immediate_char(real32 x, real32 y, char c, loaded_font *font, v4 color);
 internal void immediate_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color);
 
+internal void immediate_cube(v3 position, u32 texture);
 
 internal void draw_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color);
 
