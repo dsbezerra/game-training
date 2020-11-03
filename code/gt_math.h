@@ -186,6 +186,12 @@ equal_v4(v4 a, v4 b) {
     return result;
 }
 
+inline real32
+length_v3(v3 a) {
+    real32 result = sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
+    return result;
+}
+
 internal int
 clamp(int min, int val, int max) {
     if (val < min) return min;
@@ -521,19 +527,38 @@ z_rotation(real32 angle) {
 }
 
 // NOTE(diego): Not tested.
+// Angle should be in radians.
 inline mat4
 rotation(real32 angle, v3 axis) {
     mat4 result = identity();
     
-    if (axis.x > 0.f) {
-        result = result * x_rotation(angle * axis.x);
+    real32 x = axis.x;
+    real32 y = axis.y;
+    real32 z = axis.z;
+    
+    real32 length = length_v3(axis);
+    if ((length != 1.f) && (length != 0.f)) {
+        length = 1.f / length;
+        x *= length;
+        y *= length;
+        z *= length;
     }
-    if (axis.y > 0.f) {
-        result = result * y_rotation(angle * axis.y);
-    }
-    if (axis.z > 0.f) {
-        result = result * z_rotation(angle * axis.z);
-    }
+    
+    real32 s = sinf(angle);
+    real32 c = cosf(angle);
+    real32 t = 1.f - c; // 1-cos0
+    
+    result.e[0]  = x*x*t + c;   // cosθ+Rx2(1−cosθ)
+    result.e[1]  = y*x*t + z*s; // RyRx(1−cosθ)+Rzsinθ
+    result.e[2]  = z*x*t - y*s; // RzRx(1−cosθ)−Rysinθ
+    
+    result.e[4]  = x*y*t - z*s; // RxRy(1−cosθ)−Rzsinθ
+    result.e[5]  = y*y*t + c;   // cosθ+Ry2(1−cosθ)
+    result.e[6]  = z*y*t + x*s; // RzRy(1−cosθ)+Rxsinθ
+    
+    result.e[8]  = x*z*t + y*s; // RxRz(1−cosθ)+Rysinθ
+    result.e[9]  = y*z*t - x*s; // RyRz(1−cosθ)−Rxsinθ
+    result.e[10] = z*z*t + c;   // cosθ+Rz2(1−cosθ)
     
     return result;
 }
