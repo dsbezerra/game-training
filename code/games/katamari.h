@@ -15,7 +15,9 @@ enum katamari_entity_kind {
     
     KatamariEntity_Player,
     KatamariEntity_Squirrel,
-    //KatamariEntity_Grass,
+    KatamariEntity_Grass1,
+    KatamariEntity_Grass2,
+    KatamariEntity_Grass3,
     
     KatamariEntity_Count,
 };
@@ -28,7 +30,6 @@ struct katamari_entity {
 
 
 struct katamari_assets {
-    GLuint grass;
 };
 
 struct katamari_state {
