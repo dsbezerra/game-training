@@ -129,9 +129,9 @@ init_game(katamari_state *state) {
 
 internal void
 init_textures(katamari_assets *assets) {
-    assets->grass[0] = load_texture("./data/textures/grass_01.png");
-    assets->grass[1] = load_texture("./data/textures/grass_02.png");
-    assets->grass[2] = load_texture("./data/textures/grass_03.png");
+    assets->grass[0] = load_texture("./data/textures/katamari/grass_01.png");
+    assets->grass[1] = load_texture("./data/textures/katamari/grass_02.png");
+    assets->grass[2] = load_texture("./data/textures/katamari/grass_03.png");
 }
 
 internal void
