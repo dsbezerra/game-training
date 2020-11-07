@@ -80,7 +80,7 @@ load_texture(char *filename) {
     u8 *data = stbi_load(filename, &width, &height, &nrChannels, 4);
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        //glGenerateMipmap(GL_TEXTURE_2D);
+        open_gl->glGenerateMipmap(GL_TEXTURE_2D);
     }
     else { invalid_code_path; }
     

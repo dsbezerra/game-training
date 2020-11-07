@@ -101,6 +101,8 @@ typedef void type_glUniform1i(GLint location, GLint v0);
 typedef void type_glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 typedef void type_glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat *value);
 
+typedef void type_glGenerateMipmap(GLenum target);
+
 typedef BOOL type_wglSwapIntervalEXT(int interval);
 
 
@@ -172,5 +174,6 @@ struct opengl {
     opengl_function(glDisableVertexAttribArray);
     opengl_function(glActiveTexture);
     opengl_function(glUniform1i);
+    opengl_function(glGenerateMipmap);
     opengl_function(wglSwapIntervalEXT);
 };

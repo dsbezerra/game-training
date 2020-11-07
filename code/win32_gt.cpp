@@ -7,7 +7,7 @@ global_variable LONGLONG global_perf_count_frequency;
 global_variable bool global_running = false;
 global_variable HWND global_window;
 global_variable HCURSOR default_cursor;
-global_variable b32 global_lock_fps = true;
+global_variable b32 global_lock_fps = false;
 
 global_variable wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
 global_variable wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
@@ -154,7 +154,7 @@ win32_opengl_get_functions() {
     opengl_get_function(glDisableVertexAttribArray);
     opengl_get_function(glActiveTexture);
     opengl_get_function(glUniform1i);
-    opengl_get_function(wglSwapIntervalEXT);
+    opengl_get_function(glGenerateMipmap);
     opengl_get_function(wglSwapIntervalEXT);
 }
 
@@ -531,8 +531,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                         }
                         
                         while (seconds_elapsed_for_frame < target_dt) {
-                            seconds_elapsed_for_frame= win32_get_seconds_elapsed(last_counter,
-                                                                                 win32_get_wallclock());
+                            seconds_elapsed_for_frame = win32_get_seconds_elapsed(last_counter,
+                                                                                  win32_get_wallclock());
                         }
                     }
                 }
