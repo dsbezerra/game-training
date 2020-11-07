@@ -9,12 +9,12 @@ Description: The original Katamari Damacy game was in a 3d world, but a 2d versi
 
 #define KATAMARI_DAMACY_TITLE "Katamari Damacy"
 
-#define KATAMARI_SQUIRREL_BASE_INDEX 128
+#define KATAMARI_SQUIRREL_BASE_INDEX 32
 
 #define KATAMARI_PLAYER_SIZE 24.f
 #define KATAMARI_SQUIRREL_MAX_SIZE 45.f
 
-#define KATAMARI_SQUIRREL_SPEED 100.f
+#define KATAMARI_SQUIRREL_SPEED 50.f
 
 enum katamari_entity_kind {
     KatamariEntity_None,
@@ -51,8 +51,8 @@ struct katamari_state {
     
     katamari_assets assets;
     
-    // NOTE(diego): Slots above 128 is reserved to squirrels.
-    katamari_entity entities[256];
+    // NOTE(diego): Slots above 32 are reserved to squirrels.
+    katamari_entity entities[64];
     
     real32 spawn_t;
     real32 spawn_t_target;

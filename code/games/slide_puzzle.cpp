@@ -208,7 +208,6 @@ draw_board(slide_puzzle_state *state) {
     real32 half_tile_size = tile_size * .5f;
     loaded_font *tile_font = &state->assets.tile_font;
     
-    immediate_begin();
     for (s8 tile_y = 0; tile_y < SLIDE_PUZZLE_BOARD_COUNT; ++tile_y) {
         for (s8 tile_x = 0; tile_x < SLIDE_PUZZLE_BOARD_COUNT; ++tile_x) {
             
@@ -246,12 +245,12 @@ draw_board(slide_puzzle_state *state) {
             
             real32 size = get_text_width(&state->assets.primary_font, (char *) tile.content);
             
-            // TODO(diego): Diagnostic text width routine
-            immediate_text(min.x + half_tile_size - size * .5f, min.y + half_tile_size + tile_font->line_height * .5f, (u8 *) tile.content, tile_font, white, 1.f);
+            // NOTE(diego): Still wrong, but fuck it.
+            real32 tile_center_x = (min.x + max.x) * .5f - size * .5f;
+            real32 tile_center_y = (min.y + max.y) * .5f + tile_font->line_height * .5f - pad;
+            draw_text(tile_center_x, tile_center_y, (u8 *) tile.content, tile_font, white);
         }
     }
-    
-    immediate_flush();
     
     
     if (state->mode == SlidePuzzleMode_Generating) {

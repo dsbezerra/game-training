@@ -89,6 +89,29 @@ load_texture(char *filename) {
     return texture;
 }
 
+internal void
+load_menu_arts(app_state *state) {
+    state->menu_art.dodger = load_texture("./data/menu_arts/dodger.png");
+    state->menu_art.memory_puzzle = load_texture("./data/menu_arts/memory_puzzle.png");
+    state->menu_art.slide_puzzle = load_texture("./data/menu_arts/slide_puzzle.png");
+    state->menu_art.simon = load_texture("./data/menu_arts/simon.png");
+    state->menu_art.nibbles = load_texture("./data/menu_arts/nibbles.png");
+    state->menu_art.tetris = load_texture("./data/menu_arts/tetris.png");
+}
+
+internal void
+free_menu_arts(app_state *state) {
+    const GLuint arts[] = {
+        state->menu_art.dodger,
+        state->menu_art.memory_puzzle,
+        state->menu_art.slide_puzzle,
+        state->menu_art.simon,
+        state->menu_art.nibbles,
+        state->menu_art.tetris,
+    };
+    glDeleteTextures(array_count(arts), arts);
+}
+
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
 #include "games/slide_puzzle.cpp"
@@ -169,7 +192,6 @@ game_free(game_memory *memory, game current_game) {
     if (!memory) {
         return;
     }
-    
     if (memory->permanent_storage) {
         if (game_free_table[current_game]) {
             game_free_table[current_game](memory);
@@ -186,6 +208,7 @@ internal void
 game_quit(app_state *state, game_memory *memory) {
     state->current_selecting_game = state->current_game;
     state->current_mode = Mode_SelectingGame;
+    load_menu_arts(state);
     game_free(memory, state->current_game);
 }
 
@@ -243,6 +266,7 @@ update_mode_selecting(app_state *state, game_input *input) {
                 state->current_selecting_game = Game_None;
                 game_free(state->memory, state->current_game);
             }
+            free_menu_arts(state);
             state->current_mode = Mode_PlayingGame;
         }
     }
@@ -353,12 +377,7 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
         menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
         menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
-        state->menu_art.dodger = load_texture("./data/menu_arts/dodger.png");
-        state->menu_art.memory_puzzle = load_texture("./data/menu_arts/memory_puzzle.png");
-        state->menu_art.slide_puzzle = load_texture("./data/menu_arts/slide_puzzle.png");
-        state->menu_art.simon = load_texture("./data/menu_arts/simon.png");
-        state->menu_art.nibbles = load_texture("./data/menu_arts/nibbles.png");
-        state->menu_art.tetris = load_texture("./data/menu_arts/tetris.png");
+        load_menu_arts(state);
         
         state->initialized = true;
     }

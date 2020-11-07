@@ -448,7 +448,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
     
     if (RegisterClassA(&window_class)) {
         
-        int monitor_hz = 120;
+        int monitor_hz = 144;
         real32 app_update_hz = monitor_hz / 2.f;
         
         real32 last_dt = 1.f / app_update_hz;
