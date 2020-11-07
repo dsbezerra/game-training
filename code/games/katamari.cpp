@@ -11,15 +11,15 @@ make_entity(katamari_entity_kind kind) {
         } break;
         
         case KatamariEntity_Squirrel1: {
-            result.half_size = make_v2(10.f, 10.f);
+            result.half_size = make_v2(KATAMARI_SQUIRREL_MAX_SIZE / 3.f, KATAMARI_SQUIRREL_MAX_SIZE / 3.f);
         } break;
         
         case KatamariEntity_Squirrel2: {
-            result.half_size = make_v2(30.f, 30.f);
+            result.half_size = make_v2(KATAMARI_SQUIRREL_MAX_SIZE / 2.f, KATAMARI_SQUIRREL_MAX_SIZE / 2.f);
         } break;
         
         case KatamariEntity_Squirrel3: {
-            result.half_size = make_v2(50.f, 50.f);
+            result.half_size = make_v2(KATAMARI_SQUIRREL_MAX_SIZE, KATAMARI_SQUIRREL_MAX_SIZE);
         } break;
         
         case KatamariEntity_Grass1: {
@@ -66,11 +66,10 @@ spawn_squirrel(katamari_state *state, u32 count) {
     v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
     
     u32 past_squirrel_index = KatamariEntity_Squirrel3 + 1;
-    u32 squirrel_start_index = 128;
     for (u32 i = 0; i < count; ++i) {
         // Get first valid position for the new squirrel.
         u32 squirrel_index = 0;
-        for (int ii = squirrel_start_index; ii < array_count(state->entities); ++ii) {
+        for (int ii = KATAMARI_SQUIRREL_BASE_INDEX; ii < array_count(state->entities); ++ii) {
             if (!state->entities[ii].alive) {
                 squirrel_index = ii;
                 break;
@@ -81,7 +80,7 @@ spawn_squirrel(katamari_state *state, u32 count) {
             break;
         }
         
-        assert(squirrel_index >= 128 && squirrel_index < array_count(state->entities));
+        assert(squirrel_index >= KATAMARI_SQUIRREL_BASE_INDEX && squirrel_index < array_count(state->entities));
         katamari_entity_kind kind = (katamari_entity_kind) (random_u32() % past_squirrel_index);
         if (kind < KatamariEntity_Squirrel1) {
             kind = (katamari_entity_kind) (kind + KatamariEntity_Squirrel1);
@@ -89,12 +88,33 @@ spawn_squirrel(katamari_state *state, u32 count) {
         assert(kind >= KatamariEntity_Squirrel1 && kind <= KatamariEntity_Squirrel3);
         
         katamari_entity new_squirrel = make_entity(kind);
+        
         new_squirrel.position.x = random_real32_in_range(-center.x, center.x);
         new_squirrel.position.y = random_real32_in_range(-center.y, center.y);
         
+        // NOTE(diego): We don't care how this is computed.
+        int x_direction = random_int_in_range(-1, 1);
+        while (x_direction == 0) {
+            x_direction = random_int_in_range(-1, 1);
+        }
+        int y_direction = random_int_in_range(-1, 1);
+        while (y_direction == 0) {
+            y_direction = random_int_in_range(-1, 1);
+        }
+        new_squirrel.direction  = make_v2((real32) x_direction,
+                                          (real32) y_direction);
         state->entities[squirrel_index] = new_squirrel;
     }
-    
+}
+
+internal void
+squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel) {
+    // TODO(diego): Handle player collision.
+    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    if (squirrel->position.x < -center.x || squirrel->position.x > center.x)
+        squirrel->direction.x = -squirrel->direction.x;
+    if (squirrel->position.y < -center.y || squirrel->position.y > center.y)
+        squirrel->direction.y = -squirrel->direction.y;
 }
 
 internal void
@@ -167,6 +187,21 @@ update_game(katamari_state *state, game_input *input) {
     }
     player->position = add_v2(player->position, velocity);
     
+    //
+    // Update squirrels
+    //
+    
+    for (u32 squirrel_index = KATAMARI_SQUIRREL_BASE_INDEX; squirrel_index < array_count(state->entities); ++squirrel_index) {
+        katamari_entity *squirrel = &state->entities[squirrel_index];
+        if (!squirrel->alive) continue;
+        
+        v2 vel = {};
+        vel.x += squirrel->direction.x * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+        vel.y += squirrel->direction.y * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+        squirrel->position = add_v2(squirrel->position, vel);
+        squirrel_handle_collision(state, player, squirrel);
+    }
+    
     if (state->spawn_t >= state->spawn_t_target) {
         state->spawn_t -= state->spawn_t_target;
         spawn_squirrel(state, 1);
@@ -197,12 +232,10 @@ draw_squirrel(katamari_state *state, katamari_entity *entity) {
                      center.y + entity->position.y - entity->half_size.y);
     v2 max = make_v2(min.x + entity->half_size.x, min.y + entity->half_size.y);
     
-    v4 color = make_color(0xFFCC8200);
-    
     // NOTE(diego): To draw all squirrel with a single draw call we could sort the entities array and use onde immediate_begin and immediate_flush for each group of entities.
     // Or save all squirrels in an exclusive array.
     immediate_begin();
-    immediate_quad(min, max, color, 1.f);
+    immediate_textured_quad(min, max, state->assets.squirrel[0], 1.f);
     immediate_flush();
 }
 

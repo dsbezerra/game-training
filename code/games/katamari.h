@@ -8,7 +8,13 @@ Description: The original Katamari Damacy game was in a 3d world, but a 2d versi
 */
 
 #define KATAMARI_DAMACY_TITLE "Katamari Damacy"
+
+#define KATAMARI_SQUIRREL_BASE_INDEX 128
+
 #define KATAMARI_PLAYER_SIZE 24.f
+#define KATAMARI_SQUIRREL_MAX_SIZE 45.f
+
+#define KATAMARI_SQUIRREL_SPEED 100.f
 
 enum katamari_entity_kind {
     KatamariEntity_None,
@@ -27,6 +33,7 @@ enum katamari_entity_kind {
 struct katamari_entity {
     katamari_entity_kind kind;
     v2 position;
+    v2 direction;
     v2 half_size;
     b32 alive;
 };
@@ -61,6 +68,7 @@ internal katamari_entity make_grass(katamari_entity_kind kind, real32 x, real32 
 internal katamari_entity* find_first_entity(katamari_state *state, katamari_entity_kind kind);
 
 internal void spawn_squirrel(katamari_state *state, u32 count);
+internal void squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel);
 
 internal void init_game(katamari_state *state);
 internal void init_textures(katamari_assets *assets);
