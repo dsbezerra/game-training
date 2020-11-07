@@ -232,10 +232,15 @@ draw_squirrel(katamari_state *state, katamari_entity *entity) {
                      center.y + entity->position.y - entity->half_size.y);
     v2 max = make_v2(min.x + entity->half_size.x, min.y + entity->half_size.y);
     
+    GLuint texture = state->assets.squirrel[0];
+    if (entity->direction.x < 0) {
+        texture = state->assets.squirrel[1];
+    }
+    
     // NOTE(diego): To draw all squirrel with a single draw call we could sort the entities array and use onde immediate_begin and immediate_flush for each group of entities.
     // Or save all squirrels in an exclusive array.
     immediate_begin();
-    immediate_textured_quad(min, max, state->assets.squirrel[0], 1.f);
+    immediate_textured_quad(min, max, texture, 1.f);
     immediate_flush();
 }
 
