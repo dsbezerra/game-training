@@ -34,6 +34,7 @@ struct katamari_entity {
 
 struct katamari_assets {
     GLuint grass[3];
+    GLuint squirrel[2];
 };
 
 struct katamari_state {

@@ -132,6 +132,8 @@ init_textures(katamari_assets *assets) {
     assets->grass[0] = load_texture("./data/textures/katamari/grass_01.png");
     assets->grass[1] = load_texture("./data/textures/katamari/grass_02.png");
     assets->grass[2] = load_texture("./data/textures/katamari/grass_03.png");
+    assets->squirrel[0] = load_texture("./data/textures/katamari/squirrel_r.png");
+    assets->squirrel[1] = load_texture("./data/textures/katamari/squirrel_l.png");
 }
 
 internal void
@@ -139,6 +141,7 @@ free_textures(katamari_assets *assets) {
     assert(assets);
     
     glDeleteTextures(array_count(assets->grass), assets->grass);
+    glDeleteTextures(array_count(assets->squirrel), assets->squirrel);
 }
 
 internal void
