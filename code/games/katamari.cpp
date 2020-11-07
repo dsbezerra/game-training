@@ -3,14 +3,23 @@ make_entity(katamari_entity_kind kind) {
     
     katamari_entity result = {};
     result.kind = kind;
+    result.alive = true;
     
     switch (kind) {
         case KatamariEntity_Player: {
             result.half_size = make_v2(KATAMARI_PLAYER_SIZE/2.f, KATAMARI_PLAYER_SIZE/2.f);
         } break;
         
-        case KatamariEntity_Squirrel: {
-            // TODO(diego): Create squirrel.
+        case KatamariEntity_Squirrel1: {
+            result.half_size = make_v2(10.f, 10.f);
+        } break;
+        
+        case KatamariEntity_Squirrel2: {
+            result.half_size = make_v2(30.f, 30.f);
+        } break;
+        
+        case KatamariEntity_Squirrel3: {
+            result.half_size = make_v2(50.f, 50.f);
         } break;
         
         case KatamariEntity_Grass1: {
@@ -52,6 +61,43 @@ find_first_entity(katamari_state *state, katamari_entity_kind kind) {
 }
 
 internal void
+spawn_squirrel(katamari_state *state, u32 count) {
+    
+    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    
+    u32 past_squirrel_index = KatamariEntity_Squirrel3 + 1;
+    u32 squirrel_start_index = 128;
+    for (u32 i = 0; i < count; ++i) {
+        // Get first valid position for the new squirrel.
+        u32 squirrel_index = 0;
+        for (int ii = squirrel_start_index; ii < array_count(state->entities); ++ii) {
+            if (!state->entities[ii].alive) {
+                squirrel_index = ii;
+                break;
+            }
+        }
+        if (!squirrel_index) {
+            // If we don't have one valid position then we can't spawn any squirrel.
+            break;
+        }
+        
+        assert(squirrel_index >= 128 && squirrel_index < array_count(state->entities));
+        katamari_entity_kind kind = (katamari_entity_kind) (random_u32() % past_squirrel_index);
+        if (kind < KatamariEntity_Squirrel1) {
+            kind = (katamari_entity_kind) (kind + KatamariEntity_Squirrel1);
+        }
+        assert(kind >= KatamariEntity_Squirrel1 && kind <= KatamariEntity_Squirrel3);
+        
+        katamari_entity new_squirrel = make_entity(kind);
+        new_squirrel.position.x = random_real32_in_range(-center.x, center.x);
+        new_squirrel.position.y = random_real32_in_range(-center.y, center.y);
+        
+        state->entities[squirrel_index] = new_squirrel;
+    }
+    
+}
+
+internal void
 init_game(katamari_state *state) {
     state->game_mode = GameMode_Playing;
     state->health = 3;
@@ -76,6 +122,9 @@ init_game(katamari_state *state) {
     
     // Last to be drawn
     state->entities[entity_index++] = player;
+    
+    state->spawn_t = 0.f;
+    state->spawn_t_target = 1.f;
 }
 
 internal void
@@ -114,6 +163,13 @@ update_game(katamari_state *state, game_input *input) {
         velocity.y += speed;
     }
     player->position = add_v2(player->position, velocity);
+    
+    if (state->spawn_t >= state->spawn_t_target) {
+        state->spawn_t -= state->spawn_t_target;
+        spawn_squirrel(state, 1);
+    }
+    
+    state->spawn_t += time_info.dt;
 }
 
 internal void
@@ -167,10 +223,15 @@ draw_grass(katamari_state *state, katamari_entity *entity) {
 internal void
 draw_entity(katamari_state *state, katamari_entity *entity) {
     if (!entity) return;
+    if (!entity->alive) return;
     
     switch (entity->kind) {
         case KatamariEntity_Player: draw_player(state, entity); break;
-        case KatamariEntity_Squirrel: draw_squirrel(state, entity); break;
+        case KatamariEntity_Squirrel1:
+        case KatamariEntity_Squirrel2:
+        case KatamariEntity_Squirrel3: {
+            draw_squirrel(state, entity); 
+        } break;
         case KatamariEntity_Grass1:
         case KatamariEntity_Grass2:
         case KatamariEntity_Grass3: {

@@ -14,7 +14,9 @@ enum katamari_entity_kind {
     KatamariEntity_None,
     
     KatamariEntity_Player,
-    KatamariEntity_Squirrel,
+    KatamariEntity_Squirrel1,
+    KatamariEntity_Squirrel2,
+    KatamariEntity_Squirrel3,
     KatamariEntity_Grass1,
     KatamariEntity_Grass2,
     KatamariEntity_Grass3,
@@ -26,6 +28,7 @@ struct katamari_entity {
     katamari_entity_kind kind;
     v2 position;
     v2 half_size;
+    b32 alive;
 };
 
 
@@ -40,7 +43,11 @@ struct katamari_state {
     
     katamari_assets assets;
     
+    // NOTE(diego): Slots above 128 is reserved to squirrels.
     katamari_entity entities[256];
+    
+    real32 spawn_t;
+    real32 spawn_t_target;
     
     u8 health;
     
@@ -51,6 +58,8 @@ struct katamari_state {
 internal katamari_entity make_entity(katamari_entity_kind kind);
 internal katamari_entity make_grass(katamari_entity_kind kind, real32 x, real32 y);
 internal katamari_entity* find_first_entity(katamari_state *state, katamari_entity_kind kind);
+
+internal void spawn_squirrel(katamari_state *state, u32 count);
 
 internal void init_game(katamari_state *state);
 internal void init_textures(katamari_assets *assets);
