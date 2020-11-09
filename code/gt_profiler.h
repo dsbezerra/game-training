@@ -2,6 +2,7 @@
 
 enum profiler_item {
     ProfilerItem_Input,
+    ProfilerItem_GameUpdateAndRender,
     ProfilerItem_Count,
 };
 

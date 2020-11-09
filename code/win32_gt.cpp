@@ -505,6 +505,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 end_profiling(ProfilerItem_Input);
                 
                 // Game Update and render
+                begin_profiling(ProfilerItem_GameUpdateAndRender);
+                
                 memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
                 
@@ -512,6 +514,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 time_info.current_time += last_dt;
                 
                 game_update_and_render(&state, &memory, &input);
+                
+                end_profiling(ProfilerItem_GameUpdateAndRender);
                 
                 render_profiler(state.window_dimensions, last_dt);
                 

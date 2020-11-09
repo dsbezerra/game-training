@@ -26,8 +26,11 @@ render_profiler(v2i dim, real32 dt) {
     
     GLint usage = memory_info.total_memory_in_kb - memory_info.current_available_memory_in_kb;
     
+    profiling_data game_update_and_render_time = global_writing_profiling_data[ProfilerItem_GameUpdateAndRender];
+    
+    
     char buf[256];
-    sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms\nGPU Memory: using %dMB of %dMB\n%s", dim.width, dim.height, dt * 1000.f, usage / 1024, memory_info.total_memory_in_kb / 1024, open_gl->info.version);
+    sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms\nGPU Memory: using %dMB of %dMB\n%s\nUpdate Render: %.2fms\n", dim.width, dim.height, dt * 1000.f, usage / 1024, memory_info.total_memory_in_kb / 1024, open_gl->info.version, game_update_and_render_time.timer);
     
     render_right_handed(dim.width, dim.height);
     
