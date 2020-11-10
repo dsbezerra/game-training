@@ -142,3 +142,5 @@ internal GLint load_menu_art(char *filename);
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)
 #define is_down(b) (input->buttons[b].is_down)
 
+global_variable b32 global_vsync = false;
+global_variable b32 global_lock_fps = false;

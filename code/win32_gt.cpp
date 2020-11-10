@@ -7,7 +7,6 @@ global_variable LONGLONG global_perf_count_frequency;
 global_variable bool global_running = false;
 global_variable HWND global_window;
 global_variable HCURSOR default_cursor;
-global_variable b32 global_lock_fps = false;
 
 global_variable wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
 global_variable wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
@@ -156,6 +155,14 @@ win32_opengl_get_functions() {
     opengl_get_function(glUniform1i);
     opengl_get_function(glGenerateMipmap);
     opengl_get_function(wglSwapIntervalEXT);
+}
+
+internal void
+win32_opengl_refresh_vsync() {
+    if (!open_gl) return;
+    
+    int value = global_vsync ? 1 : 0;
+    open_gl->wglSwapIntervalEXT(value);
 }
 
 internal void
@@ -341,7 +348,7 @@ win32_init_opengl(HWND window) {
     }
     if (wglMakeCurrent(window_dc, gl_rc)) {
         win32_opengl_get_functions();
-        open_gl->wglSwapIntervalEXT(1);
+        win32_opengl_refresh_vsync();
         open_gl->info = opengl_get_info();
         
     } else {
@@ -403,7 +410,12 @@ win32_process_pending_messages(HWND window) {
                         global_lock_fps = !global_lock_fps;
                     }
                 }
-                
+                if (vk_code == 0x56) { // V
+                    if (was_down && !is_down) {
+                        global_vsync = !global_vsync;
+                        win32_opengl_refresh_vsync();
+                    }
+                }
                 if (was_down != is_down) {
                     if (state.current_mode != Mode_PlayingGame) {
                         if (vk_code == VK_ESCAPE && is_down) {
@@ -448,7 +460,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
     
     if (RegisterClassA(&window_class)) {
         
-        int monitor_hz = 144;
+        int monitor_hz = 60;
         real32 app_update_hz = monitor_hz / 2.f;
         
         real32 last_dt = 1.f / app_update_hz;
@@ -493,6 +505,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             while (global_running) {
                 
+                draw_call_count = 0;
+                
                 begin_profiler();
                 
                 begin_profiling(ProfilerItem_Input);
@@ -511,7 +525,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 memory.window_dimensions = state.window_dimensions;
                 
                 time_info.dt = last_dt;
-                time_info.current_time += last_dt;
                 
                 game_update_and_render(&state, &memory, &input);
                 
@@ -540,6 +553,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                         }
                     }
                 }
+                
                 SwapBuffers(window_dc);
                 
                 // Get the frame time
@@ -548,6 +562,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 int fps = (int) (global_perf_count_frequency / (end_counter.QuadPart - last_counter.QuadPart));
                 last_dt = win32_get_seconds_elapsed(last_counter, end_counter);
                 last_counter = end_counter;
+                
+                time_info.current_time += last_dt;
+                
             }
             
             ReleaseDC(window, window_dc);

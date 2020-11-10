@@ -2,6 +2,8 @@ global_variable imm* immediate;
 global_variable mat4 view_matrix;
 global_variable mat4 projection_matrix;
 
+global_variable u32 draw_call_count = 0;
+
 internal void
 init_draw() {
     init_shaders();
@@ -267,6 +269,8 @@ immediate_flush() {
         immediate->num_vertices = 0;
         return;
     }
+    
+    draw_call_count++;
     
     open_gl->glBindVertexArray(immediate->vao);
     open_gl->glBindBuffer(GL_ARRAY_BUFFER, immediate->vbo);
