@@ -42,7 +42,7 @@ render_profiler(v2i dim, real32 dt) {
 inline void
 begin_profiler() {
     if (!global_profiling_font.loaded) {
-        global_profiling_font.font = load_font("./data/fonts/Inconsolata-Regular.ttf", 16.f);
+        global_profiling_font.font = load_font("./data/fonts/Inconsolata-Bold.ttf", 16.f);
         global_profiling_font.loaded = true;
     }
     for (int i = 0; i < ProfilerItem_Count; i++) {

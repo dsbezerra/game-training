@@ -30,14 +30,23 @@ enum katamari_entity_kind {
     KatamariEntity_Count,
 };
 
+enum katamari_movement_pattern {
+    KatamariMovementPattern_None,
+    KatamariMovementPattern_ZigZag,
+    KatamariMovementPattern_LeftRight,
+    KatamariMovementPattern_TopBottom,
+    KatamariMovementPattern_FollowPlayer,
+    KatamariMovementPattern_Count,
+};
+
 struct katamari_entity {
     katamari_entity_kind kind;
+    katamari_movement_pattern movement_pattern;
     v2 position;
     v2 direction;
     v2 half_size;
     b32 alive;
 };
-
 
 struct katamari_assets {
     GLuint grass[3];

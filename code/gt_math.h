@@ -124,6 +124,12 @@ make_v4(float x, float y, float z, float w) {
     return result;
 }
 
+inline real32
+length_v2(v2 a) {
+    real32 result = sqrtf(a.x * a.x + a.y * a.y);
+    return result;
+}
+
 inline v2
 add_v2(v2 a, v2 b) {
     v2 result = {};
@@ -172,6 +178,11 @@ mul_v2(v2 a, real32 scalar) {
     result.y = a.y * scalar;
     
     return result;
+}
+
+inline v2
+normalize(v2 a) {
+    return mul_v2(a, 1.f / length_v2(a));
 }
 
 inline b32

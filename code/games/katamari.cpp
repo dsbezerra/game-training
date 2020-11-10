@@ -92,6 +92,22 @@ spawn_squirrel(katamari_state *state, u32 count) {
         new_squirrel.position.x = random_real32_in_range(-center.x, center.x);
         new_squirrel.position.y = random_real32_in_range(-center.y, center.y);
         
+#if 0
+        // NOTE(diego): Improve this...
+        real32 r = random_real32_in_range(0.f, 1.f);
+        if (r > .75f) {
+            new_squirrel.movement_pattern = KatamariMovementPattern_ZigZag;
+        } else if (r > .5f) {
+            new_squirrel.movement_pattern = KatamariMovementPattern_LeftRight;
+        } else if (r > .25f) {
+            new_squirrel.movement_pattern = KatamariMovementPattern_TopBottom;
+        } else {
+            new_squirrel.movement_pattern = KatamariMovementPattern_FollowPlayer;
+        }
+#else
+        new_squirrel.movement_pattern = KatamariMovementPattern_FollowPlayer;
+#endif
+        
         // NOTE(diego): We don't care how this is computed.
         int x_direction = random_int_in_range(-1, 1);
         while (x_direction == 0) {
@@ -111,10 +127,16 @@ internal void
 squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel) {
     // TODO(diego): Handle player collision.
     v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
-    if (squirrel->position.x < -center.x || squirrel->position.x > center.x)
-        squirrel->direction.x = -squirrel->direction.x;
-    if (squirrel->position.y < -center.y || squirrel->position.y > center.y)
-        squirrel->direction.y = -squirrel->direction.y;
+    
+    if (squirrel->movement_pattern == KatamariMovementPattern_LeftRight) {
+        if (squirrel->position.x < -center.x || squirrel->position.x > center.x)
+            squirrel->direction.x = -squirrel->direction.x;
+    }
+    
+    if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
+        if (squirrel->position.y < -center.y || squirrel->position.y > center.y)
+            squirrel->direction.y = -squirrel->direction.y;
+    }
 }
 
 internal void
@@ -196,8 +218,22 @@ update_game(katamari_state *state, game_input *input) {
         if (!squirrel->alive) continue;
         
         v2 vel = {};
-        vel.x += squirrel->direction.x * KATAMARI_SQUIRREL_SPEED * time_info.dt;
-        vel.y += squirrel->direction.y * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+        if (squirrel->movement_pattern == KatamariMovementPattern_LeftRight) {
+            vel.x += squirrel->direction.x * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+        }
+        if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
+            vel.y += squirrel->direction.y * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+        }
+        
+        if (squirrel->movement_pattern == KatamariMovementPattern_FollowPlayer) {
+            v2 distance = sub_v2(player->position, squirrel->position);
+            if (length_v2(distance) < 50.f) {
+                v2 normalized = normalize(distance);
+                vel.x += normalized.x * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+                vel.y += normalized.y * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+            }
+        }
+        
         squirrel->position = add_v2(squirrel->position, vel);
         squirrel_handle_collision(state, player, squirrel);
     }
