@@ -524,13 +524,13 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
                 
-                time_info.dt = last_dt;
-                
                 game_update_and_render(&state, &memory, &input);
                 
                 end_profiling(ProfilerItem_GameUpdateAndRender);
                 
                 render_profiler(state.window_dimensions, last_dt);
+                
+                SwapBuffers(window_dc);
                 
                 // Ensure a forced frame time
                 if (global_lock_fps) {
@@ -554,17 +554,14 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                     }
                 }
                 
-                SwapBuffers(window_dc);
-                
                 // Get the frame time
                 LARGE_INTEGER end_counter = win32_get_wallclock();
-                real32 ms_per_frame = 1000.0f * win32_get_seconds_elapsed(last_counter, end_counter);
-                int fps = (int) (global_perf_count_frequency / (end_counter.QuadPart - last_counter.QuadPart));
+                
                 last_dt = win32_get_seconds_elapsed(last_counter, end_counter);
                 last_counter = end_counter;
                 
                 time_info.current_time += last_dt;
-                
+                time_info.dt = last_dt;
             }
             
             ReleaseDC(window, window_dc);
