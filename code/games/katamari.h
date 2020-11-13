@@ -46,6 +46,13 @@ struct katamari_entity {
     v2 direction;
     v2 half_size;
     b32 alive;
+    
+    real32 speed;
+    real32 zigzag_t;
+    real32 zigzag_target;
+    
+    real32 stopped_t;
+    real32 stopped_t_target;
 };
 
 struct katamari_assets {

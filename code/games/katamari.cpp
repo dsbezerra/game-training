@@ -91,12 +91,16 @@ spawn_squirrel(katamari_state *state, u32 count) {
         
         new_squirrel.position.x = random_real32_in_range(-center.x, center.x);
         new_squirrel.position.y = random_real32_in_range(-center.y, center.y);
+        new_squirrel.speed = KATAMARI_SQUIRREL_SPEED;
+        new_squirrel.stopped_t_target = .0f;
+        new_squirrel.stopped_t = .0f;
         
-#if 0
-        // NOTE(diego): Improve this...
+#if 1
         real32 r = random_real32_in_range(0.f, 1.f);
         if (r > .75f) {
             new_squirrel.movement_pattern = KatamariMovementPattern_ZigZag;
+            new_squirrel.zigzag_t = 0.f;
+            new_squirrel.zigzag_target = new_squirrel.speed / random_real32_in_range(1.f, 20.f);
         } else if (r > .5f) {
             new_squirrel.movement_pattern = KatamariMovementPattern_LeftRight;
         } else if (r > .25f) {
@@ -105,7 +109,7 @@ spawn_squirrel(katamari_state *state, u32 count) {
             new_squirrel.movement_pattern = KatamariMovementPattern_FollowPlayer;
         }
 #else
-        new_squirrel.movement_pattern = KatamariMovementPattern_FollowPlayer;
+        new_squirrel.movement_pattern = KatamariMovementPattern_ZigZag;
 #endif
         
         // NOTE(diego): We don't care how this is computed.
@@ -123,19 +127,56 @@ spawn_squirrel(katamari_state *state, u32 count) {
     }
 }
 
+internal b32
+squirrel_collided(katamari_state *state, katamari_entity *squirrel, u8 wall_number) {
+    
+    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    
+    b32 result = false;
+    
+    switch (wall_number) {
+        case 0:
+        case 1: { // left or right
+            result = squirrel->position.x < -center.x || squirrel->position.x > center.x; 
+        } break;
+        
+        case 2:
+        case 3: { // top or bottom
+            result = squirrel->position.y < -center.y || squirrel->position.y > center.y;
+        } break;
+        
+        default: {
+            // No-op
+        } break;
+    }
+    
+    return result;
+}
+
 internal void
 squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel) {
     // TODO(diego): Handle player collision.
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    
+    b32 lr_collided = squirrel_collided(state, squirrel, 0) || squirrel_collided(state, squirrel, 1);
+    b32 tb_collided = squirrel_collided(state, squirrel, 2) || squirrel_collided(state, squirrel, 3);
     
     if (squirrel->movement_pattern == KatamariMovementPattern_LeftRight) {
-        if (squirrel->position.x < -center.x || squirrel->position.x > center.x)
+        if (lr_collided) 
             squirrel->direction.x = -squirrel->direction.x;
     }
-    
     if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
-        if (squirrel->position.y < -center.y || squirrel->position.y > center.y)
+        if (tb_collided)
             squirrel->direction.y = -squirrel->direction.y;
+    }
+    if (squirrel->movement_pattern == KatamariMovementPattern_ZigZag) {
+        if (lr_collided) {
+            squirrel->direction.x = -squirrel->direction.x;
+            squirrel->zigzag_t = .0f;
+        }
+        if (tb_collided) {
+            squirrel->direction.y = -squirrel->direction.y;
+            squirrel->zigzag_t = .0f;
+        }
     }
 }
 
@@ -219,18 +260,38 @@ update_game(katamari_state *state, game_input *input) {
         
         v2 vel = {};
         if (squirrel->movement_pattern == KatamariMovementPattern_LeftRight) {
-            vel.x += squirrel->direction.x * KATAMARI_SQUIRREL_SPEED * time_info.dt;
-        }
-        if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
-            vel.y += squirrel->direction.y * KATAMARI_SQUIRREL_SPEED * time_info.dt;
-        }
-        
-        if (squirrel->movement_pattern == KatamariMovementPattern_FollowPlayer) {
+            vel.x += squirrel->direction.x * squirrel->speed * time_info.dt;
+        } else if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
+            vel.y += squirrel->direction.y * squirrel->speed * time_info.dt;
+        } else if (squirrel->movement_pattern == KatamariMovementPattern_FollowPlayer) {
             v2 distance = sub_v2(player->position, squirrel->position);
             if (length_v2(distance) < 50.f) {
                 v2 normalized = normalize(distance);
-                vel.x += normalized.x * KATAMARI_SQUIRREL_SPEED * time_info.dt;
-                vel.y += normalized.y * KATAMARI_SQUIRREL_SPEED * time_info.dt;
+                vel.x += normalized.x * squirrel->speed * time_info.dt;
+                vel.y += normalized.y * squirrel->speed * time_info.dt;
+            }
+        } else if (squirrel->movement_pattern == KatamariMovementPattern_ZigZag) {
+            if (squirrel->stopped_t_target > .0f) {
+                squirrel->stopped_t += time_info.dt;
+                if (squirrel->stopped_t > squirrel->stopped_t_target) {
+                    squirrel->stopped_t = .0f;
+                    squirrel->stopped_t_target = .0f;
+                }
+            } else {
+                if (squirrel->zigzag_t > squirrel->zigzag_target) {
+                    squirrel->zigzag_t -= squirrel->zigzag_target;
+                    squirrel->stopped_t_target = random_real32_in_range(1.f, 3.f);
+                    real32 r = random_real32_in_range(0.f, 1.f);
+                    if (r > 0.5f) {
+                        squirrel->direction.x = -squirrel->direction.x;
+                    } else {
+                        squirrel->direction.y = -squirrel->direction.y;
+                    }
+                }
+                
+                vel.x += squirrel->direction.x * squirrel->speed * time_info.dt;
+                vel.y += squirrel->direction.y * squirrel->speed * time_info.dt;
+                squirrel->zigzag_t += time_info.dt;
             }
         }
         
