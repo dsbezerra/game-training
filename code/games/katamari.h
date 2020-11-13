@@ -84,6 +84,7 @@ internal katamari_entity make_grass(katamari_entity_kind kind, real32 x, real32 
 internal katamari_entity* find_first_entity(katamari_state *state, katamari_entity_kind kind);
 
 internal void spawn_squirrel(katamari_state *state, u32 count);
+internal b32 squirrel_collided(katamari_state *state, katamari_entity *squirrel, u8 wall_number);
 internal void squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel);
 
 internal void init_game(katamari_state *state);
