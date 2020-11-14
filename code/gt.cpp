@@ -91,12 +91,13 @@ load_texture(char *filename) {
 
 internal void
 load_menu_arts(app_state *state) {
-    state->menu_art.dodger = load_texture("./data/menu_arts/dodger.png");
-    state->menu_art.memory_puzzle = load_texture("./data/menu_arts/memory_puzzle.png");
-    state->menu_art.slide_puzzle = load_texture("./data/menu_arts/slide_puzzle.png");
-    state->menu_art.simon = load_texture("./data/menu_arts/simon.png");
-    state->menu_art.nibbles = load_texture("./data/menu_arts/nibbles.png");
-    state->menu_art.tetris = load_texture("./data/menu_arts/tetris.png");
+    state->menu_art.dodger          = load_texture("./data/menu_arts/dodger.png");
+    state->menu_art.memory_puzzle   = load_texture("./data/menu_arts/memory_puzzle.png");
+    state->menu_art.slide_puzzle    = load_texture("./data/menu_arts/slide_puzzle.png");
+    state->menu_art.simon           = load_texture("./data/menu_arts/simon.png");
+    state->menu_art.nibbles         = load_texture("./data/menu_arts/nibbles.png");
+    state->menu_art.tetris          = load_texture("./data/menu_arts/tetris.png");
+    state->menu_art.katamari        = load_texture("./data/menu_arts/katamari.png");
 }
 
 internal void
@@ -108,6 +109,7 @@ free_menu_arts(app_state *state) {
         state->menu_art.simon,
         state->menu_art.nibbles,
         state->menu_art.tetris,
+        state->menu_art.katamari,
     };
     glDeleteTextures(array_count(arts), arts);
 }

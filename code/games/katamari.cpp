@@ -153,9 +153,72 @@ squirrel_collided(katamari_state *state, katamari_entity *squirrel, u8 wall_numb
     return result;
 }
 
+#define DEBUG_BOX 0
+
+#if DEBUG_BOX
+internal void
+draw_box_outline(katamari_state *state, box b) {
+    
+    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    
+    real32 stwidth = 2.f;
+    
+    v2 tmin = make_v2(center.x + b.x, center.y + b.y);
+    v2 tmax = make_v2(tmin.x + b.width, tmin.y + stwidth);
+    
+    v2 bmin = make_v2(center.x + b.x, center.y + b.y + b.height);
+    v2 bmax = make_v2(bmin.x + b.width, bmin.y - stwidth);
+    
+    v4 color = make_color(0xFFFFFF00);
+    
+    real32 z_index = -5.f;
+    
+    immediate_begin();
+    immediate_quad(tmin, tmax, color, z_index);
+    immediate_quad(bmin, bmax, color, z_index);
+    immediate_flush();
+}
+#endif
+
 internal void
 squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel) {
-    // TODO(diego): Handle player collision.
+    
+    box sbox = {};
+    sbox.x = squirrel->position.x - squirrel->half_size.x;
+    sbox.y = squirrel->position.y - squirrel->half_size.y;
+    sbox.width = squirrel->half_size.x; 
+    sbox.height = squirrel->half_size.y;
+    
+    box pbox = {};
+    pbox.x = player->position.x - player->half_size.x;
+    pbox.y = player->position.y - player->half_size.y;
+    pbox.width = player->half_size.x; 
+    pbox.height = player->half_size.y;
+    
+#if DEBUG_BOX
+    draw_box_outline(state, sbox);
+    draw_box_outline(state, pbox);
+#endif
+    
+    if (aabb_vs_aabb(pbox, sbox)) {
+        real32 ls = length_v2(squirrel->half_size);
+        real32 lp = length_v2(player->half_size);
+        
+        if (ls > lp) {
+            state->health--;
+            if (state->health < 1) {
+                state->game_mode = GameMode_GameOver;
+                return;
+            }
+        } else {
+            player->half_size = add_v2(player->half_size, squirrel->half_size);
+            squirrel->alive = false;
+            if (state->health < 3) {
+                state->health++;
+            }
+        }
+        return;
+    }
     
     b32 lr_collided = squirrel_collided(state, squirrel, 0) || squirrel_collided(state, squirrel, 1);
     b32 tb_collided = squirrel_collided(state, squirrel, 2) || squirrel_collided(state, squirrel, 3);
@@ -299,6 +362,11 @@ update_game(katamari_state *state, game_input *input) {
         squirrel_handle_collision(state, player, squirrel);
     }
     
+    if (player->half_size.x > state->dimensions.width &&
+        player->half_size.y > state->dimensions.height) {
+        state->game_mode = GameMode_GameOver;
+    }
+    
     if (state->spawn_t >= state->spawn_t_target) {
         state->spawn_t -= state->spawn_t_target;
         spawn_squirrel(state, 1);
@@ -395,7 +463,7 @@ draw_hud(katamari_state *state) {
     v4 backing_color = make_color(0xFFFFFFFF);
     
     v2 backing_min = make_v2(health_x_margin - 2.f, health_y_margin);
-    v2 backing_max = make_v2(backing_min.x + health_width + health_pad, backing_min.y + state->health * health_height + (state->health - 1) * health_pad);
+    v2 backing_max = make_v2(backing_min.x + health_width + health_pad, backing_min.y + state->health * health_height + health_pad * state->health);
     
     immediate_quad(backing_min, backing_max, backing_color, 1.f);
     
@@ -406,7 +474,7 @@ draw_hud(katamari_state *state) {
         v2 max = make_v2(min.x + health_width, min.y + health_height);
         immediate_quad(min, max, color, 1.f);
         
-        y_cursor += health_pad *.5f + health_height;
+        y_cursor += health_pad + health_height;
     }
     
     immediate_flush();
@@ -434,9 +502,8 @@ draw_game_view(katamari_state *state) {
 
 internal void
 katamari_menu_art(app_state *state, v2 min, v2 max) {
-    v4 background = make_color(0xff5a1c5f);
     immediate_begin();
-    immediate_quad(min, max, background, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.katamari, 1.f);
     immediate_flush();
 }
 

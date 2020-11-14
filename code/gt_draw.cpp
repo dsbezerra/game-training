@@ -281,7 +281,7 @@ immediate_flush() {
     GLint uv_loc = immediate->current_shader.uv_loc;
     GLint z_index_loc = immediate->current_shader.z_index_loc;
     
-    open_gl->glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
+    open_gl->glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
     open_gl->glEnableVertexAttribArray(position_loc);
     
     open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*) sizeof(v3));

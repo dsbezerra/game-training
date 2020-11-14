@@ -11,7 +11,7 @@ Description: The original Katamari Damacy game was in a 3d world, but a 2d versi
 
 #define KATAMARI_SQUIRREL_BASE_INDEX 32
 
-#define KATAMARI_PLAYER_SIZE 24.f
+#define KATAMARI_PLAYER_SIZE 32.f
 #define KATAMARI_SQUIRREL_MAX_SIZE 45.f
 
 #define KATAMARI_SQUIRREL_SPEED 50.f

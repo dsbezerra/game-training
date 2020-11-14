@@ -30,6 +30,7 @@ struct game_menu_art {
     GLuint simon;
     GLuint nibbles;
     GLuint tetris;
+    GLuint katamari;
 };
 
 struct game_button_state {
