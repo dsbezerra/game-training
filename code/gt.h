@@ -110,7 +110,19 @@ struct game_memory {
     void *permanent_storage;
 };
 
-#include "gt_games.h"
+enum game {
+    Game_None,
+    Game_Dodger,
+    Game_MemoryPuzzle,
+    Game_SlidePuzzle,
+    Game_Simon,
+    Game_Nibbles,
+    Game_Tetris,
+    Game_Katamari,
+    Game_Sokoban,
+    
+    Game_Count,
+};
 
 struct app_state {
     v2i window_dimensions;
@@ -127,6 +139,8 @@ struct app_state {
     loaded_font game_title_font;
     game_memory *memory;
 };
+
+#include "gt_games.h"
 
 internal void game_output_sound(game_sound_output_buffer *sound_buffer);
 internal void game_update_and_render(app_state *state, game_memory *memory, game_input *input);
@@ -145,3 +159,4 @@ internal GLint load_menu_art(char *filename);
 
 global_variable b32 global_vsync = false;
 global_variable b32 global_lock_fps = false;
+

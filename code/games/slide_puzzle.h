@@ -84,6 +84,6 @@ internal void update_generating(slide_puzzle_state *state);
 internal void draw_board(slide_puzzle_state *state);
 internal void draw_game_view(slide_puzzle_state *state);
 
-internal void slide_puzzle_menu_art(v2 min, v2 max);
+internal void slide_puzzle_menu_art(app_state *state, v2 min, v2 max);
 internal void slide_puzzle_game_restart(slide_puzzle_state *state);
 internal void slide_puzzle_game_update_and_render(game_memory *memory, game_input *input);

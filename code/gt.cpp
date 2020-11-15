@@ -121,6 +121,7 @@ free_menu_arts(app_state *state) {
 #include "games/nibbles.cpp"
 #include "games/tetris.cpp"
 #include "games/katamari.cpp"
+#include "games/sokoban.cpp"
 
 //
 // Game titles
@@ -134,6 +135,7 @@ global_variable char* game_titles[] = {
     NIBBLES_TITLE,
     TETRIS_TITLE,
     KATAMARI_DAMACY_TITLE,
+    SOKOBAN_TITLE,
 };
 
 //
@@ -149,6 +151,7 @@ void (*menu_table[])(app_state *state, v2 min, v2 max) = {
     nibbles_menu_art,
     tetris_menu_art,
     katamari_menu_art,
+    sokoban_menu_art,
 };
 
 //
@@ -164,6 +167,7 @@ void (*game_free_table[])(game_memory *memory) = {
     0, // Nibbles
     0, // Tetris
     katamari_game_free,
+    0, // Sokoban
 };
 
 // 
@@ -179,6 +183,7 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
     nibbles_game_update_and_render,
     tetris_game_update_and_render,
     katamari_game_update_and_render,
+    sokoban_game_update_and_render,
 };
 
 internal void *

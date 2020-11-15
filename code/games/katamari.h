@@ -99,7 +99,7 @@ internal void draw_grass(katamari_state *state, katamari_entity *entity);
 internal void draw_entity(katamari_state *state, katamari_entity *entity);
 internal void draw_hud(katamari_state *state);
 
-internal void katamari_menu_art(v2 min, v2 max);
+internal void katamari_menu_art(app_state *state, v2 min, v2 max);
 internal void katamari_game_restart(katamari_state *state);
 internal void katamari_game_update_and_render(game_memory *memory, game_input *input);
 internal void katamari_game_free(game_memory *memory);

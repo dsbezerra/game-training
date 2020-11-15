@@ -5,18 +5,6 @@
 #include "games/nibbles.h"
 #include "games/tetris.h"
 #include "games/katamari.h"
-
-enum game {
-    Game_None,
-    Game_Dodger,
-    Game_MemoryPuzzle,
-    Game_SlidePuzzle,
-    Game_Simon,
-    Game_Nibbles,
-    Game_Tetris,
-    Game_Katamari,
-    
-    Game_Count,
-};
+#include "games/sokoban.h"
 
 

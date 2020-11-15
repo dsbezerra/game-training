@@ -111,6 +111,6 @@ internal void draw_next_piece(tetris_state *state);
 internal void draw_hud(tetris_state *state);
 internal void draw_game_view(tetris_state *state);
 
-internal void tetris_menu_art(v2 min, v2 max);
+internal void tetris_menu_art(app_state *state, v2 min, v2 max);
 internal void tetris_game_restart(tetris_state *state);
 internal void tetris_game_update_and_render(game_memory *memory, game_input *input);

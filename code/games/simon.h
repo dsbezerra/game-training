@@ -60,6 +60,6 @@ internal void update_hovering_button(simon_state *state);
 
 internal void draw_game_view(simon_state *state);
 
-internal void simon_menu_art(v2 min, v2 max);
+internal void simon_menu_art(app_state *state, v2 min, v2 max);
 internal void simon_game_restart(simon_state *state);
 internal void simon_game_update_and_render(game_memory *memory, game_input *input);

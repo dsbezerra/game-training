@@ -68,6 +68,6 @@ internal void draw_snake(nibbles_state *state);
 internal void draw_board(nibbles_state *state);
 internal void draw_game_view(nibbles_state *state);
 
-internal void nibbles_menu_art(v2 min, v2 max);
+internal void nibbles_menu_art(app_state *state, v2 min, v2 max);
 internal void nibbles_game_restart(nibbles_state *state);
 internal void nibbles_game_update_and_render(game_memory *memory, game_input *input);

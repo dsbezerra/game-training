@@ -49,7 +49,7 @@ struct dodger_state {
 
 internal void dodger_game_restart(dodger_state *state);
 
-internal void dodger_menu_art(v2i min, v2i max);
+internal void dodger_menu_art(app_state *state, v2 min, v2 max);
 internal void dodger_game_update_and_render(game_memory *memory, game_input *input);
 
 internal void init_world(dodger_state *state);
