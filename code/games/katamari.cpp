@@ -550,7 +550,6 @@ katamari_game_update_and_render(game_memory *memory, game_input *input) {
                 state->game_mode = GameMode_Playing;
             }
         }
-        
         if (pressed(Button_Enter)) {
             switch (state->menu_selected_item) {
                 case 0: {
