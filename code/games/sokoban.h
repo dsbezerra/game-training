@@ -19,6 +19,8 @@ struct sokoban_state {
     b32 quit_was_selected;
 };
 
+internal void init_game(sokoban_state *state);
+
 internal void draw_game_view(sokoban_state *state);
 
 internal void sokoban_menu_art(v2 min, v2 max);
