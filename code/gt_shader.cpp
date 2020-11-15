@@ -1,4 +1,5 @@
 global_variable shader global_shader;
+global_variable shader global_basic_3d_shader;
 
 internal shader_source
 parse_shader(char *filepath) {
@@ -149,4 +150,5 @@ load_shader(char *filepath) {
 internal void
 init_shaders() {
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
+    global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");
 }
