@@ -58,4 +58,4 @@ internal void draw_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 colo
 
 internal void set_shader(shader new_shader);
 internal void refresh_shader_transform();
-internal void render_right_handed(int width, int height);
+internal void render_2d_right_handed(int width, int height);

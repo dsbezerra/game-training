@@ -10,7 +10,11 @@ update_game(sokoban_state *state, game_input *input) {
 
 internal void
 draw_game_view(sokoban_state *state) {
-    // TODO
+    if (state->game_mode == GameMode_Playing) {
+        // TODO
+    } else {
+        draw_menu(SOKOBAN_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+    }
 }
 
 internal void

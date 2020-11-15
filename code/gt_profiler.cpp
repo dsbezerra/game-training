@@ -34,7 +34,7 @@ render_profiler(v2i dim, real32 dt) {
     char buf[256];
     sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms\nGPU Memory: using %dMB of %dMB\n%s\nUpdate Render: %.2fms\nVsync: %s\nFPS: %s\nDraw calls: %d\n", dim.width, dim.height, dt * 1000.f, usage / 1024, memory_info.total_memory_in_kb / 1024, open_gl->info.version, game_update_and_render_time.timer, vsync, fps_lock, draw_call_count);
     
-    render_right_handed(dim.width, dim.height);
+    render_2d_right_handed(dim.width, dim.height);
     
     draw_text(p.x, p.y, (u8 *) buf, &global_profiling_font.font, color);
 }

@@ -401,7 +401,7 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
     GLsizei height = (GLsizei) state->window_dimensions.y;
     glViewport(0, 0, width, height);
     
-    render_right_handed(width, height);
+    render_2d_right_handed(width, height);
     
     immediate_begin();
     mode m = state->current_mode;
