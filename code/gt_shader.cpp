@@ -136,8 +136,9 @@ load_shader(char *filepath) {
     delete_shaders(2, vertex_shader, fragment_shader);
     
     result.program = program;
-    result.projection_loc = open_gl->glGetUniformLocation(program, "projection");
+    result.model_loc = open_gl->glGetUniformLocation(program, "model");
     result.view_loc = open_gl->glGetUniformLocation(program, "view");
+    result.projection_loc = open_gl->glGetUniformLocation(program, "projection");
     result.texture_loc = open_gl->glGetUniformLocation(program, "ftex");
     result.position_loc = 0;
     result.color_loc    = 1;

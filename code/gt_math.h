@@ -488,6 +488,17 @@ scale(v2 scale) {
     return result;
 }
 
+inline mat4
+scale(v3 scale) {
+    mat4 result = identity();
+    
+    result.e[0 + 0 * 4] = scale.x;
+    result.e[1 + 1 * 4] = scale.y;
+    result.e[2 + 2 * 4] = scale.z;
+    
+    return result;
+}
+
 // NOTE(diego): Not tested.
 inline mat4
 x_rotation(real32 angle)

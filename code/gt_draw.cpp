@@ -38,7 +38,7 @@ immediate_init() {
     
     //glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LEQUAL);
 }
 
 internal void
@@ -330,6 +330,9 @@ refresh_shader_transform() {
 internal void
 render_2d_right_handed(int width, int height) {
     
+    // NOTE(diego): This shader is reused for all 2D rendering.
+    set_shader(global_shader);
+    
 #if 0
     mat4 tm = identity();
     
@@ -352,6 +355,19 @@ render_2d_right_handed(int width, int height) {
     projection_matrix = ortho(ortho_size, aspect_ratio, f, n);
     view_matrix       = translate(make_v2(-width / 2.f, ortho_size));
 #endif
+    
+    refresh_shader_transform();
+}
+
+internal void
+render_3d(int width, int height) {
+    
+    real32 aspect_ratio = (real32) width / (real32) height;
+    real32 n = 0.1f;
+    real32 f = 100.f;
+    
+    projection_matrix = perspective(45.0f, aspect_ratio, f, n);
+    view_matrix       = identity();
     
     refresh_shader_transform();
 }

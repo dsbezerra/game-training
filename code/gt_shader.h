@@ -7,8 +7,9 @@ struct shader_source {
 struct shader {
     GLuint program;
     
-    GLint projection_loc;
+    GLint model_loc;
     GLint view_loc;
+    GLint projection_loc;
     GLint texture_loc;
     
     GLint position_loc;

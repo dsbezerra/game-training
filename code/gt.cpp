@@ -15,6 +15,8 @@ global_variable real32 global_press_t = .0f;
 internal void
 draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 quit_was_selected) {
     
+    render_2d_right_handed(dim.width, dim.height);
+    
     v4 white          = make_color(0xffffffff);
     v4 default_color  = make_color(0xffaaaaaa);
     v4 selected_color = make_color(0xffffff00);
