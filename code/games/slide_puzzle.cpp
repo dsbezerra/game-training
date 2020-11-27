@@ -146,7 +146,7 @@ draw_board(slide_puzzle_state *state) {
     //
     immediate_begin();
     
-    immediate_quad(make_v2(.0f, 0.f), make_v2((real32) dim.width, (real32) dim.height), make_color(0xff022c56), 1.f);
+    immediate_quad(make_v2(.0f, 0.f), make_v2((real32) dim.width, (real32) dim.height), make_color(0xff022c56));
     
     b32 should_animate_slide = state->swap.to_index != -1 && state->swap.from_index != -1;
     int from_tile_x = state->swap.from_index % SLIDE_PUZZLE_BOARD_COUNT;
@@ -157,7 +157,7 @@ draw_board(slide_puzzle_state *state) {
     v2 board_min = make_v2(start.x, start.y);
     v2 board_max = make_v2(board_min.x + board_size, board_min.y + board_size);
     
-    immediate_quad(board_min, board_max, make_color(0xff008200), 1.f);
+    immediate_quad(board_min, board_max, make_color(0xff008200));
     
     for (s8 tile_y = 0; tile_y < SLIDE_PUZZLE_BOARD_COUNT; ++tile_y) {
         for (s8 tile_x = 0; tile_x < SLIDE_PUZZLE_BOARD_COUNT; ++tile_x) {
@@ -193,7 +193,7 @@ draw_board(slide_puzzle_state *state) {
             min = add_v2(min, start);
             max = add_v2(max, start);
             
-            immediate_quad(min, max, make_color(0xff00cf00), 1.f);
+            immediate_quad(min, max, make_color(0xff00cf00));
         }
     }
     
@@ -271,7 +271,7 @@ internal void
 slide_puzzle_menu_art(app_state *state, v2 min, v2 max) {
     v4 background = make_color(0xff172e56);
     immediate_begin();
-    immediate_textured_quad(min, max, state->menu_art.slide_puzzle, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.slide_puzzle);
     immediate_flush();
 }
 

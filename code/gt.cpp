@@ -342,14 +342,14 @@ render_mode_selecting(app_state *state) {
             
             v4 a = make_v4(1.f, 1.0f, 1.f, .2f);
             v4 b = make_v4(1.f, 1.0f, 1.f, .0f);
-            immediate_quad(min, max, lerp_color(b, t, a), 1.f);
+            immediate_quad(min, max, lerp_color(b, t, a));
             
             // Draw select borders
             v4 border_t_color = lerp_color(border_color, t, border_color_almost_transparent);
-            immediate_quad(left_min, left_max, border_t_color, 1.f);
-            immediate_quad(right_min, right_max, border_t_color, 1.f);
-            immediate_quad(top_min, top_max, border_t_color, 1.f);
-            immediate_quad(bottom_min, bottom_max, border_t_color, 1.f);
+            immediate_quad(left_min, left_max, border_t_color);
+            immediate_quad(right_min, right_max, border_t_color);
+            immediate_quad(top_min, top_max, border_t_color);
+            immediate_quad(bottom_min, bottom_max, border_t_color);
             
             immediate_flush();
         }

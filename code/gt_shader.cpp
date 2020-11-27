@@ -142,7 +142,6 @@ load_shader(char *filepath) {
     result.position_loc = 0;
     result.color_loc    = 1;
     result.uv_loc       = 2;
-    result.z_index_loc  = 3;
     
     return result;
 }

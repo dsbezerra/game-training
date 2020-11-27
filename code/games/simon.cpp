@@ -175,7 +175,7 @@ draw_game_view(simon_state *state) {
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
             min = add_v2(min, offset_to_center);
             max = add_v2(max, offset_to_center);
-            immediate_quad(min, max, yellow, 1.f);
+            immediate_quad(min, max, yellow);
         }
         y = 1;
         // Red
@@ -184,7 +184,7 @@ draw_game_view(simon_state *state) {
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
             min = add_v2(min, offset_to_center);
             max = add_v2(max, offset_to_center);
-            immediate_quad(min, max, red, 1.f);
+            immediate_quad(min, max, red);
         }
         x = 1;
         y = 0;
@@ -194,7 +194,7 @@ draw_game_view(simon_state *state) {
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
             min = add_v2(min, offset_to_center);
             max = add_v2(max, offset_to_center);
-            immediate_quad(min, max, blue, 1.f);
+            immediate_quad(min, max, blue);
         }
         y = 1;
         // Green
@@ -203,7 +203,7 @@ draw_game_view(simon_state *state) {
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
             min = add_v2(min, offset_to_center);
             max = add_v2(max, offset_to_center);
-            immediate_quad(min, max, green, 1.f);
+            immediate_quad(min, max, green);
         }
         
         immediate_flush();
@@ -216,7 +216,7 @@ draw_game_view(simon_state *state) {
 internal void
 simon_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_textured_quad(min, max, state->menu_art.simon, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.simon);
     immediate_flush();
 }
 

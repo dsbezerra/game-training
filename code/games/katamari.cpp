@@ -386,7 +386,7 @@ draw_player(katamari_state *state, katamari_entity *entity) {
     v4 color = make_color(0xFFFFFFFF);
     
     immediate_begin();
-    immediate_quad(min, max, color, 1.f);
+    immediate_quad(min, max, color);
     immediate_flush();
 }
 
@@ -405,7 +405,7 @@ draw_squirrel(katamari_state *state, katamari_entity *entity) {
     // NOTE(diego): To draw all squirrel with a single draw call we could sort the entities array and use onde immediate_begin and immediate_flush for each group of entities.
     // Or save all squirrels in an exclusive array.
     immediate_begin();
-    immediate_textured_quad(min, max, texture, 1.f);
+    immediate_textured_quad(min, max, texture);
     immediate_flush();
 }
 
@@ -422,7 +422,7 @@ draw_grass(katamari_state *state, katamari_entity *entity) {
     // NOTE(diego): To draw all grasses with a single draw call we could sort the entities array and use one immediate_begin and immediate_flush for each group of entities.
     // Or save all grasses in an exclusive array.
     immediate_begin();
-    immediate_textured_quad(min, max, state->assets.grass[index], 1.f);
+    immediate_textured_quad(min, max, state->assets.grass[index]);
     immediate_flush();
 }
 
@@ -465,14 +465,14 @@ draw_hud(katamari_state *state) {
     v2 backing_min = make_v2(health_x_margin - 2.f, health_y_margin);
     v2 backing_max = make_v2(backing_min.x + health_width + health_pad, backing_min.y + state->health * health_height + health_pad * state->health);
     
-    immediate_quad(backing_min, backing_max, backing_color, 1.f);
+    immediate_quad(backing_min, backing_max, backing_color);
     
     real32 y_cursor = health_y_margin + health_pad * .5f;
     
     for (u8 h = 0; h < state->health; ++h) {
         v2 min = make_v2(health_x_margin, y_cursor);
         v2 max = make_v2(min.x + health_width, min.y + health_height);
-        immediate_quad(min, max, color, 1.f);
+        immediate_quad(min, max, color);
         
         y_cursor += health_pad + health_height;
     }
@@ -484,7 +484,7 @@ internal void
 draw_game_view(katamari_state *state) {
     if (state->game_mode == GameMode_Playing) {
         immediate_begin();
-        immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff14ce00), 1.f);
+        immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff14ce00));
         immediate_flush();
         
         for (int entity_index = 0; entity_index < array_count(state->entities); ++entity_index) {
@@ -503,7 +503,7 @@ draw_game_view(katamari_state *state) {
 internal void
 katamari_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_textured_quad(min, max, state->menu_art.katamari, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.katamari);
     immediate_flush();
 }
 

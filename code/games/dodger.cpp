@@ -121,13 +121,13 @@ check_for_collision(dodger_player *player, dodger_bad_guy *bad_guy) {
 internal void
 draw_player(dodger_player *player) {
     v4 color = make_color(0xffffffff);
-    immediate_quad(player->position, add_v2(player->position, player->size), color, 1.f);
+    immediate_quad(player->position, add_v2(player->position, player->size), color);
 }
 
 internal void
 draw_bad_guy(dodger_bad_guy *bad_guy) {
     v4 color = make_color(0xff66ff66);
-    immediate_quad(bad_guy->position, add_v2(bad_guy->position, bad_guy->size), color, 1.f);
+    immediate_quad(bad_guy->position, add_v2(bad_guy->position, bad_guy->size), color);
 }
 
 internal void
@@ -193,11 +193,11 @@ dodger_menu_art(app_state *state, v2 min, v2 max) {
         v2 size = make_v2(24.f, 24.f);
         v2 position = make_v2((min.x + max.x - size.width) / 2.f, (min.y + max.y - size.height) / 2.f);
         v4 color = make_color(0xffffffff);
-        immediate_quad(position, add_v2(position, size), color, 1.f);
+        immediate_quad(position, add_v2(position, size), color);
     }
 #endif
     
-    immediate_textured_quad(min, max, state->menu_art.dodger, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.dodger);
     
     immediate_flush();
 }

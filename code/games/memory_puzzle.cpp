@@ -171,7 +171,7 @@ draw_square(memory_card *card, v2 min, v2 max) {
     v2 square_min = add_v2(min, square_size);
     v2 square_max = sub_v2(max, square_size);
     
-    immediate_quad(square_min, square_max, card->color, 1.f);
+    immediate_quad(square_min, square_max, card->color);
 }
 
 internal void
@@ -226,7 +226,7 @@ draw_lines(memory_card *card, v2 min, v2 max) {
         
         v2 line_min = make_v2(min.x, y_cursor);
         v2 line_max = make_v2(max.x, y_cursor + line_height);
-        immediate_quad(line_min, line_max, card->color, 1.f);
+        immediate_quad(line_min, line_max, card->color);
         
         y_cursor += advance_y;
     }
@@ -241,8 +241,8 @@ draw_double_square(memory_card *card, v2 min, v2 max) {
     v2 second_min = first_max;
     v2 second_max = add_v2(second_min, size);
     
-    immediate_quad(first_min, first_max, card->color, 1.f);
-    immediate_quad(second_min, second_max, card->color, 1.f);
+    immediate_quad(first_min, first_max, card->color);
+    immediate_quad(second_min, second_max, card->color);
 }
 
 internal void
@@ -258,20 +258,21 @@ draw_diamond(memory_card *card, v2 min, v2 max) {
     v2 default_uv = make_v2(-1.f, -1.f);
     
     // First triangle
-    immediate_vertex(make_v3(half.x, min.y, 1.f), card->color, default_uv, 1.f);
-    immediate_vertex(make_v3(min.x, half.y, 1.f), card->color, default_uv, 1.f);
-    immediate_vertex(make_v3(half.x, max.y, 1.f), card->color, default_uv, 1.f);
+    real32 z_index = 1.f;
+    immediate_vertex(make_v3(half.x, min.y, z_index), card->color, default_uv);
+    immediate_vertex(make_v3(min.x, half.y, z_index), card->color, default_uv);
+    immediate_vertex(make_v3(half.x, max.y, z_index), card->color, default_uv);
     
     // Second triangle
-    immediate_vertex(make_v3(half.x, min.y, 1.f), card->color, default_uv, 1.f);
-    immediate_vertex(make_v3(half.x, max.y, 1.f), card->color, default_uv, 1.f);
-    immediate_vertex(make_v3(max.x, half.y, 1.f), card->color, default_uv, 1.f);
+    immediate_vertex(make_v3(half.x, min.y, z_index), card->color, default_uv);
+    immediate_vertex(make_v3(half.x, max.y, z_index), card->color, default_uv);
+    immediate_vertex(make_v3(max.x, half.y, z_index), card->color, default_uv);
 }
 
 internal void
 memory_puzzle_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_textured_quad(min, max, state->menu_art.memory_puzzle, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.memory_puzzle);
     immediate_flush();
 }
 
@@ -309,7 +310,7 @@ draw_game_view(memory_puzzle_state *state) {
                 memory_card card = world.field[field_x][field_y];
                 if (!card.flipped) {
                     v4 white = make_color(0xffffffff);
-                    immediate_quad(min, max, white, 1.f);
+                    immediate_quad(min, max, white);
                     continue;
                 }
                 
@@ -379,10 +380,10 @@ draw_game_view(memory_puzzle_state *state) {
             v2 bottom_min = make_v2(min.x, max.y);
             v2 bottom_max = make_v2(max.x, max.y - half_stroke);
             
-            immediate_quad(left_min, left_max, color, 1.f);
-            immediate_quad(right_min, right_max, color, 1.f);
-            immediate_quad(top_min, top_max, color, 1.f);
-            immediate_quad(bottom_min, bottom_max, color, 1.f);
+            immediate_quad(left_min, left_max, color);
+            immediate_quad(right_min, right_max, color);
+            immediate_quad(top_min, top_max, color);
+            immediate_quad(bottom_min, bottom_max, color);
         }
         
         immediate_flush();

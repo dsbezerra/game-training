@@ -524,7 +524,7 @@ draw_grid(tetris_state *state) {
             }
             v2 min = make_v2(start_x + x * block_size, start_y + y * block_size);
             v2 max = make_v2(min.x + block_size, min.y + block_size);
-            immediate_quad(min, max, block.color, 1.f);
+            immediate_quad(min, max, block.color);
         }
     }
     
@@ -534,25 +534,25 @@ draw_grid(tetris_state *state) {
         // Top border
         v2 min = make_v2(start_x, start_y);
         v2 max = make_v2(min.x + grid_w, min.y + border_size);
-        immediate_quad(min, max, border_color, 1.f); 
+        immediate_quad(min, max, border_color); 
     }
     {
         // Bottom border
         v2 min = make_v2(start_x, start_y + grid_h - border_size);
         v2 max = make_v2(min.x + grid_w, min.y + border_size);
-        immediate_quad(min, max, border_color, 1.f); 
+        immediate_quad(min, max, border_color); 
     }
     {
         // Left border
         v2 min = make_v2(start_x, start_y);
         v2 max = make_v2(min.x + border_size, min.y + grid_h);
-        immediate_quad(min, max, border_color, 1.f); 
+        immediate_quad(min, max, border_color); 
     }
     {
         // Right border
         v2 min = make_v2(start_x + grid_w - border_size, start_y);
         v2 max = make_v2(min.x + border_size, min.y + grid_h);
-        immediate_quad(min, max, border_color, 1.f); 
+        immediate_quad(min, max, border_color); 
     }
 }
 
@@ -577,7 +577,7 @@ draw_current_piece(tetris_state *state) {
         v2 max = make_v2(min.x + block_size, min.y + block_size);
         min = add_v2(min, start);
         max = add_v2(max, start);
-        immediate_quad(min, max, state->current_piece.color, 1.f);
+        immediate_quad(min, max, state->current_piece.color);
     }
 }
 
@@ -600,7 +600,7 @@ draw_next_piece(tetris_state *state) {
         tetris_block block = state->next_piece.blocks[block_index];
         v2 min = make_v2(start_x + block.x * block_size, start_y + block.y * block_size);
         v2 max = make_v2(min.x + block_size, min.y + block_size);
-        immediate_quad(min, max, state->next_piece.color, 1.f);
+        immediate_quad(min, max, state->next_piece.color);
     }
     
     immediate_flush();
@@ -650,7 +650,7 @@ draw_game_view(tetris_state *state) {
 internal void
 tetris_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_textured_quad(min, max, state->menu_art.tetris, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.tetris);
     immediate_flush();
 }
 

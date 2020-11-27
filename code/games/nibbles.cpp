@@ -141,7 +141,7 @@ draw_apple(nibbles_state *state, nibbles_entity *apple) {
     v2 min = make_v2(start_x + apple_pad             , start_y + apple_pad);
     v2 max = make_v2(start_x + apple_size - apple_pad, start_y + apple_size - apple_pad);
     
-    immediate_quad(min, max, color, 1.f);
+    immediate_quad(min, max, color);
 }
 
 internal void
@@ -164,7 +164,7 @@ draw_snake(nibbles_state *state) {
         v2 min = make_v2(snake_size * snake->x, snake_size * snake->y);
         v2 max = make_v2(snake_size * snake->x + snake_size, snake_size * snake->y + snake_size);
         
-        immediate_quad(min, max, color, 1.f);
+        immediate_quad(min, max, color);
     }
 }
 
@@ -191,7 +191,7 @@ draw_game_view(nibbles_state *state) {
 internal void
 nibbles_menu_art(app_state *state, v2 min, v2 max) {
     immediate_begin();
-    immediate_textured_quad(min, max, state->menu_art.nibbles, 1.f);
+    immediate_textured_quad(min, max, state->menu_art.nibbles);
     immediate_flush();
 }
 

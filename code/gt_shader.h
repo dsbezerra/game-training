@@ -14,7 +14,6 @@ struct shader {
     GLint position_loc;
     GLint color_loc;
     GLint uv_loc;
-    GLint z_index_loc;
 };
 
 internal shader_source parse_shader(char *filepath);
