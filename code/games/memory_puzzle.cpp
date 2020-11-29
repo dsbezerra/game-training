@@ -117,7 +117,7 @@ init_world() {
         b32 contains = false;
         for (memory_card *c = cards; c != cards + size; c++) {
             if (c->kind == new_card.kind && 
-                equal_v4(c->color, new_card.color)) {
+                equal(c->color, new_card.color)) {
                 contains = true;
                 break;
             }
@@ -161,29 +161,29 @@ flipped_cards_match(memory_card *first, memory_card *second) {
     if (!first->flipped || !second->flipped) return false;
     
     return (first->kind == second->kind && 
-            equal_v4(first->color, second->color)); 
+            equal(first->color, second->color)); 
 }
 
 internal void
 draw_square(memory_card *card, v2 min, v2 max) {
-    v2 square_size = mul_v2(sub_v2(max, min), 0.25f); 
+    v2 square_size = mul(sub(max, min), 0.25f); 
     
-    v2 square_min = add_v2(min, square_size);
-    v2 square_max = sub_v2(max, square_size);
+    v2 square_min = add(min, square_size);
+    v2 square_max = sub(max, square_size);
     
     immediate_quad(square_min, square_max, card->color);
 }
 
 internal void
 draw_oval(memory_card *card, v2 min, v2 max) {
-    v2 radius = sub_v2(max, min);
+    v2 radius = sub(max, min);
     v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle_filled(center, make_v2(radius.x * 0.6f, radius.y * 0.3f), card->color);
 }
 
 internal void
 draw_donut(memory_card *card, v2 min, v2 max) {
-    v2 radius = sub_v2(max, min);
+    v2 radius = sub(max, min);
     v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle(center, radius.x * 0.15f, radius.y * 0.4f, card->color);
 }
@@ -234,12 +234,12 @@ draw_lines(memory_card *card, v2 min, v2 max) {
 
 internal void
 draw_double_square(memory_card *card, v2 min, v2 max) {
-    v2 size = mul_v2(sub_v2(max, min), 0.5f); 
+    v2 size = mul(sub(max, min), 0.5f); 
     v2 first_min = min;
-    v2 first_max = add_v2(first_min, size);
+    v2 first_max = add(first_min, size);
     
     v2 second_min = first_max;
-    v2 second_max = add_v2(second_min, size);
+    v2 second_max = add(second_min, size);
     
     immediate_quad(first_min, first_max, card->color);
     immediate_quad(second_min, second_max, card->color);
@@ -247,7 +247,7 @@ draw_double_square(memory_card *card, v2 min, v2 max) {
 
 internal void
 draw_circle(memory_card *card, v2 min, v2 max) {
-    v2 radius = mul_v2(sub_v2(max, min), 0.5f);
+    v2 radius = mul(sub(max, min), 0.5f);
     v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle_filled(center, radius, card->color);
 }
@@ -304,8 +304,8 @@ draw_game_view(memory_puzzle_state *state) {
                 v2 min = make_v2(card_size * field_x + pad, card_size * field_y + pad);
                 v2 max = make_v2(card_size * field_x + card_size, field_y * card_size + card_size);
                 
-                min = add_v2(min, start);
-                max = add_v2(max, start);
+                min = add(min, start);
+                max = add(max, start);
                 
                 memory_card card = world.field[field_x][field_y];
                 if (!card.flipped) {
@@ -353,8 +353,8 @@ draw_game_view(memory_puzzle_state *state) {
             v2 min = make_v2(card_size * field_x, card_size * field_y);
             v2 max = make_v2(card_size * field_x + card_size, field_y * card_size + card_size);
             
-            min = add_v2(min, start);
-            max = add_v2(max, start);
+            min = add(min, start);
+            max = add(max, start);
             
             
             real32 stroke = pad * .5f;

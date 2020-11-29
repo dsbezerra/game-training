@@ -125,13 +125,13 @@ make_v4(float x, float y, float z, float w) {
 }
 
 inline real32
-length_v2(v2 a) {
+length(v2 a) {
     real32 result = sqrtf(a.x * a.x + a.y * a.y);
     return result;
 }
 
 inline v2
-add_v2(v2 a, v2 b) {
+add(v2 a, v2 b) {
     v2 result = {};
     
     result.x = a.x + b.x;
@@ -141,7 +141,7 @@ add_v2(v2 a, v2 b) {
 }
 
 inline v2i
-add_v2i(v2i a, v2i b) {
+add(v2i a, v2i b) {
     v2i result = {};
     
     result.x = a.x + b.x;
@@ -151,7 +151,7 @@ add_v2i(v2i a, v2i b) {
 }
 
 inline v2
-sub_v2(v2 a, v2 b) {
+sub(v2 a, v2 b) {
     v2 result = {};
     
     result.x = a.x - b.x;
@@ -161,7 +161,7 @@ sub_v2(v2 a, v2 b) {
 }
 
 inline v2i
-sub_v2i(v2i a, v2i b) {
+sub(v2i a, v2i b) {
     v2i result = {};
     
     result.x = a.x - b.x;
@@ -171,7 +171,7 @@ sub_v2i(v2i a, v2i b) {
 }
 
 inline v2
-mul_v2(v2 a, real32 scalar) {
+mul(v2 a, real32 scalar) {
     v2 result = {};
     
     result.x = a.x * scalar;
@@ -180,13 +180,36 @@ mul_v2(v2 a, real32 scalar) {
     return result;
 }
 
+inline v3
+mul(v3 a, real32 scalar) {
+    v3 result = {};
+    
+    result.x = a.x * scalar;
+    result.y = a.y * scalar;
+    result.z = a.z * scalar;
+    
+    return result;
+}
+
 inline v2
 normalize(v2 a) {
-    return mul_v2(a, 1.f / length_v2(a));
+    return mul(a, 1.f / length(a));
+}
+
+inline real32
+length(v3 a) {
+    real32 result = sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
+    return result;
+}
+
+inline v3
+normalize(v3 a) {
+    v3 result = mul(a, (1.f / length(a)));
+    return result;
 }
 
 inline b32
-equal_v4(v4 a, v4 b) {
+equal(v4 a, v4 b) {
     b32 result = false;
     
     result = (a.x == b.x && 
@@ -197,11 +220,28 @@ equal_v4(v4 a, v4 b) {
     return result;
 }
 
-inline real32
-length_v3(v3 a) {
-    real32 result = sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
+inline v3
+sub(v3 a, v3 b) {
+    v3 result = {};
+    
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    result.z = a.z - b.z;
+    
     return result;
 }
+
+inline v3
+cross(v3 a, v3 b) {
+    v3 result = {};
+    
+    result.x = a.y * b.z - a.z * b.y;
+    result.y = a.z * b.x - a.x * b.z;
+    result.z = a.x * b.y - a.y * b.x;
+    
+    return result;
+}
+
 
 internal int
 clamp(int min, int val, int max) {
@@ -394,6 +434,27 @@ v2 rotate(v2 a, real32 angle) {
     return result;
 }
 
+inline mat4
+translate(v2 pos) {
+    mat4 result = identity();
+    
+    result.e[0 + 3 * 4] = pos.x;
+    result.e[1 + 3 * 4] = pos.y;
+    
+    return result;
+}
+
+inline mat4
+translate(v3 pos) {
+    mat4 result = identity();
+    
+    result.e[0 + 3 * 4] = pos.x;
+    result.e[1 + 3 * 4] = pos.y;
+    result.e[2 + 3 * 4] = pos.z;
+    
+    return result;
+}
+
 internal mat4
 operator*(mat4 a, mat4 b) {
     // NOTE(casey): This is written to be instructive, not optimal!
@@ -457,23 +518,35 @@ perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
     return result;
 }
 
-inline mat4
-translate(v2 pos) {
-    mat4 result = identity();
-    
-    result.e[0 + 3 * 4] = pos.x;
-    result.e[1 + 3 * 4] = pos.y;
-    
+inline real32
+inner(v3 a, v3 b) {
+    real32 result = a.x * b.x + a.y * b.y + a.z * b.z;
     return result;
 }
 
 inline mat4
-translate(v3 pos) {
+look_at(v3 position, v3 target, v3 up = make_v3(0.f, 1.f, .0f)) {
     mat4 result = identity();
     
-    result.e[0 + 3 * 4] = pos.x;
-    result.e[1 + 3 * 4] = pos.y;
-    result.e[2 + 3 * 4] = pos.z;
+    v3 f = normalize(sub(position, target));
+    v3 r = normalize(cross(up, f));
+    v3 u = cross(f, r);
+    
+    result.rc[0][0] = r.x;
+    result.rc[0][1] = r.y;
+    result.rc[0][2] = r.z;
+    
+    result.rc[1][0] = u.x;
+    result.rc[1][1] = u.y;
+    result.rc[1][2] = u.z;
+    
+    result.rc[2][0] = f.x;
+    result.rc[2][1] = f.y;
+    result.rc[2][2] = f.z;
+    
+    result.rc[3][0] = -inner(r, position);
+    result.rc[3][1] = -inner(u, position);
+    result.rc[3][2] = -inner(f, position);
     
     return result;
 }
@@ -558,12 +631,12 @@ rotation(real32 angle, v3 axis) {
     real32 y = axis.y;
     real32 z = axis.z;
     
-    real32 length = length_v3(axis);
-    if ((length != 1.f) && (length != 0.f)) {
-        length = 1.f / length;
-        x *= length;
-        y *= length;
-        z *= length;
+    real32 len = length(axis);
+    if ((len != 1.f) && (len != 0.f)) {
+        len = 1.f / len;
+        x *= len;
+        y *= len;
+        z *= len;
     }
     
     real32 s = sinf(angle);

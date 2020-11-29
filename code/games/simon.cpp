@@ -71,8 +71,8 @@ is_inside_button(v2 offset, real32 pad, real32 button_size, v2i mouse_p, simon_b
     v2 min = make_v2(button_size * x + pad, button_size * y + pad);
     v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
     
-    min = add_v2(min, offset);
-    max = add_v2(max, offset);
+    min = add(min, offset);
+    max = add(max, offset);
     
     result = mouse_p.x >= min.x && mouse_p.x <= max.x && mouse_p.y >= min.y && mouse_p.y <= max.y;
     
@@ -173,8 +173,8 @@ draw_game_view(simon_state *state) {
         {
             v2 min = make_v2(button_size * x + pad, button_size * y + pad);
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
-            min = add_v2(min, offset_to_center);
-            max = add_v2(max, offset_to_center);
+            min = add(min, offset_to_center);
+            max = add(max, offset_to_center);
             immediate_quad(min, max, yellow);
         }
         y = 1;
@@ -182,8 +182,8 @@ draw_game_view(simon_state *state) {
         {
             v2 min = make_v2(button_size * x + pad, button_size * y + pad);
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
-            min = add_v2(min, offset_to_center);
-            max = add_v2(max, offset_to_center);
+            min = add(min, offset_to_center);
+            max = add(max, offset_to_center);
             immediate_quad(min, max, red);
         }
         x = 1;
@@ -192,8 +192,8 @@ draw_game_view(simon_state *state) {
         {
             v2 min = make_v2(button_size * x + pad, button_size * y + pad);
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
-            min = add_v2(min, offset_to_center);
-            max = add_v2(max, offset_to_center);
+            min = add(min, offset_to_center);
+            max = add(max, offset_to_center);
             immediate_quad(min, max, blue);
         }
         y = 1;
@@ -201,8 +201,8 @@ draw_game_view(simon_state *state) {
         {
             v2 min = make_v2(button_size * x + pad, button_size * y + pad);
             v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
-            min = add_v2(min, offset_to_center);
-            max = add_v2(max, offset_to_center);
+            min = add(min, offset_to_center);
+            max = add(max, offset_to_center);
             immediate_quad(min, max, green);
         }
         

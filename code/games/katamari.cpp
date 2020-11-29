@@ -201,8 +201,8 @@ squirrel_handle_collision(katamari_state *state, katamari_entity *player, katama
 #endif
     
     if (aabb_vs_aabb(pbox, sbox)) {
-        real32 ls = length_v2(squirrel->half_size);
-        real32 lp = length_v2(player->half_size);
+        real32 ls = length(squirrel->half_size);
+        real32 lp = length(player->half_size);
         
         if (ls > lp) {
             state->health--;
@@ -211,7 +211,7 @@ squirrel_handle_collision(katamari_state *state, katamari_entity *player, katama
                 return;
             }
         } else {
-            player->half_size = add_v2(player->half_size, squirrel->half_size);
+            player->half_size = add(player->half_size, squirrel->half_size);
             squirrel->alive = false;
             if (state->health < 3) {
                 state->health++;
@@ -311,7 +311,7 @@ update_game(katamari_state *state, game_input *input) {
     if (is_down(Button_Down)) {
         velocity.y += speed;
     }
-    player->position = add_v2(player->position, velocity);
+    player->position = add(player->position, velocity);
     
     //
     // Update squirrels
@@ -327,8 +327,8 @@ update_game(katamari_state *state, game_input *input) {
         } else if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
             vel.y += squirrel->direction.y * squirrel->speed * time_info.dt;
         } else if (squirrel->movement_pattern == KatamariMovementPattern_FollowPlayer) {
-            v2 distance = sub_v2(player->position, squirrel->position);
-            if (length_v2(distance) < 50.f) {
+            v2 distance = sub(player->position, squirrel->position);
+            if (length(distance) < 50.f) {
                 v2 normalized = normalize(distance);
                 vel.x += normalized.x * squirrel->speed * time_info.dt;
                 vel.y += normalized.y * squirrel->speed * time_info.dt;
@@ -358,7 +358,7 @@ update_game(katamari_state *state, game_input *input) {
             }
         }
         
-        squirrel->position = add_v2(squirrel->position, vel);
+        squirrel->position = add(squirrel->position, vel);
         squirrel_handle_collision(state, player, squirrel);
     }
     

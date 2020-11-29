@@ -575,8 +575,8 @@ draw_current_piece(tetris_state *state) {
         tetris_block block = state->current_piece.blocks[block_index];
         v2 min = make_v2(block.x * block_size, block.y * block_size);
         v2 max = make_v2(min.x + block_size, min.y + block_size);
-        min = add_v2(min, start);
-        max = add_v2(max, start);
+        min = add(min, start);
+        max = add(max, start);
         immediate_quad(min, max, state->current_piece.color);
     }
 }
