@@ -1,11 +1,16 @@
 internal void
 init_game(sokoban_state *state) {
-    // TODO
+    state->game_mode = GameMode_Playing;
+    init_camera(&state->cam);
+    set_camera_mode(&state->cam, CameraMode_Free);
+    
+    state->cam.position.z = 3.f;
 }
 
 internal void
 update_game(sokoban_state *state, game_input *input) {
     // TODO
+    update_camera(&state->cam, input);
 }
 
 internal void
@@ -41,9 +46,32 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
         state = (sokoban_state *) game_alloc(memory, megabytes(12));
         state->assets.box = load_texture("./data/textures/sokoban/container.jpg");
         
+        state->cam.position = make_v3(.0f, 0.f, -3.f);
+        
         init_game(state);
+        
+        // TODO(diego): Better way to do this
+        input->mouse.sensitivity = 0.05f;
     }
     state->dimensions = memory->window_dimensions;
+    
+    // NOTE(diego): Lock mouse to center of screen and use new position
+    // to calculate velocity and move our player with it.
+    {
+        v2i new_mouse_position;
+        platform_get_cursor_position(&new_mouse_position);
+        
+        input->mouse.velocity = sub(new_mouse_position, input->mouse.position);
+        input->mouse.velocity.y *= -1; // NOTE(diego): Make mouse down move pitch down
+        
+        if (input->mouse.lock) {
+            platform_set_cursor_position(memory->window_center);
+            input->mouse.position = memory->window_center;
+        } else {
+            input->mouse.position = new_mouse_position;
+        }
+        platform_show_cursor(false);
+    }
     
     //
     // Update
@@ -101,27 +129,16 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
     // Draw
     //
     
-    render_3d(state->dimensions.width, state->dimensions.height);
-    
 #define TEST_3D 1
     
 #if TEST_3D
     
+    
+    render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
+    
     immediate_begin();
     
     v4 color = make_color(0xffffffff);
-    
-#if 1
-    real32 radius = 10.0f;
-    real32 cam_x = sinf(time_info.current_time) * radius;
-    real32 cam_z = cosf(time_info.current_time) * radius;
-    
-    v3 target = make_v3(.0f, .0f, .0f);
-    v3 world_up = make_v3(0.f, 1.f, .0f);
-    view_matrix = look_at(make_v3(cam_x, 0.f, cam_z), target, world_up);
-#else
-    view_matrix = view_matrix * translate(make_v3(.0f, 0.f, -3.f));
-#endif
     
     v3 positions[] = {
         make_v3(0.f, 0.f, 0.f),
@@ -135,6 +152,8 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
         make_v3( 1.5f,  0.2f, -1.5f),
         make_v3(-1.3f,  1.0f, -1.5f)
     };
+    
+    view_matrix = get_view_matrix(&state->cam);
     
     open_gl->glUniformMatrix4fv(global_basic_3d_shader.view_loc, 1, GL_FALSE, view_matrix.e);
     

@@ -529,14 +529,13 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 end_profiling(ProfilerItem_GameUpdateAndRender);
                 
                 render_profiler(state.window_dimensions, last_dt);
-                
+                    
                 SwapBuffers(window_dc);
                 
                 // Ensure a forced frame time
                 if (global_lock_fps) {
                     LARGE_INTEGER work_counter = win32_get_wallclock();
                     real32 work_seconds_elapsed = win32_get_seconds_elapsed(last_counter, work_counter);
-                    
                     real32 seconds_elapsed_for_frame = work_seconds_elapsed;
                     if (seconds_elapsed_for_frame < target_dt) {
                         if (sleep_is_granular) {

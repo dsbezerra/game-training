@@ -181,6 +181,17 @@ mul(v2 a, real32 scalar) {
 }
 
 inline v3
+add(v3 a, v3 b) {
+    v3 result = {};
+    
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+    result.z = a.z + b.z;
+    
+    return result;
+}
+
+inline v3
 mul(v3 a, real32 scalar) {
     v3 result = {};
     
@@ -501,21 +512,37 @@ ortho(real32 size, real32 aspect_ratio, real32 f, real32 n) {
 }
 
 inline mat4
-perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
+frustum(real32 left, real32 right, real32 bottom, real32 top, real32 n, real32 f) {
     mat4 result = identity();
     
-    real32 q = 1.f / tanf(angle_to_radians(fov) * 0.5f);
-    real32 a = q / aspect_ratio;
-    real32 b = (n + f) / (n - f);
-    real32 c = (2.f * n * f) / (n - f);
+    real32 a = right - left;
+    real32 b = top   - bottom;
+    real32 c = f - n;
     
-    result.e[0 + 0 * 4] = a;
-    result.e[1 + 1 * 4] = q;
-    result.e[2 + 2 * 4] = b;
-    result.e[3 + 2 * 4] = -1.f;
-    result.e[2 + 3 * 4] = c;
+    result.rc[0][0] = (2.f * n) / a;
+    result.rc[1][1] = (2.f * n) / b;
+    
+    result.rc[2][0] = (right + left)    / a;
+	result.rc[2][1] = (top   + bottom)  / b;
+	result.rc[2][2] = -(f  + n)    / c;
+	result.rc[2][3] = -1.f;
+    
+	result.rc[3][2] = -(2.f * f * n) / c;
+    
+	result.rc[3][3] = 0.f;
     
     return result;
+}
+
+inline mat4
+perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
+    real32 r = n * tanf(angle_to_radians(fov));
+    real32 l= -r;
+    
+	real32 b = l / aspect_ratio;
+	real32 t = r / aspect_ratio;
+    
+	return frustum(l, r, b, t, n, f);
 }
 
 inline real32
@@ -528,25 +555,25 @@ inline mat4
 look_at(v3 position, v3 target, v3 up = make_v3(0.f, 1.f, .0f)) {
     mat4 result = identity();
     
-    v3 f = normalize(sub(position, target));
-    v3 r = normalize(cross(up, f));
-    v3 u = cross(f, r);
+    v3 f = normalize(sub(target, position));
+    v3 s = normalize(cross(f, up));
+    v3 u = cross(s, f);
     
-    result.rc[0][0] = r.x;
-    result.rc[0][1] = r.y;
-    result.rc[0][2] = r.z;
+    result.rc[0][0] = s.x;
+    result.rc[1][0] = s.y;
+    result.rc[2][0] = s.z;
     
-    result.rc[1][0] = u.x;
+    result.rc[0][1] = u.x;
     result.rc[1][1] = u.y;
-    result.rc[1][2] = u.z;
+    result.rc[2][1] = u.z;
     
-    result.rc[2][0] = f.x;
-    result.rc[2][1] = f.y;
-    result.rc[2][2] = f.z;
+    result.rc[0][2] = -f.x;
+    result.rc[1][2] = -f.y;
+    result.rc[2][2] = -f.z;
     
-    result.rc[3][0] = -inner(r, position);
+    result.rc[3][0] = -inner(s, position);
     result.rc[3][1] = -inner(u, position);
-    result.rc[3][2] = -inner(f, position);
+    result.rc[3][2] =  inner(f, position);
     
     return result;
 }

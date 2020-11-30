@@ -7,6 +7,8 @@
 
 global_variable game_time_info time_info = {};
 
+#include "gt_camera.cpp"
+
 global_variable loaded_font menu_title_font;
 global_variable loaded_font menu_item_font;
 

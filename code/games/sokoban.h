@@ -18,6 +18,8 @@ struct sokoban_assets {
 struct sokoban_state {
     v2i dimensions;
     
+    camera cam;
+    
     sokoban_assets assets;
     
     game_mode game_mode;

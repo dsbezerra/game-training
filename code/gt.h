@@ -8,7 +8,6 @@
 #include "gt_platform.h"
 #include "gt_profiler.h"
 #include "gt_collision.h"
-#include "gt_camera.h"
 #include "gt_draw.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -140,6 +139,7 @@ struct app_state {
     game_memory *memory;
 };
 
+#include "gt_camera.h" // TODO(diego): Refactor so this can be up there with other h files.
 #include "gt_games.h"
 
 internal void game_output_sound(game_sound_output_buffer *sound_buffer);
