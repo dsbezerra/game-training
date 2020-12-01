@@ -177,13 +177,14 @@ immediate_textured_quad(v2 min, v2 max, u32 texture) {
     glBindTexture(GL_TEXTURE_2D, texture);
     open_gl->glActiveTexture(GL_TEXTURE0);
     
-    v2 bottom_right = make_v2(1.f, .0f);
-    v2 bottom_left  = make_v2(.0f, .0f);
     v2 top_right    = make_v2(1.f, 1.f);
     v2 top_left     = make_v2(.0f, 1.f);
+    v2 bottom_right = make_v2(1.f, .0f);
+    v2 bottom_left  = make_v2(.0f, .0f);
     
-    v4 color = make_color(0xffffffff);
     real32 z_index = 1.f;
+    v4 color = make_color(0xffffffff);
+    
     immediate_vertex(make_v3(min.x, max.y, z_index), color, bottom_left);
     immediate_vertex(make_v3(max.x, max.y, z_index), color, bottom_right);
     immediate_vertex(make_v3(min.x, min.y, z_index), color, top_left);

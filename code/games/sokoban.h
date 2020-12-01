@@ -11,8 +11,13 @@ Variant: Add all sorts of level gimmicks: teleport tiles, conveyor belts, button
 
 #define SOKOBAN_TITLE "Sokoban"
 
+struct sokoban_tile {
+    v3 position;
+    v4 color;
+};
+
 struct sokoban_assets {
-    GLint box;
+    GLint none;
 };
 
 struct sokoban_state {
@@ -21,6 +26,8 @@ struct sokoban_state {
     camera cam;
     
     sokoban_assets assets;
+    
+    sokoban_tile tiles[16][16];
     
     game_mode game_mode;
     s8 menu_selected_item;

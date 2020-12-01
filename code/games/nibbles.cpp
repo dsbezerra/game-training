@@ -241,8 +241,8 @@ nibbles_game_update_and_render(game_memory *memory, game_input *input) {
             }
             if (state->apple.kind == NibblesEntity_None && (time_info.current_time - state->last_eaten_apple_time) > .5f) {
                 while (1) {
-                    u8 spawn_x = (u8) random_int_in_range(1, NIBBLES_WORLD_X_COUNT - 1);
-                    u8 spawn_y = (u8) random_int_in_range(1, NIBBLES_WORLD_Y_COUNT - 1);
+                    u8 spawn_x = (u8) random_int_in_range(1, NIBBLES_WORLD_X_COUNT - 2);
+                    u8 spawn_y = (u8) random_int_in_range(1, NIBBLES_WORLD_Y_COUNT - 2);
                     if (!is_occupied(state, spawn_x, spawn_y)) {
                         state->apple.kind = NibblesEntity_Apple;
                         state->apple.x = spawn_x;

@@ -5,6 +5,32 @@ init_game(sokoban_state *state) {
     set_camera_mode(&state->cam, CameraMode_Free);
     
     state->cam.position.z = 3.f;
+    
+    
+    v4 white = make_color(0xffffffff);
+    v4 black = make_color(0xff000000);
+    
+    for (int tile_y = 0; tile_y < 16; tile_y++) {
+        for (int tile_x = 0; tile_x < 16; tile_x++) {
+            
+            sokoban_tile tile = {};
+            
+            v3 pos = make_v3(tile_x * .4f, .0f, tile_y * 0.4f);
+            tile.position.x = pos.x;
+            tile.position.y = pos.y;
+            tile.position.z = pos.z;
+            
+            if ((tile_x + tile_y) % 2 == 0) {
+                tile.color = white;
+            } else {
+                tile.color = black;
+            }
+            
+            state->tiles[tile_x][tile_y] = tile;
+        }
+    }
+    
+    
 }
 
 internal void
@@ -17,6 +43,82 @@ internal void
 draw_game_view(sokoban_state *state) {
     if (state->game_mode == GameMode_Playing) {
         // TODO
+        
+        
+#define TEST_3D 1
+        
+#if TEST_3D
+        
+        
+        render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
+        
+        immediate_begin();
+        
+        v4 color = make_color(0xffaaaaaa);
+        
+        view_matrix = get_view_matrix(&state->cam);
+        
+        open_gl->glUniformMatrix4fv(global_basic_3d_shader.view_loc, 1, GL_FALSE, view_matrix.e);
+        
+        open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
+        glBindTexture(GL_TEXTURE_2D, state->assets.none);
+        open_gl->glActiveTexture(GL_TEXTURE0);
+        
+        sokoban_tile *tiles_ptr = (sokoban_tile *) state->tiles;
+        int len = 16*16;
+        for (sokoban_tile *tile = tiles_ptr; tile != tiles_ptr + len; tile++) {
+            immediate_begin();
+            
+            mat4 model_matrix = translate(tile->position);
+            open_gl->glUniformMatrix4fv(global_basic_3d_shader.model_loc, 1, GL_FALSE, model_matrix.e);
+            
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.0f));
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(.0f, 0.f));
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
+            
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, 1.0f));
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(1.f, 1.0f));
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(1.f, 0.f));
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(1.f, 0.f));
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, 0.f));
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, 1.0f));
+            
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(.0f, 1.0f));
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.0f));
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 0.f));
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 0.f));
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(.0f, 0.f));
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(.0f, 1.0f));
+            
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, .0f));
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(1.f, .0f));
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.f));
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.f));
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(.0f, 1.f));
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, .0f));
+            
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, .0f));
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(1.f, .0f));
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 1.f));
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 1.f));
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(.0f, 1.f));
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, .0f));
+            
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.0f));
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, 0.f));
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
+            immediate_flush();
+        }
+        
+#endif
+        
+        
     } else {
         draw_menu(SOKOBAN_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
@@ -44,7 +146,7 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
         memory->initialized = true;
         
         state = (sokoban_state *) game_alloc(memory, megabytes(12));
-        state->assets.box = load_texture("./data/textures/sokoban/container.jpg");
+        state->assets.none = load_texture("./data/textures/sokoban/none.jpg");
         
         state->cam.position = make_v3(.0f, 0.f, -3.f);
         
@@ -128,94 +230,5 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Draw
     //
-    
-#define TEST_3D 1
-    
-#if TEST_3D
-    
-    
-    render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
-    
-    immediate_begin();
-    
-    v4 color = make_color(0xffffffff);
-    
-    v3 positions[] = {
-        make_v3(0.f, 0.f, 0.f),
-        make_v3( 2.0f,  5.0f, -15.0f),
-        make_v3(-1.5f, -2.2f, -2.5f),
-        make_v3(-3.8f, -2.0f, -12.3f),
-        make_v3 (2.4f, -0.4f, -3.5f),
-        make_v3(-1.7f,  3.0f, -7.5f),
-        make_v3( 1.3f, -2.0f, -2.5f),
-        make_v3( 1.5f,  2.0f, -2.5f),
-        make_v3( 1.5f,  0.2f, -1.5f),
-        make_v3(-1.3f,  1.0f, -1.5f)
-    };
-    
-    view_matrix = get_view_matrix(&state->cam);
-    
-    open_gl->glUniformMatrix4fv(global_basic_3d_shader.view_loc, 1, GL_FALSE, view_matrix.e);
-    
-    open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
-    glBindTexture(GL_TEXTURE_2D, state->assets.box);
-    open_gl->glActiveTexture(GL_TEXTURE0);
-    
-    for (int i = 0; i < array_count(positions); ++i) {
-        immediate_begin();
-        
-        real32 angle = 20.f * i;
-        
-        mat4 model_matrix = translate(positions[i]);
-        model_matrix = model_matrix * rotation(angle, make_v3(1.f, .3f, .5f));
-        
-        open_gl->glUniformMatrix4fv(global_basic_3d_shader.model_loc, 1, GL_FALSE, model_matrix.e);
-        
-        immediate_vertex(make_v3( .5f,  .5f,  .5f), color, make_v2(1.0f, .0f));
-        immediate_vertex(make_v3( .5f,  .5f, -.5f), color, make_v2(1.f, 1.0f));
-        immediate_vertex(make_v3( .5f, -.5f, -.5f), color, make_v2(0.f, 1.f));
-        immediate_vertex(make_v3( .5f, -.5f, -.5f), color, make_v2(0.f, 1.f));
-        immediate_vertex(make_v3( .5f, -.5f,  .5f), color, make_v2(.0f, 0.f));
-        immediate_vertex(make_v3( .5f,  .5f,  .5f), color, make_v2(1.0f, .0f));
-        
-        immediate_vertex(make_v3(-.5f, -.5f, -.5f), color, make_v2(.0f, 1.0f));
-        immediate_vertex(make_v3( .5f, -.5f, -.5f), color, make_v2(1.f, 1.0f));
-        immediate_vertex(make_v3( .5f, -.5f,  .5f), color, make_v2(1.f, 0.f));
-        immediate_vertex(make_v3( .5f, -.5f,  .5f), color, make_v2(1.f, 0.f));
-        immediate_vertex(make_v3(-.5f, -.5f,  .5f), color, make_v2(.0f, 0.f));
-        immediate_vertex(make_v3(-.5f, -.5f, -.5f), color, make_v2(.0f, 1.0f));
-        
-        immediate_vertex(make_v3(-.5f,  .5f, -.5f), color, make_v2(.0f, 1.0f));
-        immediate_vertex(make_v3( .5f,  .5f, -.5f), color, make_v2(1.f, 1.0f));
-        immediate_vertex(make_v3( .5f,  .5f,  .5f), color, make_v2(1.f, 0.f));
-        immediate_vertex(make_v3( .5f,  .5f,  .5f), color, make_v2(1.f, 0.f));
-        immediate_vertex(make_v3(-.5f,  .5f,  .5f), color, make_v2(.0f, 0.f));
-        immediate_vertex(make_v3(-.5f,  .5f, -.5f), color, make_v2(.0f, 1.0f));
-        
-        immediate_vertex(make_v3(-.5f, -.5f, -.5f), color, make_v2(.0f, .0f));
-        immediate_vertex(make_v3( .5f, -.5f, -.5f), color, make_v2(1.f, .0f));
-        immediate_vertex(make_v3( .5f,  .5f, -.5f), color, make_v2(1.f, 1.f));
-        immediate_vertex(make_v3( .5f,  .5f, -.5f), color, make_v2(1.f, 1.f));
-        immediate_vertex(make_v3(-.5f,  .5f, -.5f), color, make_v2(.0f, 1.f));
-        immediate_vertex(make_v3(-.5f, -.5f, -.5f), color, make_v2(.0f, .0f));
-        
-        immediate_vertex(make_v3(-.5f, -.5f,  .5f), color, make_v2(.0f, .0f));
-        immediate_vertex(make_v3( .5f, -.5f,  .5f), color, make_v2(1.f, .0f));
-        immediate_vertex(make_v3( .5f,  .5f,  .5f), color, make_v2(1.f, 1.f));
-        immediate_vertex(make_v3( .5f,  .5f,  .5f), color, make_v2(1.f, 1.f));
-        immediate_vertex(make_v3(-.5f,  .5f,  .5f), color, make_v2(.0f, 1.f));
-        immediate_vertex(make_v3(-.5f, -.5f,  .5f), color, make_v2(.0f, .0f));
-        
-        immediate_vertex(make_v3(-.5f,  .5f,  .5f), color, make_v2(1.0f, .0f));
-        immediate_vertex(make_v3(-.5f,  .5f, -.5f), color, make_v2(1.f, 1.0f));
-        immediate_vertex(make_v3(-.5f, -.5f, -.5f), color, make_v2(0.f, 1.f));
-        immediate_vertex(make_v3(-.5f, -.5f, -.5f), color, make_v2(0.f, 1.f));
-        immediate_vertex(make_v3(-.5f, -.5f,  .5f), color, make_v2(.0f, 0.f));
-        immediate_vertex(make_v3(-.5f,  .5f,  .5f), color, make_v2(1.0f, .0f));
-        immediate_flush();
-    }
-    
-#endif
-    
     draw_game_view(state);
 }

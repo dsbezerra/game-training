@@ -321,6 +321,18 @@ make_color(u32 color) {
     return make_color(r, g, b, a);
 }
 
+internal inline v4
+invert_color(v4 color) {
+    v4 result;
+    
+    result.r = 1.f - color.r;
+    result.g = 1.f - color.g;
+    result.b = 1.f - color.b;
+    result.a = color.a;
+    
+    return result;
+}
+
 internal inline v4 
 lerp_color(u32 a, real32 t, u32 b) {
     real32 a_a = (0xff & (a >> 24)) / 255.f;
