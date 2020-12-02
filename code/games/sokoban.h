@@ -11,7 +11,15 @@ Variant: Add all sorts of level gimmicks: teleport tiles, conveyor belts, button
 
 #define SOKOBAN_TITLE "Sokoban"
 
-struct sokoban_tile {
+enum sokoban_entity_kind {
+    SokobanEntityKind_None,
+    SokobanEntityKind_Tile,
+    SokobanEntityKind_Light,
+    SokobanEntityKind_Count,
+};
+
+struct sokoban_entity {
+    sokoban_entity_kind kind;
     v3 position;
     v4 color;
 };
@@ -27,7 +35,7 @@ struct sokoban_state {
     
     sokoban_assets assets;
     
-    sokoban_tile tiles[16][16];
+    sokoban_entity entities[16 * 16];
     
     game_mode game_mode;
     s8 menu_selected_item;

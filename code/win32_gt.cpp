@@ -147,6 +147,7 @@ win32_opengl_get_functions() {
     opengl_get_function(glGenVertexArrays);
     opengl_get_function(glDrawArrays);
     opengl_get_function(glGetUniformLocation);
+    opengl_get_function(glUniform3f);
     opengl_get_function(glUniform4f);
     opengl_get_function(glUniformMatrix4fv);
     opengl_get_function(glEnableVertexAttribArray);
@@ -405,6 +406,11 @@ win32_process_pending_messages(HWND window) {
                 process_button(VK_LEFT, Button_Left);
                 process_button(VK_RIGHT, Button_Right);
                 
+                process_button(0x41, Button_A);
+                process_button(0x44, Button_D);
+                process_button(0x57, Button_W);
+                process_button(0x53, Button_S);
+                
                 if (vk_code == 0x55) {
                     if (was_down && !is_down) {
                         global_lock_fps = !global_lock_fps;
@@ -416,6 +422,7 @@ win32_process_pending_messages(HWND window) {
                         win32_opengl_refresh_vsync();
                     }
                 }
+                
                 if (was_down != is_down) {
                     if (state.current_mode != Mode_PlayingGame) {
                         if (vk_code == VK_ESCAPE && is_down) {
@@ -529,7 +536,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 end_profiling(ProfilerItem_GameUpdateAndRender);
                 
                 render_profiler(state.window_dimensions, last_dt);
-                    
+                
                 SwapBuffers(window_dc);
                 
                 // Ensure a forced frame time

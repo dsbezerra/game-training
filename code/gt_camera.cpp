@@ -49,16 +49,16 @@ update_camera(camera *cam, game_input *input) {
             
             real32 speed = 5.f * time_info.dt;
             if (is_down(Button_Up)) {
-                cam->position = add(cam->position, mul(cam->front, speed));
+                cam->position = cam->position + cam->front * speed;
             }
             if (is_down(Button_Down)) {
-                cam->position = sub(cam->position, mul(cam->front, speed));
+                cam->position = cam->position - cam->front * speed;
             }
             if (is_down(Button_Left)) {
-                cam->position = sub(cam->position, mul(cam->right, speed));
+                cam->position = cam->position - cam->right * speed;
             }
             if (is_down(Button_Right)) {
-                cam->position = add(cam->position, mul(cam->right, speed));
+                cam->position = cam->position + cam->right * speed;
             }
             
             
@@ -83,7 +83,7 @@ get_view_matrix(camera *cam) {
     
     mat4 result;
     
-    result = look_at(cam->position, add(cam->position, cam->front), cam->up);
+    result = look_at(cam->position, cam->position + cam->front, cam->up);
     
     return result;
 }

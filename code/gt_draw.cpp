@@ -47,6 +47,30 @@ immediate_free() {
 }
 
 internal void
+set_mat4(char *name, mat4 matrix) {
+    GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
+    open_gl->glUniformMatrix4fv(location, 1, GL_FALSE, matrix.e);
+}
+
+internal void
+set_int1(char *name, int value) {
+    GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
+    open_gl->glUniform1i(location, value);
+}
+
+internal void
+set_float4(char *name, v4 values) {
+    GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
+    open_gl->glUniform4f(location, values.x, values.y, values.z, values.w);
+}
+
+internal void
+set_float3(char *name, v3 values) {
+    GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
+    open_gl->glUniform3f(location, values.x, values.y, values.z);
+}
+
+internal void
 immediate_begin() {
     assert(immediate);
     
@@ -60,6 +84,11 @@ get_next_vertex_ptr() {
 
 internal void
 immediate_vertex(v3 position, v4 color, v2 uv) {
+    immediate_vertex(position, color, uv, make_v3(.0f, 0.f, .0f));
+}
+
+internal void
+immediate_vertex(v3 position, v4 color, v2 uv, v3 normal) {
     
     if (immediate->num_vertices >= MAX_VERTICES) {
 		immediate_flush();
@@ -68,10 +97,15 @@ immediate_vertex(v3 position, v4 color, v2 uv) {
     
     vertex *v = get_next_vertex_ptr();
     v->position.x = position.x;
-    v->position.y = -position.y;
+    if (immediate->mode == RenderingMode_2D) {
+        v->position.y = -position.y;
+    } else {
+        v->position.y = position.y;
+    }
     v->position.z = position.z;
     v->color      = color;
     v->uv         = uv;
+    v->normal     = normal;
     
     immediate->num_vertices += 1;
 }
@@ -172,8 +206,6 @@ immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, v4 color) {
 internal void
 immediate_textured_quad(v2 min, v2 max, u32 texture) {
     
-    open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
-    
     glBindTexture(GL_TEXTURE_2D, texture);
     open_gl->glActiveTexture(GL_TEXTURE0);
     
@@ -196,8 +228,6 @@ immediate_textured_quad(v2 min, v2 max, u32 texture) {
 
 internal void
 immediate_char(real32 x, real32 y, char c, loaded_font *font, v4 color) {
-    
-    open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
     
     glBindTexture(GL_TEXTURE_2D, font->texture);
     open_gl->glActiveTexture(GL_TEXTURE0);
@@ -225,8 +255,6 @@ immediate_char(real32 x, real32 y, char c, loaded_font *font, v4 color) {
 
 internal void
 immediate_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 color, real32 z_index) {
-    
-    open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
     
     glBindTexture(GL_TEXTURE_2D, font->texture);
     open_gl->glActiveTexture(GL_TEXTURE0);
@@ -283,6 +311,7 @@ immediate_flush() {
     GLint position_loc = immediate->current_shader.position_loc;
     GLint color_loc = immediate->current_shader.color_loc;
     GLint uv_loc = immediate->current_shader.uv_loc;
+    GLint normal_loc = immediate->current_shader.normal_loc;
     
     open_gl->glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
     open_gl->glEnableVertexAttribArray(position_loc);
@@ -292,6 +321,9 @@ immediate_flush() {
     
     open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v3) + sizeof(v4)));
     open_gl->glEnableVertexAttribArray(uv_loc);
+    
+    open_gl->glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v3) + sizeof(v4) + sizeof(v2)));
+    open_gl->glEnableVertexAttribArray(normal_loc);
     
     glDrawArrays(GL_TRIANGLES, 0, immediate->num_vertices);
     
@@ -324,12 +356,13 @@ refresh_shader_transform() {
         return;
     }
     
-    open_gl->glUniformMatrix4fv(immediate->current_shader.view_loc, 1, GL_FALSE, view_matrix.e);
-    open_gl->glUniformMatrix4fv(immediate->current_shader.projection_loc, 1, GL_FALSE, projection_matrix.e);
+    set_mat4("view", view_matrix);
+    set_mat4("projection", projection_matrix);
 }
 
 internal void
 render_2d_right_handed(int width, int height) {
+    immediate->mode = RenderingMode_2D;
     
     // NOTE(diego): This shader is reused for all 2D rendering.
     set_shader(global_shader);
@@ -362,8 +395,7 @@ render_2d_right_handed(int width, int height) {
 
 internal void
 render_3d(int width, int height, real32 fov = 45.f) {
-    
-    set_shader(global_basic_3d_shader);
+    immediate->mode = RenderingMode_3D;
     
     real32 aspect_ratio = (real32) width / (real32) height;
     real32 n = .1f;

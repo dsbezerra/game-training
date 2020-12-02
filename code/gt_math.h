@@ -5,15 +5,15 @@
 
 union v2 {
     struct {
-        float x, y;
+        real32 x, y;
     };
     struct {
-        float u, v;
+        real32 u, v;
     };
     struct {
-        float width, height;
+        real32 width, height;
     };
-    float e[2];
+    real32 e[2];
 };
 
 union v2i {
@@ -28,15 +28,15 @@ union v2i {
 
 union v3 {
     struct {
-        float x, y, z;
+        real32 x, y, z;
     };
     struct {
-        float u, v, __;
+        real32 u, v, __;
     };
     struct {
-        float r, g, b;
+        real32 r, g, b;
     };
-    float e[3];
+    real32 e[3];
 };
 
 union v4 {
@@ -44,21 +44,21 @@ union v4 {
         union {
             v3 xyz;
             struct {
-                float x, y, z;
+                real32 x, y, z;
             };
         };
-        float w;
+        real32 w;
     };
     struct {
         union {
             v3 rgb;
             struct {
-                float r, g, b;
+                real32 r, g, b;
             };
         };
-        float a;
+        real32 a;
     };
-    float e[4];
+    real32 e[4];
 };
 
 struct mat4 {
@@ -69,17 +69,9 @@ struct mat4 {
     };
 };
 
-internal inline mat4
-identity() {
-    mat4 result = {};
-    
-    result.e[0 + 0 * 4] = 1.0f;
-    result.e[1 + 1 * 4] = 1.0f;
-    result.e[2 + 2 * 4] = 1.0f;
-    result.e[3 + 3 * 4] = 1.0f;
-    
-    return result;
-}
+//
+// V2
+//
 
 internal inline v2
 make_v2(real32 x, real32 y) {
@@ -101,6 +93,167 @@ make_v2i(int x, int y) {
     return result;
 }
 
+inline real32
+inner(v2 a, v2 b) {
+    real32 result = a.x * b.x + a.y * b.y;
+    return result;
+}
+
+inline s32
+inner(v2i a, v2i b) {
+    s32 result = a.x * b.x + a.y * b.y;
+    return result;
+}
+
+inline v2
+operator* (real32 a, v2 b) {
+    v2 result = {};
+    
+    result.x = a * b.x;
+    result.y = a * b.y;
+    
+    return result;
+}
+
+inline v2
+operator* (v2 b, real32 a) {
+    v2 result = a * b;
+    return result;
+}
+
+inline v2 &
+operator*= (v2 &b, real32 a) {
+    b = a * b;
+    return b;
+}
+
+inline v2
+operator- (v2 a) {
+    v2 result;
+    
+    result.x = -a.x;
+    result.y = -a.y;
+    
+    return result;
+}
+
+inline v2
+operator+ (v2 a, v2 b) {
+    v2 result = {};
+    
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+    
+    return result;
+}
+
+inline v2 &
+operator+= (v2 &a, v2 b) {
+    a = a + b;
+    return a;
+}
+
+inline v2
+operator- (v2 a, v2 b) {
+    v2 result = {};
+    
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    
+    return result;
+}
+
+inline v2 &
+operator-= (v2 &a, v2 b) {
+    a = a - b;
+    return a;
+}
+
+inline real32
+length_sq(v2 a) {
+    real32 result = inner(a, a);
+    return result;
+}
+
+inline real32
+length(v2 a) {
+    real32 result = sqrtf(length_sq(a));
+    return result;
+}
+
+inline v2
+normalize(v2 a) {
+    return a * (1.f / length(a));
+}
+
+inline v2i
+operator* (s32 a, v2i b) {
+    v2i result = {};
+    
+    result.x = a * b.x;
+    result.y = a * b.y;
+    
+    return result;
+}
+
+inline v2i
+operator* (v2i b, s32 a) {
+    v2i result = a * b;
+    return result;
+}
+
+inline v2i &
+operator*= (v2i &b, s32 a) {
+    b = a * b;
+    return b;
+}
+
+inline v2i
+operator- (v2i a) {
+    v2i result;
+    
+    result.x = -a.x;
+    result.y = -a.y;
+    
+    return result;
+}
+
+inline v2i
+operator+ (v2i a, v2i b) {
+    v2i result = {};
+    
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+    
+    return result;
+}
+
+inline v2i &
+operator+= (v2i &a, v2i b) {
+    a = a + b;
+    return a;
+}
+
+inline v2i
+operator- (v2i a, v2i b) {
+    v2i result = {};
+    
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    
+    return result;
+}
+
+inline v2i &
+operator-= (v2i &a, v2i b) {
+    a = a - b;
+    return a;
+}
+
+//
+// V3
+//
+
 internal inline v3
 make_v3(real32 x, real32 y, real32 z) {
     v3 result;
@@ -112,133 +265,21 @@ make_v3(real32 x, real32 y, real32 z) {
     return result;
 }
 
-internal inline v4
-make_v4(float x, float y, float z, float w) {
-    v4 result;
-    
-    result.x = x;
-    result.y = y;
-    result.z = z;
-    result.w = w;
-    
+inline real32
+inner(v3 a, v3 b) {
+    real32 result = a.x * b.x + a.y * b.y + a.z * b.z;
     return result;
 }
 
 inline real32
-length(v2 a) {
-    real32 result = sqrtf(a.x * a.x + a.y * a.y);
+length_sq(v3 a) {
+    real32 result = inner(a, a);
     return result;
-}
-
-inline v2
-add(v2 a, v2 b) {
-    v2 result = {};
-    
-    result.x = a.x + b.x;
-    result.y = a.y + b.y;
-    
-    return result;
-}
-
-inline v2i
-add(v2i a, v2i b) {
-    v2i result = {};
-    
-    result.x = a.x + b.x;
-    result.y = a.y + b.y;
-    
-    return result;
-}
-
-inline v2
-sub(v2 a, v2 b) {
-    v2 result = {};
-    
-    result.x = a.x - b.x;
-    result.y = a.y - b.y;
-    
-    return result;
-}
-
-inline v2i
-sub(v2i a, v2i b) {
-    v2i result = {};
-    
-    result.x = a.x - b.x;
-    result.y = a.y - b.y;
-    
-    return result;
-}
-
-inline v2
-mul(v2 a, real32 scalar) {
-    v2 result = {};
-    
-    result.x = a.x * scalar;
-    result.y = a.y * scalar;
-    
-    return result;
-}
-
-inline v3
-add(v3 a, v3 b) {
-    v3 result = {};
-    
-    result.x = a.x + b.x;
-    result.y = a.y + b.y;
-    result.z = a.z + b.z;
-    
-    return result;
-}
-
-inline v3
-mul(v3 a, real32 scalar) {
-    v3 result = {};
-    
-    result.x = a.x * scalar;
-    result.y = a.y * scalar;
-    result.z = a.z * scalar;
-    
-    return result;
-}
-
-inline v2
-normalize(v2 a) {
-    return mul(a, 1.f / length(a));
 }
 
 inline real32
 length(v3 a) {
-    real32 result = sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
-    return result;
-}
-
-inline v3
-normalize(v3 a) {
-    v3 result = mul(a, (1.f / length(a)));
-    return result;
-}
-
-inline b32
-equal(v4 a, v4 b) {
-    b32 result = false;
-    
-    result = (a.x == b.x && 
-              a.y == b.y && 
-              a.z == b.z && 
-              a.w == b.w);
-    
-    return result;
-}
-
-inline v3
-sub(v3 a, v3 b) {
-    v3 result = {};
-    
-    result.x = a.x - b.x;
-    result.y = a.y - b.y;
-    result.z = a.z - b.z;
-    
+    real32 result = sqrtf(length_sq(a));
     return result;
 }
 
@@ -253,9 +294,210 @@ cross(v3 a, v3 b) {
     return result;
 }
 
+inline v3
+operator* (real32 a, v3 b) {
+    v3 result = {};
+    
+    result.x = a * b.x;
+    result.y = a * b.y;
+    result.z = a * b.z;
+    
+    return result;
+}
 
-internal int
-clamp(int min, int val, int max) {
+inline v3
+operator* (v3 b, real32 a) {
+    v3 result = a * b;
+    return result;
+}
+
+inline v3 &
+operator*= (v3 &b, real32 a) {
+    b = a * b;
+    return b;
+}
+
+inline v3
+operator- (v3 a) {
+    v3 result;
+    
+    result.x = -a.x;
+    result.y = -a.y;
+    result.z = -a.z;
+    
+    return result;
+}
+
+inline v3
+operator+ (v3 a, v3 b) {
+    v3 result = {};
+    
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+    result.z = a.z + b.z;
+    
+    return result;
+}
+
+inline v3 &
+operator+= (v3 &a, v3 b) {
+    a = a + b;
+    return a;
+}
+
+inline v3
+operator- (v3 a, v3 b) {
+    v3 result = {};
+    
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    result.z = a.z - b.z;
+    
+    return result;
+}
+
+inline v3 &
+operator-= (v3 &a, v3 b) {
+    a = a - b;
+    return a;
+}
+
+inline v3
+normalize(v3 a) {
+    v3 result = a * (1.f / length(a));
+    return result;
+}
+
+//
+// V4
+// 
+
+internal inline v4
+make_v4(real32 x, real32 y, real32 z, real32 w) {
+    v4 result;
+    
+    result.x = x;
+    result.y = y;
+    result.z = z;
+    result.w = w;
+    
+    return result;
+}
+
+inline real32
+inner(v4 a, v4 b) {
+    real32 result = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+    return result;
+}
+
+inline real32
+length_sq(v4 a) {
+    real32 result = inner(a, a);
+    return result;
+}
+
+inline real32
+length(v4 a) {
+    real32 result = sqrtf(length_sq(a));
+    return result;
+}
+
+inline v4
+operator* (real32 a, v4 b) {
+    v4 result = {};
+    
+    result.x = a * b.x;
+    result.y = a * b.y;
+    result.z = a * b.z;
+    result.w = a * b.w;
+    
+    return result;
+}
+
+inline v4
+operator* (v4 b, real32 a) {
+    v4 result = a * b;
+    return result;
+}
+
+inline v4 &
+operator*= (v4 &b, real32 a) {
+    b = a * b;
+    return b;
+}
+
+inline v4
+operator- (v4 a) {
+    v4 result;
+    
+    result.x = -a.x;
+    result.y = -a.y;
+    result.z = -a.z;
+    result.w = -a.w;
+    
+    return result;
+}
+
+inline v4
+operator+ (v4 a, v4 b) {
+    v4 result = {};
+    
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+    result.z = a.z + b.z;
+    result.w = a.w + b.w;
+    
+    return result;
+}
+
+inline v4 &
+operator+= (v4 &a, v4 b) {
+    a = a + b;
+    return a;
+}
+
+inline v4
+operator- (v4 a, v4 b) {
+    v4 result = {};
+    
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+    result.z = a.z - b.z;
+    result.w = a.w - b.w;
+    
+    return result;
+}
+
+inline v4 &
+operator-= (v4 &a, v4 b) {
+    a = a - b;
+    return a;
+}
+
+inline b32
+operator==(v4 a, v4 b) {
+    b32 result = false;
+    
+    result = (a.x == b.x && 
+              a.y == b.y && 
+              a.z == b.z && 
+              a.w == b.w);
+    
+    return result;
+}
+
+inline v4
+normalize(v4 a) {
+    v4 result = a * (1.f / length(a));
+    return result;
+}
+
+//
+// Clamp
+//
+
+internal s32
+clamp(s32 min, s32 val, s32 max) {
     if (val < min) return min;
     if (val > max) return max;
     return val;
@@ -284,7 +526,6 @@ safe_divide_1(real32 a, real32 b) {
     return a / b;
 }
 
-
 internal inline real32
 max_real32(real32 a, real32 b) {
     if (a > b) return a; 
@@ -301,6 +542,10 @@ inline real32
 lerp(real32 a, real32 t, real32 b) {
     return (1.f - t) * a + t * b;
 }
+
+//
+// Color
+//
 
 internal inline v4
 make_color(real32 r, real32 g, real32 b) {
@@ -414,6 +659,10 @@ random_real32_in_range(real32 min, real32 max) {
     return random_unilateral() * (max - min) + min;
 }
 
+//
+// Matrices
+//
+
 inline real32
 angle_to_radians(real32 angle) {
     real32 result = 0.f;
@@ -423,9 +672,18 @@ angle_to_radians(real32 angle) {
     return result;
 }
 
-//
-// Matrices
-//
+internal inline mat4
+identity() {
+    mat4 result = {};
+    
+    result.e[0 + 0 * 4] = 1.0f;
+    result.e[1 + 1 * 4] = 1.0f;
+    result.e[2 + 2 * 4] = 1.0f;
+    result.e[3 + 3 * 4] = 1.0f;
+    
+    return result;
+}
+
 inline
 v2 rotate_around(v2 a, v2 center, real32 angle) {
     v2 result = {};
@@ -557,17 +815,11 @@ perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
 	return frustum(l, r, b, t, n, f);
 }
 
-inline real32
-inner(v3 a, v3 b) {
-    real32 result = a.x * b.x + a.y * b.y + a.z * b.z;
-    return result;
-}
-
 inline mat4
 look_at(v3 position, v3 target, v3 up = make_v3(0.f, 1.f, .0f)) {
     mat4 result = identity();
     
-    v3 f = normalize(sub(target, position));
+    v3 f = normalize(target - position);
     v3 s = normalize(cross(f, up));
     v3 u = cross(s, f);
     

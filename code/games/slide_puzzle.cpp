@@ -190,8 +190,8 @@ draw_board(slide_puzzle_state *state) {
             }
             
             // Translate values to correct position so it can be correctly centered.
-            min = add(min, start);
-            max = add(max, start);
+            min = min + start;
+            max = max + start;
             
             immediate_quad(min, max, make_color(0xff00cf00));
         }
@@ -240,8 +240,8 @@ draw_board(slide_puzzle_state *state) {
             }
             
             // Translate values to correct position so it can be correctly centered.
-            min = add(min, start);
-            max = add(max, start);
+            min = min + start;
+            max = max + start;
             
             real32 size = get_text_width(&state->assets.primary_font, (char *) tile.content);
             

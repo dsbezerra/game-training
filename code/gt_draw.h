@@ -4,6 +4,14 @@ struct vertex {
     v3 position;
     v4 color;
     v2 uv;
+    v3 normal;
+};
+
+enum rendering_mode {
+    RenderingMode_None,
+    RenderingMode_2D,
+    RenderingMode_3D,
+    RenderingMode_Count,
 };
 
 struct imm {
@@ -15,6 +23,8 @@ struct imm {
     vertex vertices[MAX_VERTICES];
     
     int num_vertices;
+    
+    rendering_mode mode;
 };
 
 internal void init_draw();
@@ -30,6 +40,7 @@ internal void immediate_flush();
 internal vertex *get_next_vertex_ptr();
 
 internal void immediate_vertex(v3 position, v4 color, v2 uv);
+internal void immediate_vertex(v3 position, v4 color, v2 uv, v3 normal);
 
 
 internal void immediate_circle(v2 center, real32 inner_radius_x, real32 inner_radius_y, real32 outer_radius_x, real32 outer_radius_y, v4 color);

@@ -72,7 +72,7 @@ update_player(dodger_state *state, game_input *input) {
         velocity.y += speed;
     }
     
-    v2 new_position = add(player->position, velocity);
+    v2 new_position = player->position + velocity;
     new_position.x = clampf(0.f, new_position.x, ((real32) dim.width) - player->size.width);
     new_position.y = clampf(0.f, new_position.y, ((real32) dim.height) - player->size.height);
     player->position = new_position;
@@ -121,13 +121,13 @@ check_for_collision(dodger_player *player, dodger_bad_guy *bad_guy) {
 internal void
 draw_player(dodger_player *player) {
     v4 color = make_color(0xffffffff);
-    immediate_quad(player->position, add(player->position, player->size), color);
+    immediate_quad(player->position, player->position + player->size, color);
 }
 
 internal void
 draw_bad_guy(dodger_bad_guy *bad_guy) {
     v4 color = make_color(0xff66ff66);
-    immediate_quad(bad_guy->position, add(bad_guy->position, bad_guy->size), color);
+    immediate_quad(bad_guy->position, bad_guy->position + bad_guy->size, color);
 }
 
 internal void
@@ -238,7 +238,7 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
         v2i new_mouse_position;
         platform_get_cursor_position(&new_mouse_position);
         
-        input->mouse.velocity = sub(new_mouse_position, input->mouse.position);
+        input->mouse.velocity = new_mouse_position - input->mouse.position;
         
         if (input->mouse.lock) {
             platform_set_cursor_position(memory->window_center);

@@ -60,6 +60,11 @@ enum button {
     Button_Left,
     Button_Right,
     
+    Button_W,
+    Button_A,
+    Button_S,
+    Button_D,
+    
     Button_Mouse1,
     
     Button_Count
@@ -85,6 +90,11 @@ struct game_input {
             game_button_state down;
             game_button_state left;
             game_button_state right;
+            
+            game_button_state w;
+            game_button_state a;
+            game_button_state s;
+            game_button_state d;
             
             game_button_state mouse1;
         };

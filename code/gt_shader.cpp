@@ -1,5 +1,6 @@
 global_variable shader global_shader;
 global_variable shader global_basic_3d_shader;
+global_variable shader global_basic_3d_light_shader;
 
 internal shader_source
 parse_shader(char *filepath) {
@@ -140,9 +141,13 @@ load_shader(char *filepath) {
     result.view_loc = open_gl->glGetUniformLocation(program, "view");
     result.projection_loc = open_gl->glGetUniformLocation(program, "projection");
     result.texture_loc = open_gl->glGetUniformLocation(program, "ftex");
+    
+    result.light_color_loc = open_gl->glGetUniformLocation(program, "light_color");
+    
     result.position_loc = 0;
     result.color_loc    = 1;
     result.uv_loc       = 2;
+    result.normal_loc   = 3;
     
     return result;
 }
@@ -151,4 +156,5 @@ internal void
 init_shaders() {
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
     global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");
+    global_basic_3d_light_shader = load_shader("./data/shaders/basic_3d_light.glsl");
 }

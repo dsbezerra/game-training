@@ -4,32 +4,54 @@ init_game(sokoban_state *state) {
     init_camera(&state->cam);
     set_camera_mode(&state->cam, CameraMode_Free);
     
+    
+    state->cam.yaw = 0.f;
+    state->cam.pitch = -55.f;
+    state->cam.position.y = 3.f;
     state->cam.position.z = 3.f;
     
-    
     v4 white = make_color(0xffffffff);
-    v4 black = make_color(0xff000000);
     
-    for (int tile_y = 0; tile_y < 16; tile_y++) {
-        for (int tile_x = 0; tile_x < 16; tile_x++) {
-            
-            sokoban_tile tile = {};
-            
-            v3 pos = make_v3(tile_x * .4f, .0f, tile_y * 0.4f);
-            tile.position.x = pos.x;
-            tile.position.y = pos.y;
-            tile.position.z = pos.z;
-            
-            if ((tile_x + tile_y) % 2 == 0) {
-                tile.color = white;
-            } else {
-                tile.color = black;
-            }
-            
-            state->tiles[tile_x][tile_y] = tile;
+    s32 stride = array_count(state->entities) / 16;
+    
+    s32 cube_rows = 5;
+    
+    s32 tile_x = 0;
+    s32 tile_y = 0;
+    
+    // Light goes here
+    
+    v3 pos = make_v3(0.f, 2.4f, 2.4f);
+    
+    // First 25 entities are tiles
+    for (int i = 1; i < cube_rows * cube_rows; i++) {
+        
+        sokoban_entity *entity = &state->entities[i];
+        
+        entity->kind = SokobanEntityKind_Tile;
+        
+        v3 p = make_v3(tile_x * .5f, .0f, tile_y * 0.5f);
+        entity->position.x = p.x;
+        entity->position.y = p.y;
+        entity->position.z = p.z;
+        
+        entity->color = make_v4(1.0f, 0.5f, 0.31f, 1.f);
+        if (tile_x >= cube_rows) {
+            tile_x = 0;
+            tile_y++;
         }
+        
+        tile_x++;
     }
     
+    sokoban_entity *light = &state->entities[0];
+    sokoban_entity cube = state->entities[8];
+    
+    light->kind = SokobanEntityKind_Light;
+    light->position.x = cube.position.x;
+    light->position.y = cube.position.y + 8.f;
+    light->position.z = cube.position.z;
+    light->color = make_color(0xffffffff);
     
 }
 
@@ -37,82 +59,127 @@ internal void
 update_game(sokoban_state *state, game_input *input) {
     // TODO
     update_camera(&state->cam, input);
+    
+    
+    sokoban_entity *light = &state->entities[0];
+    
+    if (is_down(Button_W)) {
+        light->position.y += 20.f * time_info.dt;
+    }
+    if (is_down(Button_S)) {
+        light->position.y -= 20.f * time_info.dt;
+    }
+    
+    if (is_down(Button_A)) {
+        light->position.x += 20.f * time_info.dt;
+    }
+    if (is_down(Button_D)) {
+        light->position.x -= 20.f * time_info.dt;
+    }
 }
 
 internal void
 draw_game_view(sokoban_state *state) {
     if (state->game_mode == GameMode_Playing) {
         // TODO
-        
-        
 #define TEST_3D 1
-        
 #if TEST_3D
         
         
         render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
         
-        immediate_begin();
-        
-        v4 color = make_color(0xffaaaaaa);
-        
+        v4 white = make_color(0xffffffff);
         view_matrix = get_view_matrix(&state->cam);
         
-        open_gl->glUniformMatrix4fv(global_basic_3d_shader.view_loc, 1, GL_FALSE, view_matrix.e);
-        
-        open_gl->glUniform1i(immediate->current_shader.texture_loc, 0);
         glBindTexture(GL_TEXTURE_2D, state->assets.none);
         open_gl->glActiveTexture(GL_TEXTURE0);
         
-        sokoban_tile *tiles_ptr = (sokoban_tile *) state->tiles;
-        int len = 16*16;
-        for (sokoban_tile *tile = tiles_ptr; tile != tiles_ptr + len; tile++) {
+        sokoban_entity *light = &state->entities[0];
+        
+        for (sokoban_entity *entity = state->entities; entity != state->entities + array_count(state->entities); entity++) {
+            
+            if (entity->kind == SokobanEntityKind_None) {
+                continue;
+            }
+            
+            mat4 model_matrix = translate(entity->position);
+            
+            switch (entity->kind) {
+                case SokobanEntityKind_Tile: {
+                    // TODO(diego): Specific tile stuff
+                    set_shader(global_basic_3d_shader);
+                    
+                    set_float3("view_position", state->cam.position);
+                    set_float3("light_position", light->position);
+                    set_float4("light_color", make_color(0xffffffff));
+                    
+                } break;
+                case SokobanEntityKind_Light: {
+                    
+                    set_shader(global_basic_3d_light_shader);
+                    set_float4("light_color", white);
+                    
+                    model_matrix = model_matrix * scale(make_v3(.5f, .5f, .5f));
+                } break;
+                
+                default: {
+                    continue;
+                } break;
+            }
+            
             immediate_begin();
             
-            mat4 model_matrix = translate(tile->position);
-            open_gl->glUniformMatrix4fv(global_basic_3d_shader.model_loc, 1, GL_FALSE, model_matrix.e);
+            v3 n0 = make_v3(0.0f,  0.0f, -1.0f);
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, .0f), n0);
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(1.f, .0f), n0);
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.f), n0);
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.f), n0);
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(.0f, 1.f), n0);
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, .0f), n0);
             
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.0f));
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(.0f, 0.f));
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
+            v3 n1 = make_v3(0.0f,  0.0f,  1.0f);
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, .0f), n1);
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(1.f, .0f), n1);
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 1.f), n1);
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 1.f), n1);
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(.0f, 1.f), n1);
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, .0f), n1);
             
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, 1.0f));
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(1.f, 1.0f));
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(1.f, 0.f));
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(1.f, 0.f));
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, 0.f));
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, 1.0f));
+            v3 n2 = make_v3(-1.0f,  0.0f,  0.0f);
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n2);
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.0f), n2);
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n2);
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n2);
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, 0.f), n2);
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n2);
             
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(.0f, 1.0f));
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.0f));
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 0.f));
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 0.f));
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(.0f, 0.f));
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(.0f, 1.0f));
+            v3 n3 = make_v3(1.0f,  0.0f,  0.0f);
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n3);
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.0f), n3);
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n3);
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n3);
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(.0f, 0.f), n3);
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n3);
             
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, .0f));
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), tile->color, make_v2(1.f, .0f));
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.f));
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.f));
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(.0f, 1.f));
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(.0f, .0f));
+            v3 n4 = make_v3(0.0f,  -1.0f,  0.0f);
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, 1.0f), n4);
+            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(1.f, 1.0f), n4);
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(1.f, 0.f), n4);
+            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(1.f, 0.f), n4);
+            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, 0.f), n4);
+            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, 1.0f), n4);
             
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, .0f));
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), tile->color, make_v2(1.f, .0f));
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 1.f));
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), tile->color, make_v2(1.f, 1.f));
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(.0f, 1.f));
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, .0f));
+            v3 n5 = make_v3(0.0f,  1.0f,  0.0f);
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(.0f, 1.0f), n5);
+            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.0f), n5);
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 0.f), n5);
+            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 0.f), n5);
+            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(.0f, 0.f), n5);
+            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(.0f, 1.0f), n5);
             
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), tile->color, make_v2(1.f, 1.0f));
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), tile->color, make_v2(0.f, 1.f));
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), tile->color, make_v2(.0f, 0.f));
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), tile->color, make_v2(1.0f, .0f));
+            set_mat4("model", model_matrix);
+            refresh_shader_transform();
+            
             immediate_flush();
         }
         
@@ -163,7 +230,7 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
         v2i new_mouse_position;
         platform_get_cursor_position(&new_mouse_position);
         
-        input->mouse.velocity = sub(new_mouse_position, input->mouse.position);
+        input->mouse.velocity = new_mouse_position - input->mouse.position;
         input->mouse.velocity.y *= -1; // NOTE(diego): Make mouse down move pitch down
         
         if (input->mouse.lock) {

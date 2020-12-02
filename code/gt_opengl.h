@@ -98,6 +98,7 @@ typedef void type_glDrawArrays(GLenum mode, GLint first, GLsizei count);
 
 typedef GLint type_glGetUniformLocation(GLuint program, const GLchar *name);
 typedef void type_glUniform1i(GLint location, GLint v0);
+typedef void type_glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
 typedef void type_glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 typedef void type_glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat *value);
 
@@ -166,6 +167,7 @@ struct opengl {
     opengl_function(glBufferSubData);
     opengl_function(glVertexAttribPointer);
     opengl_function(glGenVertexArrays);
+    opengl_function(glUniform3f);
     opengl_function(glUniform4f);
     opengl_function(glUniformMatrix4fv);
     opengl_function(glDrawArrays);
