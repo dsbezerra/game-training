@@ -30,7 +30,7 @@ init_game(sokoban_state *state) {
         entity->position.y = p.y;
         entity->position.z = p.z;
         
-        entity->color = make_v4(1.0f, 0.5f, 0.31f, 1.f);
+        entity->color = make_v4(1.0f, 1.0f, 1.0f, 1.f);
         if (tile_x >= cube_rows) {
             tile_x = 0;
             tile_y++;
@@ -83,11 +83,15 @@ draw_game_view(sokoban_state *state) {
         v4 white = make_color(0xffffffff);
         view_matrix = get_view_matrix(&state->cam);
         
-        glBindTexture(GL_TEXTURE_2D, state->assets.none);
         open_gl->glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, state->assets.container);
+        
+        open_gl->glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, state->assets.container_specular);
         
         sokoban_entity *light = &state->entities[0];
         
+#if 0
         v4 light_color = {};
         light_color.a = 1.f;
         light_color.r = sinf(time_info.current_time * 2.0f);
@@ -96,7 +100,10 @@ draw_game_view(sokoban_state *state) {
         
         v4 diffuse_color = light_color * make_v4(0.5f, 0.5f, 0.5f, 1.f);
         v4 ambient_color = diffuse_color * make_v4(0.2f, 0.2f, 0.2f, 1.f);
-        
+#else
+        v4 ambient_color = make_v4(.2f, .2f, .2f, 1.f);
+        v4 diffuse_color = make_v4(.5f, .5f, .5f, 1.f);
+#endif
         
         for (sokoban_entity *entity = state->entities; entity != state->entities + array_count(state->entities); entity++) {
             
@@ -117,10 +124,9 @@ draw_game_view(sokoban_state *state) {
                     set_float4("light.specular", make_v4(1.0f, 1.0f, 1.0f, 1.f));
                     
                     // Set material values
-                    set_float4("material.ambient", make_v4(1.f,  .5f, .31f, 1.f));
-                    set_float4("material.diffuse", make_v4(1.f,  .5f, .31f, 1.f));
-                    set_float4("material.specular", make_v4(.5f, .5f, .5f, 1.f));
-                    set_float("material.shininess", 32.f);
+                    set_int1("material.diffuse", 0);
+                    set_int1("material.specular", 1);
+                    set_float("material.shininess", 64.f);
                     
                     set_float3("view_position", state->cam.position);
                     
@@ -196,7 +202,7 @@ draw_game_view(sokoban_state *state) {
         
 #endif
         
-        
+        open_gl->glActiveTexture(GL_TEXTURE0);
     } else {
         draw_menu(SOKOBAN_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
@@ -225,6 +231,8 @@ sokoban_game_update_and_render(game_memory *memory, game_input *input) {
         
         state = (sokoban_state *) game_alloc(memory, megabytes(12));
         state->assets.none = load_texture("./data/textures/sokoban/none.jpg");
+        state->assets.container = load_texture("./data/textures/sokoban/container.png");
+        state->assets.container_specular = load_texture("./data/textures/sokoban/container_specular.png");
         
         state->cam.position = make_v3(.0f, 0.f, -3.f);
         

@@ -26,6 +26,8 @@ struct sokoban_entity {
 
 struct sokoban_assets {
     GLint none;
+    GLint container;
+    GLint container_specular;
 };
 
 struct sokoban_state {
