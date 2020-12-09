@@ -119,14 +119,17 @@ draw_game_view(sokoban_state *state) {
                     set_shader(global_basic_3d_shader);
                     
                     set_float3("light.position", light->position);
-                    //set_float4("light.direction", make_v4(1.f, 0.f, .0f. .0f));
                     set_float4("light.ambient", ambient_color);
                     set_float4("light.diffuse", diffuse_color);
                     set_float4("light.specular", make_v4(1.0f, 1.0f, 1.0f, 1.f));
+                    set_float4("light.direction", make_v4(state->cam.front.x, state->cam.front.y, state->cam.front.z, 1.f));
+                    
+                    
+                    set_float("light.cutoff", cosf(angle_to_radians(6.5f)));
                     
                     set_float("light.constant", 1.f);
                     set_float("light.linear", .09f);
-                    set_float("light.quadratic", .032f);
+                    set_float("light.quadratic", .0032f);
                     
                     // Set material values
                     set_int1("material.diffuse", 0);

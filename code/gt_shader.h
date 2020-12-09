@@ -1,7 +1,7 @@
 
 struct shader_source {
     char vertex[1 << 10];
-    char fragment[1 << 11];
+    char fragment[1 << 12];
 };
 
 struct shader {
