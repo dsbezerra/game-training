@@ -28,10 +28,15 @@ void main() {
 
 struct Light {
     vec3 position;
-  
+    vec4 direction; // w == 1 indicates that we have a directional light
+
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 struct Material {
@@ -58,7 +63,13 @@ void main() {
     
     // diffuse
     vec3 norm = normalize(out_normal);
-    vec3 light_dir = normalize(light.position - frag_position);
+    
+    vec3 light_dir = vec3(1.0);
+    if (light.direction.w == 1.0) {
+      light_dir = normalize(-light.direction.xyz);
+    } else {
+      light_dir = normalize(light.position - frag_position);
+    }
     float diff = max(dot(norm, light_dir), 0.0);
     vec4 diffuse = light.diffuse * diff * texture(material.diffuse, out_uv);
     
@@ -67,6 +78,14 @@ void main() {
     vec3 reflect_dir = reflect(-light_dir, norm);
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
     vec4 specular = light.specular * spec * texture(material.specular, out_uv);
+
+    // Calculate attenuation for a more realistic light
+    float distance = length(light.position - frag_position);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+   
+    ambient  *= attenuation;
+    diffuse  *= attenuation;
+    specular *= attenuation;
 
     vec4 result = (ambient + diffuse + specular);
     frag_color = vec4(result.rgb, 1.0);
