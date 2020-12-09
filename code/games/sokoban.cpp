@@ -5,10 +5,7 @@ init_game(sokoban_state *state) {
     set_camera_mode(&state->cam, CameraMode_Free);
     
     
-    state->cam.yaw = 0.f;
-    state->cam.pitch = -55.f;
-    state->cam.position.y = 3.f;
-    state->cam.position.z = 3.f;
+    state->cam.position = make_v3(.0f, .0f, 3.0f);
     
     v4 white = make_color(0xffffffff);
     
@@ -21,10 +18,8 @@ init_game(sokoban_state *state) {
     
     // Light goes here
     
-    v3 pos = make_v3(0.f, 2.4f, 2.4f);
-    
     // First 25 entities are tiles
-    for (int i = 1; i < cube_rows * cube_rows; i++) {
+    for (int i = 1; i < 2; i++) {
         
         sokoban_entity *entity = &state->entities[i];
         
@@ -48,9 +43,7 @@ init_game(sokoban_state *state) {
     sokoban_entity cube = state->entities[8];
     
     light->kind = SokobanEntityKind_Light;
-    light->position.x = cube.position.x;
-    light->position.y = cube.position.y + 8.f;
-    light->position.z = cube.position.z;
+    light->position = make_v3(1.2f, 1.0f, 12.0f);
     light->color = make_color(0xffffffff);
     
 }
@@ -85,7 +78,6 @@ draw_game_view(sokoban_state *state) {
 #define TEST_3D 1
 #if TEST_3D
         
-        
         render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
         
         v4 white = make_color(0xffffffff);
@@ -95,6 +87,16 @@ draw_game_view(sokoban_state *state) {
         open_gl->glActiveTexture(GL_TEXTURE0);
         
         sokoban_entity *light = &state->entities[0];
+        
+        v4 light_color = {};
+        light_color.a = 1.f;
+        light_color.r = sinf(time_info.current_time * 2.0f);
+        light_color.g = sinf(time_info.current_time * 0.7f);
+        light_color.b = sinf(time_info.current_time * 1.3f);
+        
+        v4 diffuse_color = light_color * make_v4(0.5f, 0.5f, 0.5f, 1.f);
+        v4 ambient_color = diffuse_color * make_v4(0.2f, 0.2f, 0.2f, 1.f);
+        
         
         for (sokoban_entity *entity = state->entities; entity != state->entities + array_count(state->entities); entity++) {
             
@@ -109,9 +111,18 @@ draw_game_view(sokoban_state *state) {
                     // TODO(diego): Specific tile stuff
                     set_shader(global_basic_3d_shader);
                     
+                    set_float3("light.position", light->position);
+                    set_float4("light.ambient", ambient_color);
+                    set_float4("light.diffuse", diffuse_color);
+                    set_float4("light.specular", make_v4(1.0f, 1.0f, 1.0f, 1.f));
+                    
+                    // Set material values
+                    set_float4("material.ambient", make_v4(1.f,  .5f, .31f, 1.f));
+                    set_float4("material.diffuse", make_v4(1.f,  .5f, .31f, 1.f));
+                    set_float4("material.specular", make_v4(.5f, .5f, .5f, 1.f));
+                    set_float("material.shininess", 32.f);
+                    
                     set_float3("view_position", state->cam.position);
-                    set_float3("light_position", light->position);
-                    set_float4("light_color", make_color(0xffffffff));
                     
                 } break;
                 case SokobanEntityKind_Light: {
@@ -119,7 +130,7 @@ draw_game_view(sokoban_state *state) {
                     set_shader(global_basic_3d_light_shader);
                     set_float4("light_color", white);
                     
-                    model_matrix = model_matrix * scale(make_v3(.5f, .5f, .5f));
+                    model_matrix = scale(model_matrix, make_v3(.2f, .2f, .2f));
                 } break;
                 
                 default: {
@@ -130,52 +141,52 @@ draw_game_view(sokoban_state *state) {
             immediate_begin();
             
             v3 n0 = make_v3(0.0f,  0.0f, -1.0f);
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, .0f), n0);
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(1.f, .0f), n0);
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.f), n0);
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.f), n0);
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(.0f, 1.f), n0);
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, .0f), n0);
+            immediate_vertex(make_v3(-.5f, -.5f, -.5f), entity->color, make_v2(.0f, .0f), n0);
+            immediate_vertex(make_v3( .5f, -.5f, -.5f), entity->color, make_v2(1.f, .0f), n0);
+            immediate_vertex(make_v3( .5f,  .5f, -.5f), entity->color, make_v2(1.f, 1.f), n0);
+            immediate_vertex(make_v3( .5f,  .5f, -.5f), entity->color, make_v2(1.f, 1.f), n0);
+            immediate_vertex(make_v3(-.5f,  .5f, -.5f), entity->color, make_v2(.0f, 1.f), n0);
+            immediate_vertex(make_v3(-.5f, -.5f, -.5f), entity->color, make_v2(.0f, .0f), n0);
             
             v3 n1 = make_v3(0.0f,  0.0f,  1.0f);
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, .0f), n1);
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(1.f, .0f), n1);
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 1.f), n1);
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 1.f), n1);
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(.0f, 1.f), n1);
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, .0f), n1);
+            immediate_vertex(make_v3(-.5f, -.5f,  .5f), entity->color, make_v2(.0f, .0f), n1);
+            immediate_vertex(make_v3( .5f, -.5f,  .5f), entity->color, make_v2(1.f, .0f), n1);
+            immediate_vertex(make_v3( .5f,  .5f,  .5f), entity->color, make_v2(1.f, 1.f), n1);
+            immediate_vertex(make_v3( .5f,  .5f,  .5f), entity->color, make_v2(1.f, 1.f), n1);
+            immediate_vertex(make_v3(-.5f,  .5f,  .5f), entity->color, make_v2(.0f, 1.f), n1);
+            immediate_vertex(make_v3(-.5f, -.5f,  .5f), entity->color, make_v2(.0f, .0f), n1);
             
             v3 n2 = make_v3(-1.0f,  0.0f,  0.0f);
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n2);
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.0f), n2);
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n2);
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n2);
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, 0.f), n2);
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n2);
+            immediate_vertex(make_v3(-.5f,  .5f,  .5f), entity->color, make_v2(1.0f, .0f), n2);
+            immediate_vertex(make_v3(-.5f,  .5f, -.5f), entity->color, make_v2(1.f, 1.0f), n2);
+            immediate_vertex(make_v3(-.5f, -.5f, -.5f), entity->color, make_v2(0.f, 1.f), n2);
+            immediate_vertex(make_v3(-.5f, -.5f, -.5f), entity->color, make_v2(0.f, 1.f), n2);
+            immediate_vertex(make_v3(-.5f, -.5f,  .5f), entity->color, make_v2(.0f, 0.f), n2);
+            immediate_vertex(make_v3(-.5f,  .5f,  .5f), entity->color, make_v2(1.0f, .0f), n2);
             
             v3 n3 = make_v3(1.0f,  0.0f,  0.0f);
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n3);
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.0f), n3);
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n3);
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(0.f, 1.f), n3);
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(.0f, 0.f), n3);
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.0f, .0f), n3);
+            immediate_vertex(make_v3( .5f,  .5f,  .5f), entity->color, make_v2(1.0f, .0f), n3);
+            immediate_vertex(make_v3( .5f,  .5f, -.5f), entity->color, make_v2(1.f, 1.0f), n3);
+            immediate_vertex(make_v3( .5f, -.5f, -.5f), entity->color, make_v2(0.f, 1.f), n3);
+            immediate_vertex(make_v3( .5f, -.5f, -.5f), entity->color, make_v2(0.f, 1.f), n3);
+            immediate_vertex(make_v3( .5f, -.5f,  .5f), entity->color, make_v2(.0f, 0.f), n3);
+            immediate_vertex(make_v3( .5f,  .5f,  .5f), entity->color, make_v2(1.0f, .0f), n3);
             
             v3 n4 = make_v3(0.0f,  -1.0f,  0.0f);
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, 1.0f), n4);
-            immediate_vertex(make_v3( .2f, -.2f, -.2f), entity->color, make_v2(1.f, 1.0f), n4);
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(1.f, 0.f), n4);
-            immediate_vertex(make_v3( .2f, -.2f,  .2f), entity->color, make_v2(1.f, 0.f), n4);
-            immediate_vertex(make_v3(-.2f, -.2f,  .2f), entity->color, make_v2(.0f, 0.f), n4);
-            immediate_vertex(make_v3(-.2f, -.2f, -.2f), entity->color, make_v2(.0f, 1.0f), n4);
+            immediate_vertex(make_v3(-.5f, -.5f, -.5f), entity->color, make_v2(.0f, 1.0f), n4);
+            immediate_vertex(make_v3( .5f, -.5f, -.5f), entity->color, make_v2(1.f, 1.0f), n4);
+            immediate_vertex(make_v3( .5f, -.5f,  .5f), entity->color, make_v2(1.f, 0.f), n4);
+            immediate_vertex(make_v3( .5f, -.5f,  .5f), entity->color, make_v2(1.f, 0.f), n4);
+            immediate_vertex(make_v3(-.5f, -.5f,  .5f), entity->color, make_v2(.0f, 0.f), n4);
+            immediate_vertex(make_v3(-.5f, -.5f, -.5f), entity->color, make_v2(.0f, 1.0f), n4);
             
             v3 n5 = make_v3(0.0f,  1.0f,  0.0f);
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(.0f, 1.0f), n5);
-            immediate_vertex(make_v3( .2f,  .2f, -.2f), entity->color, make_v2(1.f, 1.0f), n5);
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 0.f), n5);
-            immediate_vertex(make_v3( .2f,  .2f,  .2f), entity->color, make_v2(1.f, 0.f), n5);
-            immediate_vertex(make_v3(-.2f,  .2f,  .2f), entity->color, make_v2(.0f, 0.f), n5);
-            immediate_vertex(make_v3(-.2f,  .2f, -.2f), entity->color, make_v2(.0f, 1.0f), n5);
+            immediate_vertex(make_v3(-.5f,  .5f, -.5f), entity->color, make_v2(.0f, 1.0f), n5);
+            immediate_vertex(make_v3( .5f,  .5f, -.5f), entity->color, make_v2(1.f, 1.0f), n5);
+            immediate_vertex(make_v3( .5f,  .5f,  .5f), entity->color, make_v2(1.f, 0.f), n5);
+            immediate_vertex(make_v3( .5f,  .5f,  .5f), entity->color, make_v2(1.f, 0.f), n5);
+            immediate_vertex(make_v3(-.5f,  .5f,  .5f), entity->color, make_v2(.0f, 0.f), n5);
+            immediate_vertex(make_v3(-.5f,  .5f, -.5f), entity->color, make_v2(.0f, 1.0f), n5);
             
             set_mat4("model", model_matrix);
             refresh_shader_transform();

@@ -59,15 +59,21 @@ set_int1(char *name, int value) {
 }
 
 internal void
-set_float4(char *name, v4 values) {
+set_float(char *name, real32 value) {
     GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
-    open_gl->glUniform4f(location, values.x, values.y, values.z, values.w);
+    open_gl->glUniform1f(location, value);
 }
 
 internal void
 set_float3(char *name, v3 values) {
     GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
     open_gl->glUniform3f(location, values.x, values.y, values.z);
+}
+
+internal void
+set_float4(char *name, v4 values) {
+    GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
+    open_gl->glUniform4f(location, values.x, values.y, values.z, values.w);
 }
 
 internal void
@@ -398,7 +404,7 @@ render_3d(int width, int height, real32 fov = 45.f) {
     immediate->mode = RenderingMode_3D;
     
     real32 aspect_ratio = (real32) width / (real32) height;
-    real32 n = .1f;
+    real32 n = 0.1f;
     real32 f = 100.f;
     
     projection_matrix = perspective(fov, aspect_ratio, f, n);

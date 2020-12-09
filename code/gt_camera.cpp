@@ -47,7 +47,7 @@ update_camera(camera *cam, game_input *input) {
             
             update_vectors(cam);
             
-            real32 speed = 5.f * time_info.dt;
+            real32 speed = 2.5f * time_info.dt;
             if (is_down(Button_Up)) {
                 cam->position = cam->position + cam->front * speed;
             }

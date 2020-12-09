@@ -68,5 +68,14 @@ internal void draw_text(real32 x, real32 y, u8 *text, loaded_font *font, v4 colo
 
 internal void set_shader(shader new_shader);
 internal void refresh_shader_transform();
+
+
+internal void set_mat4(char *name, mat4 matrix);
+
+internal void set_int1(char *name, int value);
+internal void set_float(char *name, real32 value);
+internal void set_float3(char *name, v3 values);
+internal void set_float4(char *name, v4 values);
+
 internal void render_2d_right_handed(int width, int height);
 internal void render_3d(int width, int height);

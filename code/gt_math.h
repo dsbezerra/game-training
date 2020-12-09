@@ -403,6 +403,18 @@ length(v4 a) {
 }
 
 inline v4
+operator* (v4 a, v4 b) {
+    v4 result = {};
+    
+    result.x = a.x * b.x;
+    result.y = a.y * b.y;
+    result.z = a.z * b.z;
+    result.w = a.w * b.w;
+    
+    return result;
+}
+
+inline v4
 operator* (real32 a, v4 b) {
     v4 result = {};
     
@@ -861,6 +873,17 @@ scale(v3 scale) {
     result.e[2 + 2 * 4] = scale.z;
     
     return result;
+}
+
+inline mat4
+scale(mat4 matrix, v3 scale) {
+    mat4 result = identity();
+    
+    result.e[0 + 0 * 4] = scale.x;
+    result.e[1 + 1 * 4] = scale.y;
+    result.e[2 + 2 * 4] = scale.z;
+    
+    return matrix * result;
 }
 
 // NOTE(diego): Not tested.

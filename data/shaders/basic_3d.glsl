@@ -26,6 +26,21 @@ void main() {
 #shader fragment
 #version 330 core
 
+struct Light {
+    vec3 position;
+  
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+};
+
+struct Material {
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    float shininess;
+}; 
+  
 out vec4 frag_color;
 
 in vec2 out_uv;
@@ -35,27 +50,26 @@ in vec3 frag_position;
 
 uniform sampler2D ftex;
 
-uniform vec4 light_color;
-uniform vec3 light_position;
 uniform vec3 view_position;
+
+uniform Light light;
+uniform Material material;
 
 void main() {
     // ambient
-    float ambient_strength = 0.1;
-    vec4 ambient = ambient_strength * light_color;
+    vec4 ambient = light.ambient * material.ambient;
     
     // diffuse
     vec3 norm = normalize(out_normal);
-    vec3 light_dir = normalize(light_position - frag_position);
+    vec3 light_dir = normalize(light.position - frag_position);
     float diff = max(dot(norm, light_dir), 0.0);
-    vec4 diffuse = diff * light_color;
+    vec4 diffuse = light.diffuse * (diff * material.diffuse);
     
     // specular
-    float spec_strength = 0.5;
     vec3 view_dir = normalize(view_position - frag_position);
     vec3 reflect_dir = reflect(-light_dir, norm);
-    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
-    vec4 specular = spec_strength * spec * light_color;
+    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+    vec4 specular = light.specular * (spec * material.specular);
 
     vec4 result = (ambient + diffuse + specular) * out_color;
     frag_color = texture(ftex, out_uv) * vec4(result.xyz, 1.0);

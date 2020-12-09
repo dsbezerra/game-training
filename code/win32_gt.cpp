@@ -147,6 +147,7 @@ win32_opengl_get_functions() {
     opengl_get_function(glGenVertexArrays);
     opengl_get_function(glDrawArrays);
     opengl_get_function(glGetUniformLocation);
+    opengl_get_function(glUniform1f);
     opengl_get_function(glUniform3f);
     opengl_get_function(glUniform4f);
     opengl_get_function(glUniformMatrix4fv);
