@@ -16,10 +16,8 @@ init_game(sokoban_state *state) {
     s32 tile_x = 0;
     s32 tile_y = 0;
     
-    // Light goes here
     
-    // First 25 entities are tiles
-    for (int i = 1; i < 2; i++) {
+    for (int i = 2; i < 3; i++) {
         
         sokoban_entity *entity = &state->entities[i];
         
@@ -39,12 +37,21 @@ init_game(sokoban_state *state) {
         tile_x++;
     }
     
-    sokoban_entity *light = &state->entities[0];
-    sokoban_entity cube = state->entities[8];
+    v3 point_light_positions[] = {
+        make_v3( 0.7f,  0.2f,  8.0f),
+        make_v3( 4.3f, -3.3f, -4.0f),
+    };
     
-    light->kind = SokobanEntityKind_Light;
-    light->position = make_v3(1.2f, 1.0f, 12.0f);
-    light->color = make_color(0xffffffff);
+    sokoban_entity *first_light  = &state->entities[0];
+    sokoban_entity *second_light = &state->entities[1];
+    
+    first_light->kind = SokobanEntityKind_Light;
+    first_light->position = point_light_positions[0];
+    first_light->color = make_color(0xffffffff);
+    
+    second_light->kind = SokobanEntityKind_Light;
+    second_light->position = point_light_positions[1];
+    second_light->color = make_color(0xffff00ff);
     
 }
 
@@ -52,23 +59,6 @@ internal void
 update_game(sokoban_state *state, game_input *input) {
     // TODO
     update_camera(&state->cam, input);
-    
-    
-    sokoban_entity *light = &state->entities[0];
-    
-    if (is_down(Button_W)) {
-        light->position.y += 20.f * time_info.dt;
-    }
-    if (is_down(Button_S)) {
-        light->position.y -= 20.f * time_info.dt;
-    }
-    
-    if (is_down(Button_A)) {
-        light->position.x += 20.f * time_info.dt;
-    }
-    if (is_down(Button_D)) {
-        light->position.x -= 20.f * time_info.dt;
-    }
 }
 
 internal void
@@ -91,19 +81,6 @@ draw_game_view(sokoban_state *state) {
         
         sokoban_entity *light = &state->entities[0];
         
-#if 0
-        v4 light_color = {};
-        light_color.a = 1.f;
-        light_color.r = sinf(time_info.current_time * 2.0f);
-        light_color.g = sinf(time_info.current_time * 0.7f);
-        light_color.b = sinf(time_info.current_time * 1.3f);
-        
-        v4 diffuse_color = light_color * make_v4(0.5f, 0.5f, 0.5f, 1.f);
-        v4 ambient_color = diffuse_color * make_v4(0.2f, 0.2f, 0.2f, 1.f);
-#else
-        v4 ambient_color = make_v4(.2f, .2f, .2f, 1.f);
-        v4 diffuse_color = make_v4(.5f, .5f, .5f, 1.f);
-#endif
         
         for (sokoban_entity *entity = state->entities; entity != state->entities + array_count(state->entities); entity++) {
             
@@ -118,18 +95,28 @@ draw_game_view(sokoban_state *state) {
                     // TODO(diego): Specific tile stuff
                     set_shader(global_basic_3d_shader);
                     
-                    set_float3("light.position", light->position);
-                    set_float4("light.ambient", ambient_color);
-                    set_float4("light.diffuse", diffuse_color);
-                    set_float4("light.specular", make_v4(1.0f, 1.0f, 1.0f, 1.f));
-                    set_float4("light.direction", make_v4(state->cam.front.x, state->cam.front.y, state->cam.front.z, 1.f));
+                    set_float3("dir_light.ambient", make_v3(0.05f, 0.05f, 0.05f));
+                    set_float3("dir_light.diffuse", make_v3(0.4f, 0.4f, 0.4f));
+                    set_float3("dir_light.specular", make_v3(0.5f, 0.5f, 0.5f));
+                    set_float3("dir_light.direction", make_v3(-0.2f, -1.0f, -0.3f));
                     
                     
-                    set_float("light.cutoff", cosf(angle_to_radians(6.5f)));
+                    set_float3("point_lights[0].position", state->entities[0].position);
+                    set_float3("point_lights[0].ambient", make_v3(0.05f, 0.05f, 0.05f));
+                    set_float3("point_lights[0].diffuse", make_v3(0.8f, 0.8f, 0.8f));
+                    set_float3("point_lights[0].specular", make_v3(1.0f, 1.0f, 1.0f));
+                    set_float("point_lights[0].constant", 1.f);
+                    set_float("point_lights[0].linear", .09f);
+                    set_float("point_lights[0].quadratic", .0032f);
                     
-                    set_float("light.constant", 1.f);
-                    set_float("light.linear", .09f);
-                    set_float("light.quadratic", .0032f);
+                    set_float3("point_lights[1].position", state->entities[1].position);
+                    set_float3("point_lights[1].ambient", make_v3(0.05f, 0.05f, 0.05f));
+                    set_float3("point_lights[1].diffuse", make_v3(0.8f, 0.8f, 0.8f));
+                    set_float3("point_lights[1].specular", make_v3(1.0f, 1.0f, 1.0f));
+                    set_float("point_lights[1].constant", 1.f);
+                    set_float("point_lights[1].linear", .09f);
+                    set_float("point_lights[1].quadratic", .0032f);
+                    
                     
                     // Set material values
                     set_int1("material.diffuse", 0);

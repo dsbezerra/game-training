@@ -26,19 +26,30 @@ void main() {
 #shader fragment
 #version 330 core
 
-struct Light {
-    vec3 position;
-    vec4 direction; // w == 1 indicates that we have a directional light
-    float cutoff; // As cosine of angle, used for spotlights
+struct DirLight {
+    vec3 direction;
 
-    vec4 ambient;
-    vec4 diffuse;
-    vec4 specular;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+uniform DirLight dir_light;
+
+struct PointLight {
+    vec3 position;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
 
     float constant;
     float linear;
     float quadratic;
 };
+
+#define NUM_POINT_LIGHTS 2
+uniform PointLight point_lights[NUM_POINT_LIGHTS];
 
 struct Material {
     sampler2D diffuse;
@@ -55,43 +66,58 @@ in vec3 frag_position;
 
 uniform vec3 view_position;
 
-uniform Light light;
 uniform Material material;
 
+vec3 calc_dir_light(DirLight light, vec3 normal, vec3 view_dir);
+vec3 calc_point_light(PointLight light, vec3 normal, vec3 frag_pos, vec3 view_dir);
+
 void main() {
+  // properties
+  vec3 norm = normalize(out_normal);
+  vec3 view_dir = normalize(view_position - frag_position);
+
+  // phase 1: Direction light
+  vec3 result = calc_dir_light(dir_light, norm, view_dir);
+  // phase 2: Point lights
+  for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+    result += calc_point_light(point_lights[i], norm, frag_position, view_dir);
+  // phase 3: Spotlights?
+  // Maybe.
+
+  frag_color = vec4(result, 1.0);
+}
+
+vec3 calc_dir_light(DirLight light, vec3 normal, vec3 view_dir) {
+  vec3 light_dir = normalize(-light.direction);
+  // diffuse shading
+  float diff = max(dot(normal, light_dir), 0.0);
+  // specular shading
+  vec3 reflect_dir = reflect(-light_dir, normal);
+  float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+  // combine results
+  vec3 ambient  = light.ambient         * vec3(texture(material.diffuse, out_uv));
+  vec3 diffuse  = light.diffuse  * diff * vec3(texture(material.diffuse, out_uv));
+  vec3 specular = light.specular * spec * vec3(texture(material.specular, out_uv)); 
+  return (ambient + diffuse + specular);
+}
+
+vec3 calc_point_light(PointLight light, vec3 normal, vec3 frag_pos, vec3 view_dir) {
+  vec3 light_dir = normalize(light.position - frag_pos);
+  // diffuse shading
+  float diff = max(dot(normal, light_dir), 0.0);
+  // specular shading
+  vec3 reflect_dir = reflect(-light_dir, normal);
+  float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+  // attenuation
+  float distance = length(light.position - frag_pos);
+  float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+  // combine results
+  vec3 ambient  = light.ambient         * vec3(texture(material.diffuse, out_uv));
+  vec3 diffuse  = light.diffuse  * diff * vec3(texture(material.diffuse, out_uv));
+  vec3 specular = light.specular * spec * vec3(texture(material.specular, out_uv)); 
  
-    vec3 light_dir = normalize(light.position - frag_position);
-    float theta = dot(light_dir, normalize(-light.direction.xyz)); 
-    // See Smooth/Soft edges of Light casters in 
-    // https://learnopengl.com/Lighting/Light-casters
-    // to learn about it.
-    if (theta > light.cutoff) {
-      // ambient
-      vec4 ambient = light.ambient * texture(material.diffuse, out_uv);
-    
-      // diffuse
-      vec3 norm = normalize(out_normal);
-    
-      float diff = max(dot(norm, light_dir), 0.0);
-      vec4 diffuse = light.diffuse * diff * texture(material.diffuse, out_uv);
-    
-      // specular
-      vec3 view_dir = normalize(view_position - frag_position);
-      vec3 reflect_dir = reflect(-light_dir, norm);
-      float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-      vec4 specular = light.specular * spec * texture(material.specular, out_uv);
-
-      // Calculate attenuation for a more realistic light
-      float distance = length(light.position - frag_position);
-      float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-   
-      //ambient  *= attenuation;
-      diffuse  *= attenuation;
-      specular *= attenuation;
-
-      vec4 result = (ambient + diffuse + specular);
-      frag_color = vec4(result.rgb, 1.0);
-    } else {
-      frag_color = light.ambient * texture(material.diffuse, out_uv);
-    }
+  ambient *= attenuation;
+  diffuse *= attenuation;
+  specular *= attenuation;
+  return (ambient + diffuse + specular);
 }
