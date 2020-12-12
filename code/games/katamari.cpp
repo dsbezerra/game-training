@@ -296,22 +296,30 @@ update_game(katamari_state *state, game_input *input) {
     katamari_entity *player = find_first_entity(state, KatamariEntity_Player);
     assert(player);
     
-    // TODO(diego): Implement equation of motions
-    real32 speed = 100.f * time_info.dt;
-    v2 velocity = {};
+    v2 acceleration = {};
+    
     if (is_down(Button_Left)) {
-        velocity.x -= speed;
+        acceleration.x = -1.f;
     }
     if (is_down(Button_Right)) {
-        velocity.x += speed;
+        acceleration.x = 1.f;
     }
     if (is_down(Button_Up)) {
-        velocity.y -= speed;
+        acceleration.y = -1.f;
     }
     if (is_down(Button_Down)) {
-        velocity.y += speed;
+        acceleration.y = 1.f;
     }
-    player->position = player->position + velocity;
+    
+    real32 speed = 200.f;
+    acceleration *= speed;
+    acceleration += -2.f * player->velocity;
+    
+    // NOTE(diego): Equation of Motions!
+    real32 square_dt = time_info.dt * time_info.dt;
+    player->position = (0.5f*acceleration*square_dt +
+                        player->velocity*time_info.dt + player->position);
+    player->velocity = acceleration*time_info.dt + player->velocity;
     
     //
     // Update squirrels

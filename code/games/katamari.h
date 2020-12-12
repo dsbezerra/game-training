@@ -43,6 +43,7 @@ struct katamari_entity {
     katamari_entity_kind kind;
     katamari_movement_pattern movement_pattern;
     v2 position;
+    v2 velocity;
     v2 direction;
     v2 half_size;
     b32 alive;
