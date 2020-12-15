@@ -9,6 +9,7 @@
 #include "gt_profiler.h"
 #include "gt_collision.h"
 #include "gt_draw.h"
+#include "gt_mesh.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_FAILURE_STRINGS

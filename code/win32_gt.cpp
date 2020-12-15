@@ -125,6 +125,7 @@ internal void
 win32_opengl_get_functions() {
     assert(open_gl);
     
+    opengl_get_function(glGetDebugMessageLog);
     opengl_get_function(glGetShaderInfoLog);
     opengl_get_function(glGetShaderiv);
     opengl_get_function(glGetProgramiv);
@@ -139,13 +140,16 @@ win32_opengl_get_functions() {
     opengl_get_function(glLinkProgram);
     opengl_get_function(glUseProgram);
     opengl_get_function(glGenBuffers);
+    opengl_get_function(glDeleteBuffers);
     opengl_get_function(glBindVertexArray);
     opengl_get_function(glBindBuffer);
     opengl_get_function(glBufferData);
     opengl_get_function(glBufferSubData);
     opengl_get_function(glVertexAttribPointer);
     opengl_get_function(glGenVertexArrays);
+    opengl_get_function(glDeleteVertexArrays);
     opengl_get_function(glDrawArrays);
+    opengl_get_function(glDrawElements);
     opengl_get_function(glGetUniformLocation);
     opengl_get_function(glUniform1f);
     opengl_get_function(glUniform3f);
@@ -338,8 +342,8 @@ win32_init_opengl(HWND window) {
     // TODO(diego): Watch handmade hero 245
     if (wglCreateContextAttribsARB) {
         int attribs[] = {
-            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 5,
             WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
             WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
             0,

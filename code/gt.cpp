@@ -4,6 +4,7 @@
 #include "gt_shader.cpp"
 #include "gt_draw.cpp"
 #include "gt_profiler.cpp"
+#include "gt_mesh.cpp"
 
 global_variable game_time_info time_info = {};
 

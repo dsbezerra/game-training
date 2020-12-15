@@ -4,6 +4,8 @@ global_variable mat4 projection_matrix;
 
 global_variable u32 draw_call_count = 0;
 
+#define DUMP_GL_ERRORS true
+
 internal void
 init_draw() {
     init_shaders();
@@ -23,6 +25,11 @@ immediate_init() {
     }
     
     immediate = (imm *) platform_alloc(sizeof(imm));
+    
+#if DUMP_GL_ERRORS
+#define GL_DEBUG_OUTPUT 0x92E0
+    glEnable(GL_DEBUG_OUTPUT);
+#endif
     
     open_gl->glGenVertexArrays(1, &immediate->vao);
     open_gl->glBindVertexArray(immediate->vao);
@@ -332,6 +339,7 @@ immediate_flush() {
     open_gl->glEnableVertexAttribArray(normal_loc);
     
     glDrawArrays(GL_TRIANGLES, 0, immediate->num_vertices);
+    dump_gl_errors("immediate_flush");
     
     open_gl->glDisableVertexAttribArray(position_loc);
     open_gl->glDisableVertexAttribArray(color_loc);
@@ -411,4 +419,28 @@ render_3d(int width, int height, real32 fov = 45.f) {
     view_matrix       = identity();
     
     refresh_shader_transform();
+}
+
+internal void
+dump_gl_errors(char *tag) {
+#if DUMP_GL_ERRORS
+    if (!open_gl->glGetDebugMessageLog) return;
+    
+    while (true) {
+        GLuint source, type, id;
+        GLint length;
+        GLenum severity;
+        
+        GLchar buffer[4096];
+        
+        if (open_gl->glGetDebugMessageLog(1, sizeof(buffer), &source, &type, &id, &severity, &length, buffer)) {
+            
+            char buf[4096];
+            sprintf(buf, "[%s] %s\n", tag, buffer);
+            OutputDebugString(buf);
+        } else {
+            break;
+        }
+    }
+#endif
 }

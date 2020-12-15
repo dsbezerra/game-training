@@ -30,6 +30,13 @@ struct sokoban_assets {
     GLint container_specular;
 };
 
+struct sokoban_player {
+    v3 position;
+    v3 velocity;
+    
+    Model model;
+};
+
 struct sokoban_state {
     v2i dimensions;
     
@@ -38,6 +45,8 @@ struct sokoban_state {
     sokoban_assets assets;
     
     sokoban_entity entities[16 * 16];
+    
+    sokoban_player player;
     
     game_mode game_mode;
     s8 menu_selected_item;

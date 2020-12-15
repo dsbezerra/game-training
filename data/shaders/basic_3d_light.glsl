@@ -34,6 +34,5 @@ uniform sampler2D ftex;
 uniform vec4 light_color;
 
 void main() {
-   frag_color = vec4(1.0);  
-// frag_color = texture(ftex, out_uv) * out_color * light_color;
+   frag_color = out_color;
 }

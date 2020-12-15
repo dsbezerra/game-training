@@ -79,3 +79,5 @@ internal void set_float4(char *name, v4 values);
 
 internal void render_2d_right_handed(int width, int height);
 internal void render_3d(int width, int height);
+
+internal void dump_gl_errors(char *tag);

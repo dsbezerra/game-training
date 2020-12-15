@@ -53,12 +53,61 @@ init_game(sokoban_state *state) {
     second_light->position = point_light_positions[1];
     second_light->color = make_color(0xffff00ff);
     
+    
+    //
+    // Player
+    //
+    sokoban_player player = {};
+    player.position = make_v3(0.f, 0.f, 0.f);
+    player.velocity = make_v3(0.f, 0.f, 0.f);
+    
+    //
+    // Load mesh
+    //
+    player.model = load_model("./data/models/default_blender_cube.obj");
+    
+    state->player = player;
 }
 
 internal void
 update_game(sokoban_state *state, game_input *input) {
     // TODO
     update_camera(&state->cam, input);
+}
+
+internal void
+draw_tile(sokoban_state *state) {
+    set_shader(global_basic_3d_shader);
+    
+    set_float3("dir_light.ambient", make_v3(0.05f, 0.05f, 0.05f));
+    set_float3("dir_light.diffuse", make_v3(0.4f, 0.4f, 0.4f));
+    set_float3("dir_light.specular", make_v3(0.5f, 0.5f, 0.5f));
+    set_float3("dir_light.direction", make_v3(-0.2f, -1.0f, -0.3f));
+    
+    
+    set_float3("point_lights[0].position", state->entities[0].position);
+    set_float3("point_lights[0].ambient", make_v3(0.05f, 0.05f, 0.05f));
+    set_float3("point_lights[0].diffuse", make_v3(0.8f, 0.8f, 0.8f));
+    set_float3("point_lights[0].specular", make_v3(1.0f, 1.0f, 1.0f));
+    set_float("point_lights[0].constant", 1.f);
+    set_float("point_lights[0].linear", .09f);
+    set_float("point_lights[0].quadratic", .0032f);
+    
+    set_float3("point_lights[1].position", state->entities[1].position);
+    set_float3("point_lights[1].ambient", make_v3(0.05f, 0.05f, 0.05f));
+    set_float3("point_lights[1].diffuse", make_v3(0.8f, 0.8f, 0.8f));
+    set_float3("point_lights[1].specular", make_v3(1.0f, 1.0f, 1.0f));
+    set_float("point_lights[1].constant", 1.f);
+    set_float("point_lights[1].linear", .09f);
+    set_float("point_lights[1].quadratic", .0032f);
+    
+    
+    // Set material values
+    set_int1("material.diffuse", 0);
+    set_int1("material.specular", 1);
+    set_float("material.shininess", 64.f);
+    
+    set_float3("view_position", state->cam.position);
 }
 
 internal void
@@ -70,17 +119,21 @@ draw_game_view(sokoban_state *state) {
         
         render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
         
+        glClearColor(.2f, .3f, 0.2f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
         v4 white = make_color(0xffffffff);
         view_matrix = get_view_matrix(&state->cam);
         
+        sokoban_entity *light = &state->entities[0];
+        
+        
+#if 0
         open_gl->glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, state->assets.container);
         
         open_gl->glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, state->assets.container_specular);
-        
-        sokoban_entity *light = &state->entities[0];
-        
         
         for (sokoban_entity *entity = state->entities; entity != state->entities + array_count(state->entities); entity++) {
             
@@ -93,38 +146,7 @@ draw_game_view(sokoban_state *state) {
             switch (entity->kind) {
                 case SokobanEntityKind_Tile: {
                     // TODO(diego): Specific tile stuff
-                    set_shader(global_basic_3d_shader);
-                    
-                    set_float3("dir_light.ambient", make_v3(0.05f, 0.05f, 0.05f));
-                    set_float3("dir_light.diffuse", make_v3(0.4f, 0.4f, 0.4f));
-                    set_float3("dir_light.specular", make_v3(0.5f, 0.5f, 0.5f));
-                    set_float3("dir_light.direction", make_v3(-0.2f, -1.0f, -0.3f));
-                    
-                    
-                    set_float3("point_lights[0].position", state->entities[0].position);
-                    set_float3("point_lights[0].ambient", make_v3(0.05f, 0.05f, 0.05f));
-                    set_float3("point_lights[0].diffuse", make_v3(0.8f, 0.8f, 0.8f));
-                    set_float3("point_lights[0].specular", make_v3(1.0f, 1.0f, 1.0f));
-                    set_float("point_lights[0].constant", 1.f);
-                    set_float("point_lights[0].linear", .09f);
-                    set_float("point_lights[0].quadratic", .0032f);
-                    
-                    set_float3("point_lights[1].position", state->entities[1].position);
-                    set_float3("point_lights[1].ambient", make_v3(0.05f, 0.05f, 0.05f));
-                    set_float3("point_lights[1].diffuse", make_v3(0.8f, 0.8f, 0.8f));
-                    set_float3("point_lights[1].specular", make_v3(1.0f, 1.0f, 1.0f));
-                    set_float("point_lights[1].constant", 1.f);
-                    set_float("point_lights[1].linear", .09f);
-                    set_float("point_lights[1].quadratic", .0032f);
-                    
-                    
-                    // Set material values
-                    set_int1("material.diffuse", 0);
-                    set_int1("material.specular", 1);
-                    set_float("material.shininess", 64.f);
-                    
-                    set_float3("view_position", state->cam.position);
-                    
+                    draw_tile(state);
                 } break;
                 case SokobanEntityKind_Light: {
                     
@@ -194,6 +216,19 @@ draw_game_view(sokoban_state *state) {
             
             immediate_flush();
         }
+#endif
+        
+        //
+        // Draw player
+        //
+        
+        set_shader(global_basic_3d_light_shader);
+        
+        mat4 model_matrix = translate(state->player.position);
+        set_mat4("model", model_matrix);
+        refresh_shader_transform();
+        
+        draw_model(&state->player.model);
         
 #endif
         
