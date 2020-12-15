@@ -1,8 +1,5 @@
 /* date = December 14th 2020 10:15 pm */
 
-#define TINYOBJ_LOADER_C_IMPLEMENTATION
-#include "external/tinyobj_loader.h"      // OBJ/MTL file formats loading
-
 enum Texture_Type {
     TextureType_None,
     TextureType_Diffuse,

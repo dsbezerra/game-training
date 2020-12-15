@@ -64,7 +64,7 @@ init_game(sokoban_state *state) {
     //
     // Load mesh
     //
-    player.model = load_model("./data/models/default_blender_cube.obj");
+    player.model = load_model("./data/models/backpack.obj");
     
     state->player = player;
 }
