@@ -217,14 +217,48 @@ gen_mesh_cube(float width, float height, float length) {
 internal void
 insert_vertex(Triangle_Mesh *mesh, Obj_Model *model, Obj_Index idx, u32 *vcount, u32 *ucount, u32 *ncount) {
     
-    mesh->vertices[*vcount] = model->vertices[idx.vertex_index];
-    mesh->indices[*vcount] = *vcount; // TODO(diego): Optimize it by getting the correct indices
+    v3 vertex = model->vertices[idx.vertex_index];
     
+    bool32 has_normals = model->normal_count > 0;
+    bool32 has_uvs     = model->uv_count > 0;
+    
+    int previous = -1;
+    for (int i = 0; i < (int) (*vcount); ++i) {
+        v3 v = mesh->vertices[i];
+        
+        bool32 match = v.x == vertex.x && v.y == vertex.y && v.z == vertex.z;
+        if (!match) continue;
+        
+        if (has_uvs) {
+            v2 muv = mesh->uvs[i];
+            v2 uv = model->uvs[idx.uv_index];
+            match = uv.x == muv.x && uv.y == muv.y; 
+            if (!match) continue;
+        }
+        if (has_normals) {
+            v3 nv = mesh->normals[i];
+            v3 n = model->normals[idx.normal_index];
+            match = n.x == nv.x && n.y == nv.y && n.z == nv.z; 
+            if (!match) continue;
+        }
+        if (match) {
+            previous = i;
+            break;
+        }
+    }
+    
+    mesh->vertices[*vcount] = vertex;
     if (model->uv_count > 0) {
         mesh->uvs[(*ucount)++] = model->uvs[idx.uv_index];
     }
     if (model->normal_count > 0) {
         mesh->normals[(*ncount)++] = model->normals[idx.normal_index];
+    }
+    
+    if (previous != -1) {
+        mesh->indices[*vcount] = previous;
+    } else {
+        mesh->indices[*vcount] = *vcount;
     }
     
     (*vcount)++;
@@ -302,8 +336,8 @@ load_obj_model(char *filepath) {
             spec.idx2.uv_index = get_index(spec.idx2.uv_index, model.uv_count);
             
             spec.idx0.normal_index = get_index(spec.idx0.normal_index, model.normal_count);
-            spec.idx1.normal_index = get_index(spec.idx0.normal_index, model.normal_count);
-            spec.idx2.normal_index = get_index(spec.idx0.normal_index, model.normal_count);
+            spec.idx1.normal_index = get_index(spec.idx1.normal_index, model.normal_count);
+            spec.idx2.normal_index = get_index(spec.idx2.normal_index, model.normal_count);
             
             element->kind = ObjElementKind_Face;
             element->face_spec = spec;
@@ -339,7 +373,7 @@ load_obj_model(char *filepath) {
     Triangle_Mesh *mesh = &result.meshes[0];
     
     u32 vertex_count = model.face_count * 3;
-    u32 index_count = vertex_count * 3;
+    u32 index_count = vertex_count;
     mesh->vertices  = (v3 *) platform_alloc(vertex_count * sizeof(v3));
     mesh->indices   = (u32 *) platform_alloc(index_count * sizeof(u32));
     mesh->uvs       = (v2 *) platform_alloc(vertex_count * sizeof(v2));

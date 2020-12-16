@@ -216,13 +216,18 @@ draw_game_view(sokoban_state *state) {
             
             immediate_flush();
         }
-#endif
+#else
         
         //
         // Draw player
         //
+        open_gl->glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, state->assets.container);
         
-        set_shader(global_basic_3d_light_shader);
+        open_gl->glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, state->assets.container_specular);
+        
+        draw_tile(state);
         
         mat4 model_matrix = translate(state->player.position);
         set_mat4("model", model_matrix);
@@ -230,6 +235,7 @@ draw_game_view(sokoban_state *state) {
         
         draw_model(&state->player.model);
         
+#endif
 #endif
         
         open_gl->glActiveTexture(GL_TEXTURE0);
