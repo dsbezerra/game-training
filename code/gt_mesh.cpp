@@ -214,13 +214,189 @@ gen_mesh_cube(float width, float height, float length) {
     return mesh;
 }
 
+internal void
+insert_vertex(Triangle_Mesh *mesh, Obj_Model *model, Obj_Index idx, u32 *vcount, u32 *ucount, u32 *ncount) {
+    
+    mesh->vertices[*vcount] = model->vertices[idx.vertex_index];
+    mesh->indices[*vcount] = *vcount; // TODO(diego): Optimize it by getting the correct indices
+    
+    if (model->uv_count > 0) {
+        mesh->uvs[(*ucount)++] = model->uvs[idx.uv_index];
+    }
+    if (model->normal_count > 0) {
+        mesh->normals[(*ncount)++] = model->normals[idx.normal_index];
+    }
+    
+    (*vcount)++;
+}
+
+internal int
+get_index(int index, int count) {
+    if (index > 0) {
+        return index - 1;
+    }
+    return count + index;
+}
+
+internal Model
+load_obj_model(char *filepath) {
+    assert(string_length(filepath) != 0);
+    assert(string_ends_with(filepath, ".obj"));
+    
+    file_contents obj_file = platform_read_entire_file(filepath);
+    assert(obj_file.file_size > 0);
+    
+    Obj_Model model = {};
+    model.filepath = filepath;
+    
+    u32 num_lines = count_lines(obj_file.contents);
+    
+    Obj_Element *elements = (Obj_Element *) platform_alloc(num_lines * sizeof(Obj_Element));
+    
+    u32 current_line = 0;
+    
+    u8 *at = obj_file.contents;
+    while (1) {
+        
+        char *line = consume_next_line(&at);
+        if (!line) break;
+        
+        Obj_Element *element = &elements[current_line];
+        
+        Break_String_Result r = break_by_spaces(line);
+        if (strings_are_equal(r.lhs, "v")) {
+            v3 vertex = {};
+            sscanf(r.rhs, "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
+            
+            element->kind = ObjElementKind_Vertex;
+            element->vertex = vertex;
+            model.vertex_count++;
+        } else if (strings_are_equal(r.lhs, "vt")) {
+            v2 uv = {};
+            sscanf(r.rhs, "%f %f", &uv.x, &uv.y);
+            element->kind = ObjElementKind_UV;
+            element->uv = uv;
+            model.uv_count++;
+        } else if (strings_are_equal(r.lhs, "vn")) {
+            v3 normal = {};
+            sscanf(r.rhs, "%f %f %f", &normal.x, &normal.y, &normal.z);
+            
+            element->kind = ObjElementKind_Normal;
+            element->normal = normal;
+            model.normal_count++;
+        } else if (strings_are_equal(r.lhs, "f")) {
+            // NOTE(diego): We assume faces have Vertex index, uv index and normal index V/T/N
+            // And that the model is already triangulated.
+            Obj_Face_Spec spec = {};
+            sscanf(r.rhs, "%d/%d/%d %d/%d/%d %d/%d/%d",
+                   &spec.idx0.vertex_index, &spec.idx0.uv_index, &spec.idx0.normal_index,
+                   &spec.idx1.vertex_index, &spec.idx1.uv_index, &spec.idx1.normal_index,
+                   &spec.idx2.vertex_index, &spec.idx2.uv_index, &spec.idx2.normal_index);
+            
+            spec.idx0.vertex_index = get_index(spec.idx0.vertex_index, model.vertex_count);
+            spec.idx1.vertex_index = get_index(spec.idx1.vertex_index, model.vertex_count);
+            spec.idx2.vertex_index = get_index(spec.idx2.vertex_index, model.vertex_count);
+            
+            spec.idx0.uv_index = get_index(spec.idx0.uv_index, model.uv_count);
+            spec.idx1.uv_index = get_index(spec.idx1.uv_index, model.uv_count);
+            spec.idx2.uv_index = get_index(spec.idx2.uv_index, model.uv_count);
+            
+            spec.idx0.normal_index = get_index(spec.idx0.normal_index, model.normal_count);
+            spec.idx1.normal_index = get_index(spec.idx0.normal_index, model.normal_count);
+            spec.idx2.normal_index = get_index(spec.idx0.normal_index, model.normal_count);
+            
+            element->kind = ObjElementKind_Face;
+            element->face_spec = spec;
+            model.face_count++;
+        } else {
+            element->kind = ObjElementKind_None;
+        }
+        
+        ++current_line;
+    }
+    
+    // Don't need it anymore
+    platform_free(obj_file.contents);
+    
+    model.vertices = (v3 *) platform_alloc(model.vertex_count * sizeof(v3));
+    model.uvs      = (v2 *) platform_alloc(model.uv_count * sizeof(v2));
+    model.normals  = (v3 *) platform_alloc(model.normal_count * sizeof(v3));
+    model.faces    = (Obj_Face_Spec *) platform_alloc(model.face_count * sizeof(Obj_Face_Spec));
+    
+    u32 v_count  = 0;
+    u32 vt_count = 0;
+    u32 vn_count = 0;
+    u32 f_count = 0;
+    
+    Model result = {};
+    result.mesh_count = 1;
+    result.meshes = (Triangle_Mesh *) platform_alloc(result.mesh_count * sizeof(Triangle_Mesh));
+    
+    u32 vcount = 0;
+    u32 ucount = 0;
+    u32 ncount = 0;
+    
+    Triangle_Mesh *mesh = &result.meshes[0];
+    
+    u32 vertex_count = model.face_count * 3;
+    u32 index_count = vertex_count * 3;
+    mesh->vertices  = (v3 *) platform_alloc(vertex_count * sizeof(v3));
+    mesh->indices   = (u32 *) platform_alloc(index_count * sizeof(u32));
+    mesh->uvs       = (v2 *) platform_alloc(vertex_count * sizeof(v2));
+    mesh->normals   = (v3 *) platform_alloc(vertex_count * sizeof(v3));
+    
+    mesh->vertex_count = vertex_count;
+    mesh->index_count  = index_count;
+    
+    for (u32 element_index = 0; element_index < num_lines; ++element_index) {
+        Obj_Element *element = &elements[element_index];
+        switch (element->kind) {
+            case ObjElementKind_Vertex: {
+                model.vertices[v_count++] = element->vertex;
+            } break;
+            case ObjElementKind_UV: {
+                model.uvs[vt_count++] = element->uv;
+            } break;
+            case ObjElementKind_Normal: {
+                model.normals[vn_count++] = element->normal;
+            } break;
+            case ObjElementKind_Face: {
+                model.faces[f_count++] = element->face_spec;
+                // Construct final model
+                Obj_Index idx0 = element->face_spec.idx0;
+                Obj_Index idx1 = element->face_spec.idx1;
+                Obj_Index idx2 = element->face_spec.idx2;
+                
+                insert_vertex(mesh, &model, idx0, &vcount, &ucount, &ncount);
+                insert_vertex(mesh, &model, idx1, &vcount, &ucount, &ncount);
+                insert_vertex(mesh, &model, idx2, &vcount, &ucount, &ncount);
+                
+            } break;
+            default: break;
+        }
+    }
+    
+    platform_free(elements);
+    platform_free(model.vertices);
+    platform_free(model.uvs);
+    platform_free(model.normals);
+    platform_free(model.faces);
+    
+    return result;
+}
+
 internal Model
 load_model(char *filepath) {
     Model result = {};
     
+#if 0
     result.mesh_count = 1;
     result.meshes = (Triangle_Mesh *) platform_alloc(sizeof(Triangle_Mesh));
     result.meshes[0] = gen_mesh_cube(1.f, 1.f, 1.f);
+#else
+    result = load_obj_model(filepath);
+#endif
+    result.filepath = filepath;
     
     //
     // Init it.

@@ -64,7 +64,7 @@ platform_get_cursor_position(v2i *position) {
     position->y = point.y;
 }
 internal file_contents
-plataform_read_entire_file(char *filepath) {
+platform_read_entire_file(char *filepath) {
     file_contents result = {};
     
     HANDLE file_handle = CreateFileA(filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
@@ -81,9 +81,7 @@ plataform_read_entire_file(char *filepath) {
     DWORD bytes_read;
     if (ReadFile(file_handle, result.contents, file_size, &bytes_read, 0) && file_size == bytes_read) {
         // Success;
-    } else {
-        assert(0);
-    }
+    } else { invalid_code_path; }
     
     CloseHandle(file_handle);
     return result;

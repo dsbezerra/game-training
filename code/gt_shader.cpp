@@ -6,7 +6,7 @@ internal shader_source
 parse_shader(char *filepath) {
     shader_source result = {};
     
-    file_contents file = plataform_read_entire_file(filepath);
+    file_contents file = platform_read_entire_file(filepath);
     
     char *at = (char *) file.contents;
     u8 type = 0;

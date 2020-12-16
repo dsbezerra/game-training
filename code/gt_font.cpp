@@ -5,7 +5,7 @@ load_font(char *fontpath, real32 size) {
     u32 buffer_size = 1 << 20;
     u8 *bitmap = (u8 *) platform_alloc(BITMAP_SIZE * BITMAP_SIZE);
     
-    file_contents font_contents = plataform_read_entire_file(fontpath); 
+    file_contents font_contents = platform_read_entire_file(fontpath); 
     
     int ascent, descent, line_gap;
     stbtt_InitFont(&result.info, font_contents.contents, 0);

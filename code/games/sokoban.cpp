@@ -64,7 +64,7 @@ init_game(sokoban_state *state) {
     //
     // Load mesh
     //
-    player.model = load_model("./data/models/backpack.obj");
+    player.model = load_model("./data/models/cube_t.obj");
     
     state->player = player;
 }
