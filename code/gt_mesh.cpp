@@ -222,6 +222,7 @@ insert_vertex(Triangle_Mesh *mesh, Obj_Model *model, Obj_Index idx, u32 *vcount,
     bool32 has_normals = model->normal_count > 0;
     bool32 has_uvs     = model->uv_count > 0;
     
+    // TODO(diego): Replace with hash table
     int previous = -1;
     for (int i = 0; i < (int) (*vcount); ++i) {
         v3 v = mesh->vertices[i];
