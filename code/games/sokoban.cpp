@@ -85,18 +85,20 @@ draw_tile(sokoban_state *state) {
     set_float3("dir_light.direction", make_v3(-0.2f, -1.0f, -0.3f));
     
     
+    v4 color = state->entities[0].color;
     set_float3("point_lights[0].position", state->entities[0].position);
     set_float3("point_lights[0].ambient", make_v3(0.05f, 0.05f, 0.05f));
     set_float3("point_lights[0].diffuse", make_v3(0.8f, 0.8f, 0.8f));
-    set_float3("point_lights[0].specular", make_v3(1.0f, 1.0f, 1.0f));
+    set_float3("point_lights[0].specular", make_v3(color.r, color.g, color.b));
     set_float("point_lights[0].constant", 1.f);
     set_float("point_lights[0].linear", .09f);
     set_float("point_lights[0].quadratic", .0032f);
     
+    color = state->entities[1].color;
     set_float3("point_lights[1].position", state->entities[1].position);
     set_float3("point_lights[1].ambient", make_v3(0.05f, 0.05f, 0.05f));
     set_float3("point_lights[1].diffuse", make_v3(0.8f, 0.8f, 0.8f));
-    set_float3("point_lights[1].specular", make_v3(1.0f, 1.0f, 1.0f));
+    set_float3("point_lights[1].specular", make_v3(color.r, color.g, color.b));
     set_float("point_lights[1].constant", 1.f);
     set_float("point_lights[1].linear", .09f);
     set_float("point_lights[1].quadratic", .0032f);
