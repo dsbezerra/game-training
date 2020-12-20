@@ -2,10 +2,13 @@
 
 enum Obj_Element_Kind {
     ObjElementKind_None,
+    ObjElementKind_Object,
+    ObjElementKind_Group,
     ObjElementKind_Vertex,
     ObjElementKind_UV,
     ObjElementKind_Normal,
     ObjElementKind_Face,
+    ObjElementKind_Usemtl,
     ObjElementKind_Count,
 };
 
@@ -27,8 +30,27 @@ struct Obj_Element {
         v3 vertex;
         v3 normal;
         v2 uv;
+        
         Obj_Face_Spec face_spec;
+        
+        char *object_name;
+        char *group_name;
+        char *material_name;
     };
+};
+
+struct Obj_Material {
+    v3 Ka;
+    v3 Kd;
+    v3 Ks;
+    
+    float Ns;
+    
+    char *name;
+    
+    char *texture_map_name;
+    char *normal_map_name;
+    char *specular_map_name;
 };
 
 struct Obj_Index_Entry {
@@ -57,14 +79,28 @@ struct Obj_Model {
     u32 uv_count;
     u32 face_count;
     
+    u32 object_count;
+    u32 group_count;
+    u32 material_count;
+    
+    u32 triangle_list_count_count;
+    
+    u32 material_index;
+    
+    s32 previous_usemtl_index;
+    s32 usemtl_index;
+    
     u32 inserting_count;
 };
-
-internal Model load_obj_model(char *filepath);
 
 //
 // Private
 //
+internal void clear_materials();
+internal void parse_mtl(Obj_Material *materials);
+internal void free_elements(Obj_Element *elements, u32 count);
+internal Triangle_Mesh load_mesh_from_obj(char *filepath);
+
 internal u64 hash(Obj_Index_Table *table, Obj_Index idx);
 internal Obj_Index_Table* index_table_create(u64 size);
 internal Obj_Index_Entry* index_table_get(Obj_Index_Table *table, Obj_Index key);

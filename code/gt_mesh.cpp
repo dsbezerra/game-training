@@ -2,16 +2,6 @@
 #include "gt_obj_loader.cpp"
 
 internal void
-init_model(Model *model) {
-    assert(model);
-    
-    for (int mi = 0; mi < model->mesh_count; ++mi) {
-        Triangle_Mesh *mesh = &model->meshes[mi];
-        init_mesh(mesh);
-    }
-}
-
-internal void
 init_mesh(Triangle_Mesh *mesh) {
     assert(mesh);
     
@@ -82,21 +72,29 @@ init_mesh(Triangle_Mesh *mesh) {
 }
 
 internal void
-draw_model(Model *model) {
-    
-    for (int mi = 0; mi < model->mesh_count; ++mi) {
-        Triangle_Mesh *mesh = &model->meshes[mi];
-        draw_mesh(mesh);
-    }
-}
-
-internal void
 draw_mesh(Triangle_Mesh *mesh) {
     assert(mesh);
     
     open_gl->glBindVertexArray(mesh->vao);
-    // TODO(diego): Add to open_gl
-    open_gl->glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, 0);
+    
+    open_gl->glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    open_gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+    
+    u32 index_size = sizeof(mesh->indices[0]);
+    for (u32 li = 0; li < mesh->triangle_list_count; ++li) {
+        
+        if (mesh->list[li].material_index > -1) {
+            // TODO(diego): Change to Render_Material
+            Obj_Material *mat = &materials[mesh->list[li].material_index];
+            set_float3("material.ambient", mat->Ka);
+            set_float3("material.diffuse", mat->Kd);
+            set_float3("material.specular", mat->Ks);
+            set_float("material.shininess", mat->Ns);
+        }
+        
+        s32 index = mesh->list[li].start_index * index_size;
+        open_gl->glDrawElements(GL_TRIANGLES, mesh->list[li].num_indices, GL_UNSIGNED_INT, (void *) index);
+    }
     open_gl->glBindVertexArray(0);
 }
 
@@ -217,23 +215,21 @@ gen_mesh_cube(float width, float height, float length) {
     return mesh;
 }
 
-internal Model
-load_model(char *filepath) {
-    Model result = {};
+internal Triangle_Mesh
+load_mesh(char *filepath) {
+    Triangle_Mesh result = {};
     
 #if 0
-    result.mesh_count = 1;
-    result.meshes = (Triangle_Mesh *) platform_alloc(sizeof(Triangle_Mesh));
-    result.meshes[0] = gen_mesh_cube(1.f, 1.f, 1.f);
+    result = gen_mesh_cube(1.f, 1.f, 1.f);
 #else
-    result = load_obj_model(filepath);
+    result = load_mesh_from_obj(filepath);
 #endif
     result.filepath = filepath;
     
     //
     // Init it.
     //
-    init_model(&result);
+    init_mesh(&result);
     
     return result;
 }
@@ -251,6 +247,7 @@ free_mesh(Triangle_Mesh *mesh) {
     // may use the same texture id.
     //
     // TODO(diego): Make sure that the texture is not being used by other meshes.
+#if 0
     if (mesh->textures) {
         // @Speed call glDeleteTextures with an array of textures.
         for (Texture *texture = mesh->textures; texture != mesh->textures + mesh->texture_count; texture++) {
@@ -258,6 +255,15 @@ free_mesh(Triangle_Mesh *mesh) {
             glDeleteTextures(1, &texture->id);
         }
         platform_free(mesh->textures);
+    }
+#endif
+    
+    if (mesh->list) {
+        for (Triangle_List_Info *info = mesh->list; info != mesh->list + mesh->triangle_list_count; info++) {
+            if (!info) continue;
+            platform_free(info);
+        }
+        platform_free(mesh->list);
     }
     
     // Delete OpenGL stuff.

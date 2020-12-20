@@ -34,7 +34,7 @@ struct sokoban_player {
     v3 position;
     v3 velocity;
     
-    Model model;
+    Triangle_Mesh mesh;
 };
 
 struct sokoban_state {

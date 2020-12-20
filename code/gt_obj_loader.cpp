@@ -1,22 +1,161 @@
 #include "gt_obj_loader.h"
 
-internal Model
-load_obj_model(char *filepath) {
+#define MAX_MATERIALS 1000
+Obj_Material materials[MAX_MATERIALS];
+
+internal void
+clear_materials() {
+    for (int i = 0; i < array_count(materials); i++) {
+        Obj_Material *material = &materials[i];
+        if (material->name) platform_free(material->name);
+        if (material->texture_map_name) platform_free(material->texture_map_name);
+    }
+}
+
+internal Obj_Material*
+get_material_at(int index) {
+    if (index < 0 || index >= MAX_MATERIALS) {
+        return 0;
+    }
+    Obj_Material *mat = &materials[index];
+    if (!mat->name) return 0;
+    
+    return mat;
+}
+
+internal int
+find_material_index(char *name) {
+    // @Speed make this use hash table if necessary.
+    for (int i = 0; i < MAX_MATERIALS; i++) {
+        Obj_Material *mat = &materials[i];
+        if (strings_are_equal(mat->name, name))
+            return i;
+    }
+    return -1;
+}
+
+internal void
+parse_mtl(char *filepath) {
+    int len = string_length(filepath);
+    char *mtlpath = (char *) platform_alloc(len * sizeof(char *));
+    copy_string(mtlpath, filepath);
+    put_string_at(mtlpath, "mtl", len - 3);
+    
+    file_contents obj_file = platform_read_entire_file(mtlpath);
+    assert(obj_file.file_size > 0);
+    
+    // We don't need mtlpath anymore.
+    platform_free(mtlpath);
+    
+    
+    Text_File_Handler handler = {};
+    init_handler(&handler, obj_file.contents);
+    
+    assert(handler.num_lines > 0);
+    
+    Obj_Material current_material = {};
+    
+    u32 newmtl_count = 0;
+    
+    u8 *at = obj_file.contents;
+    while (1) {
+        
+        char *line = consume_next_line(&handler);
+        if (!line) break;
+        
+        Break_String_Result r = break_by_spaces(line);
+        if (!r.lhs || r.lhs[0] == '#') {
+            //
+            // First we try to get the Material count from comment at the second line
+            //
+            // # Material Count: X
+            //
+            if (r.rhs[0] == 'M' && !materials) {
+                r = break_by_tok(r.rhs, ':'); 
+                if (strings_are_equal(r.lhs, "Material Count")) {
+                    int count = atoi(r.rhs);
+                    assert(count < MAX_MATERIALS);
+                }
+            }
+            continue;
+        } else if (strings_are_equal(r.lhs, "newmtl")) {
+            if (newmtl_count > 0) {
+                materials[newmtl_count - 1] = current_material;
+            }
+            //
+            // We assume that all of our mtl files have # Material Count in the second comment.
+            //
+            if (materials) {
+                current_material.name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
+                copy_string(current_material.name, r.rhs);
+            }
+            newmtl_count++;
+        } else if (strings_are_equal(r.lhs, "Ns")) {
+            sscanf(r.rhs, "%f", &current_material.Ns);
+        } else if (strings_are_equal(r.lhs, "Ka")) {
+            sscanf(r.rhs, "%f %f %f", &current_material.Ka.r, &current_material.Ka.g, &current_material.Ka.b);
+        } else if (strings_are_equal(r.lhs, "Kd")) {
+            sscanf(r.rhs, "%f %f %f", &current_material.Kd.r, &current_material.Kd.g, &current_material.Kd.b);
+        } else if (strings_are_equal(r.lhs, "Ks")) {
+            sscanf(r.rhs, "%f %f %f", &current_material.Ks.r, &current_material.Ks.g, &current_material.Ks.b);
+        } else if (strings_are_equal(r.lhs, "Ke")) {
+            // Ignored.
+        } else if (strings_are_equal(r.lhs, "Ni")) {
+            // Ignored.
+        } else if (strings_are_equal(r.lhs, "d")) {
+            // Ignored.
+        } else if (strings_are_equal(r.lhs, "illum")) {
+            // Ignored.
+        } else if (strings_are_equal(r.lhs, "map_Kd")) {
+            // TODO(diego): Get only the texture name!!
+            current_material.texture_map_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
+            copy_string(current_material.texture_map_name, r.rhs);
+        }
+    }
+    
+    // Add last one
+    if (newmtl_count > 0) {
+        materials[newmtl_count - 1] = current_material;
+    }
+    
+    platform_free(handler.data);
+}
+
+internal void
+free_elements(Obj_Element *elements, u32 count) {
+    if (!elements) return;
+    
+    for (u32 index = 0; index < count; ++index) {
+        Obj_Element *e = &elements[index];
+        if (!e) continue;
+        switch (e->kind) {
+            case ObjElementKind_Object: if (e->object_name)   platform_free(e->object_name);    break;
+            case ObjElementKind_Group:  if (e->group_name)    platform_free(e->group_name);     break;
+            case ObjElementKind_Usemtl: if (e->material_name) platform_free(e->material_name);  break;
+            default: {
+                // Continue
+            } break;
+        }
+    }
+    
+    platform_free(elements);
+}
+
+internal Triangle_Mesh
+load_mesh_from_obj(char *filepath) {
     assert(string_length(filepath) != 0);
     assert(string_ends_with(filepath, ".obj"));
     
     file_contents obj_file = platform_read_entire_file(filepath);
     assert(obj_file.file_size > 0);
     
-    Obj_Model model = {};
-    model.filepath = filepath;
-    
     u32 num_lines = count_lines(obj_file.contents);
+    assert(num_lines > 0);
     
+    Obj_Model model = {};
     Obj_Element *elements = (Obj_Element *) platform_alloc(num_lines * sizeof(Obj_Element));
     
     u32 current_line = 0;
-    
     u8 *at = obj_file.contents;
     while (1) {
         
@@ -26,27 +165,52 @@ load_obj_model(char *filepath) {
         Obj_Element *element = &elements[current_line];
         
         Break_String_Result r = break_by_spaces(line);
-        if (strings_are_equal(r.lhs, "v")) {
-            v3 vertex = {};
-            sscanf(r.rhs, "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
+        if (!r.lhs || r.lhs[0] == '#') {
+            continue;
+        } else if (strings_are_equal(r.lhs, "mtllib")) {
+            parse_mtl(filepath);
+        } else if (r.lhs[0] == 'o') {
+            element->kind = ObjElementKind_Object;
+            element->object_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char*));
+            copy_string(element->object_name, r.rhs);
+            model.object_count++;
             
-            element->kind = ObjElementKind_Vertex;
-            element->vertex = vertex;
-            model.vertex_count++;
-        } else if (strings_are_equal(r.lhs, "vt")) {
-            v2 uv = {};
-            sscanf(r.rhs, "%f %f", &uv.x, &uv.y);
-            element->kind = ObjElementKind_UV;
-            element->uv = uv;
-            model.uv_count++;
-        } else if (strings_are_equal(r.lhs, "vn")) {
-            v3 normal = {};
-            sscanf(r.rhs, "%f %f %f", &normal.x, &normal.y, &normal.z);
+        } else if (r.lhs[0] == 'g') {
+            element->kind = ObjElementKind_Group;
+            element->group_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char*));
+            copy_string(element->group_name, r.rhs);
+            model.group_count++;
             
-            element->kind = ObjElementKind_Normal;
-            element->normal = normal;
-            model.normal_count++;
-        } else if (strings_are_equal(r.lhs, "f")) {
+        } else if (r.lhs[0] == 'v') {
+            if (r.lhs[1] == 't') {
+                v2 uv = {};
+                sscanf(r.rhs, "%f %f", &uv.x, &uv.y);
+                element->kind = ObjElementKind_UV;
+                element->uv = uv;
+                model.uv_count++;
+                
+            } else if (r.lhs[1] == 'n') {
+                v3 normal = {};
+                sscanf(r.rhs, "%f %f %f", &normal.x, &normal.y, &normal.z);
+                
+                element->kind = ObjElementKind_Normal;
+                element->normal = normal;
+                model.normal_count++;
+            } else {
+                v3 v = {};
+                sscanf(r.rhs, "%f %f %f", &v.x, &v.y, &v.z);
+                element->kind = ObjElementKind_Vertex;
+                element->vertex = v;
+                model.vertex_count++;
+            }
+            
+        } else if (strings_are_equal(r.lhs, "usemtl")) {
+            element->kind = ObjElementKind_Usemtl;
+            element->material_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char));
+            copy_string(element->material_name, r.rhs);
+            model.material_count++;
+            
+        } else if (r.lhs[0] == 'f') {
             // NOTE(diego): We assume faces have Vertex index, uv index and normal index V/T/N
             // And that the model is already triangulated.
             Obj_Face_Spec spec = {};
@@ -57,13 +221,19 @@ load_obj_model(char *filepath) {
             fix_face_indices(&model, &spec);
             element->kind = ObjElementKind_Face;
             element->face_spec = spec;
+            
             model.face_count++;
+            
         } else {
             element->kind = ObjElementKind_None;
         }
         
         ++current_line;
     }
+    
+    // NOTE(diego): Replace with error logging maybe.
+    assert(model.vertex_count > 0);
+    assert(model.face_count > 0);
     
     // Don't need it anymore
     platform_free(obj_file.contents);
@@ -76,26 +246,37 @@ load_obj_model(char *filepath) {
     model.normals  = (v3 *) platform_alloc(model.normal_count * sizeof(v3));
     model.faces    = (Obj_Face_Spec *) platform_alloc(model.face_count * sizeof(Obj_Face_Spec));
     
-    model.table = index_table_create(model.face_count * 3);
+    model.table    = index_table_create(model.face_count * 3);
+    
+    model.usemtl_index = -1;
+    
     
     //
     // Allocate result mesh here.
     //
-    //
     // We support single mesh for OBJ.
-    Model result = {};
-    result.mesh_count = 1;
-    result.meshes = (Triangle_Mesh *) platform_alloc(result.mesh_count * sizeof(Triangle_Mesh));
+    Triangle_Mesh mesh = {};
+    mesh.filepath = filepath;
     
-    Triangle_Mesh *mesh = &result.meshes[0];
+    mesh.vertex_count = model.face_count * 3;
+    mesh.index_count  = mesh.vertex_count;
     
-    mesh->vertex_count = model.face_count * 3;
-    mesh->index_count  = mesh->vertex_count;
+    mesh.vertices  = (v3 *)  platform_alloc(mesh.vertex_count * sizeof(v3));
+    mesh.indices   = (u32 *) platform_alloc(mesh.index_count  * sizeof(u32));
+    mesh.uvs       = (v2 *)  platform_alloc(mesh.vertex_count * sizeof(v2));
+    mesh.normals   = (v3 *)  platform_alloc(mesh.vertex_count * sizeof(v3));
     
-    mesh->vertices  = (v3 *)  platform_alloc(mesh->vertex_count * sizeof(v3));
-    mesh->indices   = (u32 *) platform_alloc(mesh->index_count  * sizeof(u32));
-    mesh->uvs       = (v2 *)  platform_alloc(mesh->vertex_count * sizeof(v2));
-    mesh->normals   = (v3 *)  platform_alloc(mesh->vertex_count * sizeof(v3));
+    //
+    // Setup triangle list
+    //
+    mesh.triangle_list_count = model.material_count;
+    mesh.list      = (Triangle_List_Info *) platform_alloc(mesh.triangle_list_count * sizeof(Triangle_List_Info));
+    for (u32 li = 0; li < mesh.triangle_list_count; ++li) {
+        Triangle_List_Info *info = &mesh.list[li];
+        info->start_index = -1;
+        info->material_index = -1;
+        info->num_indices = 0;
+    }
     
     //
     // Input obj files vertices, uvs, normals and face counts.
@@ -106,6 +287,7 @@ load_obj_model(char *filepath) {
     u32 vt_count = 0;
     u32 vn_count = 0;
     u32 f_count = 0;
+    
     for (u32 element_index = 0; element_index < num_lines; ++element_index) {
         Obj_Element *element = &elements[element_index];
         switch (element->kind) {
@@ -118,25 +300,43 @@ load_obj_model(char *filepath) {
             case ObjElementKind_Normal: {
                 model.normals[vn_count++] = element->normal;
             } break;
+            case ObjElementKind_Usemtl: {
+                model.previous_usemtl_index = model.usemtl_index;
+                model.usemtl_index++;
+                model.material_index = find_material_index(element->material_name);
+            } break;
             case ObjElementKind_Face: {
                 model.faces[f_count++] = element->face_spec;
                 // Insert face to mesh
-                insert_face(mesh, &model, &element->face_spec);
+                insert_face(&mesh, &model, &element->face_spec);
             } break;
             default: break;
         }
     }
     
+    //
+    // Free stuff.
+    //
     index_table_free(model.table);
     
-    platform_free(elements);
-    platform_free(model.vertices);
-    platform_free(model.uvs);
-    platform_free(model.normals);
-    platform_free(model.faces);
+    free_elements(elements, num_lines);
     
-    return result;
+    if (model.vertices) platform_free(model.vertices);
+    if (model.uvs)      platform_free(model.uvs);
+    if (model.normals)  platform_free(model.normals);
+    if (model.faces)    platform_free(model.faces);
+    
+    // Update last triangle list
+    int previous_index = model.previous_usemtl_index == -1 ? 0 : model.usemtl_index;
+    Triangle_List_Info *last = &mesh.list[previous_index];
+    last->num_indices = model.inserting_count - last->start_index;
+    
+    return mesh;
 }
+
+//
+// Obj_Index stuff
+//
 
 internal u64
 hash(Obj_Index_Table *table, Obj_Index idx) {
@@ -219,6 +419,22 @@ index_table_free(Obj_Index_Table *table) {
     platform_free(table);
 }
 
+//
+// Obj_Material stuff
+//
+
+internal u64
+hash_djb2(u8 *str) {
+    u64 hash = 5381;
+    int c;
+    
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + (u64) (c);
+    }
+    
+    return hash;
+}
+
 internal void
 insert_vertex(Triangle_Mesh *mesh, Obj_Model *model, Obj_Index idx) {
     
@@ -252,6 +468,22 @@ insert_vertex(Triangle_Mesh *mesh, Obj_Model *model, Obj_Index idx) {
 
 internal void
 insert_face(Triangle_Mesh *mesh, Obj_Model *model, Obj_Face_Spec *face) {
+    
+    // Build triangle list
+    if (model->usemtl_index > -1) {
+        Triangle_List_Info *info = &mesh->list[model->usemtl_index];
+        if (info->start_index == -1) {
+            info->start_index = model->inserting_count;
+            info->material_index = model->material_index;
+        }
+        if (model->previous_usemtl_index > -1) {
+            if (model->usemtl_index != model->previous_usemtl_index) {
+                Triangle_List_Info *prev = &mesh->list[model->previous_usemtl_index];
+                prev->num_indices = model->inserting_count - prev->start_index;
+            }
+        }
+    }
+    
     insert_vertex(mesh, model, face->idx0);
     insert_vertex(mesh, model, face->idx1);
     insert_vertex(mesh, model, face->idx2);

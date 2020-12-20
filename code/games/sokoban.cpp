@@ -64,7 +64,7 @@ init_game(sokoban_state *state) {
     //
     // Load mesh
     //
-    player.model = load_model("./data/models/monkey_t.obj");
+    player.mesh = load_mesh("./data/models/colored_cube.obj");
     
     state->player = player;
 }
@@ -105,9 +105,6 @@ draw_tile(sokoban_state *state) {
     
     
     // Set material values
-    set_int1("material.diffuse", 0);
-    set_int1("material.specular", 1);
-    set_float("material.shininess", 64.f);
     
     set_float3("view_position", state->cam.position);
 }
@@ -223,19 +220,24 @@ draw_game_view(sokoban_state *state) {
         //
         // Draw player
         //
-        open_gl->glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, state->assets.container);
-        
-        open_gl->glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, state->assets.container_specular);
         
         draw_tile(state);
         
         mat4 model_matrix = translate(state->player.position);
+        
+        local_persist real32 angle = time_info.dt;
+        
+        model_matrix = y_rotation(angle_to_radians(angle));
         set_mat4("model", model_matrix);
+        
+        angle += time_info.dt * 30.f;
+        if (angle > 360.f) {
+            angle -= 360.f;
+        }
+        
         refresh_shader_transform();
         
-        draw_model(&state->player.model);
+        draw_mesh(&state->player.mesh);
         
 #endif
 #endif
