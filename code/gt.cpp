@@ -426,9 +426,9 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
     //
     // TODO(diego): Implement proper hotloader
     local_persist real32 t = 0.f;
-    t += time_info.dt;
     if (t >= 1.f) {
         reload_shaders();
         t -= 1.f;
     }
+    t += time_info.dt;
 }
