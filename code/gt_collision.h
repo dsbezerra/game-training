@@ -1,5 +1,5 @@
 
-struct box {
+struct Box {
     real32 x;
     real32 y;
     real32 width;
@@ -7,7 +7,7 @@ struct box {
 };
 
 internal b32
-aabb_vs_aabb(box a, box b) {
+aabb_vs_aabb(Box a, Box b) {
     b32 result = 0;
     
     result = (a.x < b.x + b.width && 

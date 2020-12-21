@@ -11,14 +11,14 @@ Variant: A nine-button version can add challenge to this game (but more than tha
 
 #define SIMON_TITLE "Simon"
 
-enum simon_mode {
+enum Simon_Mode {
     SimonMode_DisplayPattern,
     SimonMode_Playing,
     
     SimonMode_Count,
 };
 
-enum simon_button_color {
+enum Simon_Button_Color {
     SimonButton_None,
     SimonButton_Yellow,
     SimonButton_Blue,
@@ -28,38 +28,37 @@ enum simon_button_color {
     SimonButton_Count,
 };
 
-struct simon_state {
-    v2i dimensions;
-    v2i mouse_position;
+struct Simon_State {
+    Game_Mode Game_Mode;
     
-    simon_mode mode;
-    simon_button_color pattern[6];
+    Simon_Mode mode;
+    Simon_Button_Color pattern[6];
+    Simon_Button_Color hovering_button;
     
-    
+    Vector2i dimensions;
+    Vector2i mouse_position;
+
     u8 displaying_index;
     u8 displaying_count;
     u8 player_index;
-    
-    simon_button_color hovering_button;
     
     real32 flashing_t;
     real32 flashing_t_target;
     real32 flashing_dt;
     
-    game_mode game_mode;
     s8 menu_selected_item;
     b32 quit_was_selected;
 };
 
-internal simon_button_color random_button();
-internal void init_pattern(simon_state *state);
-internal void advance_pattern(simon_state *state);
+internal Simon_Button_Color random_button();
+internal void init_pattern(Simon_State *state);
+internal void advance_pattern(Simon_State *state);
 
-internal b32 is_inside_button(v2 offset, real32 pad, real32 button_size, v2i mouse_p, simon_button_color button);
-internal void update_hovering_button(simon_state *state);
+internal b32 is_inside_button(Vector2 offset, real32 pad, real32 button_size, Vector2i mouse_p, Simon_Button_Color button);
+internal void update_hovering_button(Simon_State *state);
 
-internal void draw_game_view(simon_state *state);
+internal void draw_game_view(Simon_State *state);
 
-internal void simon_menu_art(app_state *state, v2 min, v2 max);
-internal void simon_game_restart(simon_state *state);
-internal void simon_game_update_and_render(game_memory *memory, game_input *input);
+internal void simon_menu_art(App_State *state, Vector2 min, Vector2 max);
+internal void simon_game_restart(Simon_State *state);
+internal void simon_game_update_and_render(Game_Memory *memory, Game_Input *input);

@@ -1,6 +1,6 @@
-internal simon_button_color
+internal Simon_Button_Color
 random_button() {
-    simon_button_color result = SimonButton_None;
+    Simon_Button_Color result = SimonButton_None;
     
     while (result == SimonButton_None) {
         if (random_choice(1)) {
@@ -21,7 +21,7 @@ random_button() {
 }
 
 internal void
-init_pattern(simon_state *state) {
+init_pattern(Simon_State *state) {
     state->mode = SimonMode_DisplayPattern;
     for (int i = 0; i < array_count(state->pattern); ++i) {
         state->pattern[i] = random_button();
@@ -37,7 +37,7 @@ init_pattern(simon_state *state) {
 }
 
 internal void
-advance_pattern(simon_state *state) {
+advance_pattern(Simon_State *state) {
     state->displaying_count++;
     
     state->displaying_index = 0;
@@ -51,7 +51,7 @@ advance_pattern(simon_state *state) {
 }
 
 internal b32
-is_inside_button(v2 offset, real32 pad, real32 button_size, v2i mouse_p, simon_button_color button) {
+is_inside_button(Vector2 offset, real32 pad, real32 button_size, Vector2i mouse_p, Simon_Button_Color button) {
     b32 result = false;
     
     int x = 0;
@@ -68,8 +68,8 @@ is_inside_button(v2 offset, real32 pad, real32 button_size, v2i mouse_p, simon_b
         y = 1;
     }
     
-    v2 min = make_v2(button_size * x + pad, button_size * y + pad);
-    v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
+    Vector2 min = make_vector2(button_size * x + pad, button_size * y + pad);
+    Vector2 max = make_vector2(button_size * x + button_size, button_size * y + button_size);
     
     min = min + offset;
     max = max + offset;
@@ -80,10 +80,10 @@ is_inside_button(v2 offset, real32 pad, real32 button_size, v2i mouse_p, simon_b
 }
 
 internal void
-update_hovering_button(simon_state *state) {
-    simon_button_color result = SimonButton_None;
+update_hovering_button(Simon_State *state) {
+    Simon_Button_Color result = SimonButton_None;
     
-    v2i dim = state->dimensions;
+    Vector2i dim = state->dimensions;
     
     real32 pad;
     if (dim.width > dim.height) {
@@ -95,10 +95,10 @@ update_hovering_button(simon_state *state) {
     real32 max_height = dim.height * .8f;
     real32 button_size = (max_height - 2 * pad) / 2;
     
-    v2 offset_to_center = make_v2((dim.width  - button_size * 2) * .5f,
-                                  (dim.height - button_size * 2) * .5f);
+    Vector2 offset_to_center = make_vector2((dim.width  - button_size * 2) * .5f,
+                                            (dim.height - button_size * 2) * .5f);
     
-    v2i mouse_p = state->mouse_position;
+    Vector2i mouse_p = state->mouse_position;
     
     if (is_inside_button(offset_to_center, pad, button_size, mouse_p, SimonButton_Yellow)) {
         result = SimonButton_Yellow;
@@ -114,14 +114,14 @@ update_hovering_button(simon_state *state) {
 }
 
 internal void
-draw_game_view(simon_state *state) {
+draw_game_view(Simon_State *state) {
     
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         //
         // Draw buttons
         //
         
-        v2i dim = state->dimensions;
+        Vector2i dim = state->dimensions;
         
         real32 pad;
         if (dim.width > dim.height) {
@@ -133,46 +133,46 @@ draw_game_view(simon_state *state) {
         real32 max_height = dim.height * .8f;
         real32 button_size = (max_height - 2 * pad) / 2;
         
-        v2 offset_to_center = make_v2((dim.width  - button_size * 2) * .5f,
-                                      (dim.height - button_size * 2) * .5f);
+        Vector2 offset_to_center = make_vector2((dim.width  - button_size * 2) * .5f,
+                                                (dim.height - button_size * 2) * .5f);
         
         u8 x = 0;
         u8 y = 0;
         
         immediate_begin();
         
-        v4 yellow = make_color(0x33ffff00);
-        v4 red = make_color(0x33ff0000);
-        v4 blue = make_color(0x330000ff);
-        v4 green = make_color(0x3300ff00);
+        Vector4 yellow = make_color(0x33ffff00);
+        Vector4 red = make_color(0x33ff0000);
+        Vector4 blue = make_color(0x330000ff);
+        Vector4 green = make_color(0x3300ff00);
         
-        simon_button_color button = SimonButton_None;
+        Simon_Button_Color button = SimonButton_None;
         if (state->mode == SimonMode_Playing) {
             button = state->hovering_button;
         } else if (state->mode == SimonMode_DisplayPattern) {
             button = state->pattern[state->displaying_index];
         }
         if (button == SimonButton_Yellow) {
-            v4 opaque_yellow = make_color(0xffffff00);
+            Vector4 opaque_yellow = make_color(0xffffff00);
             yellow = lerp_color(yellow, state->flashing_t, opaque_yellow);
         }
         if (button == SimonButton_Red) {
-            v4 opaque_red = make_color(0xffff0000);
+            Vector4 opaque_red = make_color(0xffff0000);
             red = lerp_color(red, state->flashing_t, opaque_red);
         }
         if (button == SimonButton_Blue) {
-            v4 opaque_blue = make_color(0xff0000ff);
+            Vector4 opaque_blue = make_color(0xff0000ff);
             blue = lerp_color(blue, state->flashing_t, opaque_blue);
         }
         if (button == SimonButton_Green) {
-            v4 opaque_green = make_color(0xff00ff00);
+            Vector4 opaque_green = make_color(0xff00ff00);
             green = lerp_color(green, state->flashing_t, opaque_green);
         }
         
         // Yellow
         {
-            v2 min = make_v2(button_size * x + pad, button_size * y + pad);
-            v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
+            Vector2 min = make_vector2(button_size * x + pad, button_size * y + pad);
+            Vector2 max = make_vector2(button_size * x + button_size, button_size * y + button_size);
             min = min + offset_to_center;
             max = max + offset_to_center;
             immediate_quad(min, max, yellow);
@@ -180,8 +180,8 @@ draw_game_view(simon_state *state) {
         y = 1;
         // Red
         {
-            v2 min = make_v2(button_size * x + pad, button_size * y + pad);
-            v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
+            Vector2 min = make_vector2(button_size * x + pad, button_size * y + pad);
+            Vector2 max = make_vector2(button_size * x + button_size, button_size * y + button_size);
             min = min + offset_to_center;
             max = max + offset_to_center;
             immediate_quad(min, max, red);
@@ -190,8 +190,8 @@ draw_game_view(simon_state *state) {
         y = 0;
         // Blue
         {
-            v2 min = make_v2(button_size * x + pad, button_size * y + pad);
-            v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
+            Vector2 min = make_vector2(button_size * x + pad, button_size * y + pad);
+            Vector2 max = make_vector2(button_size * x + button_size, button_size * y + button_size);
             min = min + offset_to_center;
             max = max + offset_to_center;
             immediate_quad(min, max, blue);
@@ -199,8 +199,8 @@ draw_game_view(simon_state *state) {
         y = 1;
         // Green
         {
-            v2 min = make_v2(button_size * x + pad, button_size * y + pad);
-            v2 max = make_v2(button_size * x + button_size, button_size * y + button_size);
+            Vector2 min = make_vector2(button_size * x + pad, button_size * y + pad);
+            Vector2 max = make_vector2(button_size * x + button_size, button_size * y + button_size);
             min = min + offset_to_center;
             max = max + offset_to_center;
             immediate_quad(min, max, green);
@@ -208,21 +208,21 @@ draw_game_view(simon_state *state) {
         
         immediate_flush();
     } else {
-        draw_menu(SIMON_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(SIMON_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
     
 } 
 
 internal void
-simon_menu_art(app_state *state, v2 min, v2 max) {
+simon_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
     immediate_textured_quad(min, max, state->menu_art.simon);
     immediate_flush();
 }
 
 internal void
-simon_game_restart(simon_state *state) {
-    state->game_mode = GameMode_Playing;
+simon_game_restart(Simon_State *state) {
+    state->Game_Mode = GameMode_Playing;
     state->quit_was_selected = false;
     state->menu_selected_item = 0;
     
@@ -233,15 +233,15 @@ simon_game_restart(simon_state *state) {
 }
 
 internal void
-simon_game_update_and_render(game_memory *memory, game_input *input) {
+simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
-    simon_state *state = (simon_state *) memory->permanent_storage;
+    Simon_State *state = (Simon_State *) memory->permanent_storage;
     if (!memory->initialized) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        state = (simon_state *) game_alloc(memory, megabytes(12));
+        state = (Simon_State *) game_alloc(memory, megabytes(12));
         
         init_pattern(state);
     }
@@ -251,14 +251,14 @@ simon_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Update
     //
-    v2i new_mouse_position;
+    Vector2i new_mouse_position;
     platform_get_cursor_position(&new_mouse_position);
     state->mouse_position = new_mouse_position;
     platform_show_cursor(true);
     
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
+            state->Game_Mode = GameMode_Menu;
         } else {
             
             if (state->mode == SimonMode_Playing) {
@@ -275,7 +275,7 @@ simon_game_update_and_render(game_memory *memory, game_input *input) {
                     if (state->displaying_count < array_count(state->pattern) - 1) {
                         advance_pattern(state);
                     } else {
-                        state->game_mode = GameMode_Menu;
+                        state->Game_Mode = GameMode_Menu;
                     }
                 }
                 
@@ -298,7 +298,7 @@ simon_game_update_and_render(game_memory *memory, game_input *input) {
                 }
             }
         }
-    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
+    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -306,10 +306,10 @@ simon_game_update_and_render(game_memory *memory, game_input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
+            if (state->Game_Mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = GameMode_Playing;
+                state->Game_Mode = GameMode_Playing;
             }
         }
         

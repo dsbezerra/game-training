@@ -1,7 +1,7 @@
 
 internal void
-generate_puzzle(slide_puzzle_state *state) {
-    slide_puzzle_gen generation = {};
+generate_puzzle(Slide_Puzzle_State *state) {
+    Slide_Puzzle_Gen generation = {};
     generation.number = 1;
     generation.shuffle_t = .0f;
     generation.shuffle_target = 1.f;
@@ -14,17 +14,17 @@ generate_puzzle(slide_puzzle_state *state) {
 }
 
 internal void 
-init_puzzle(slide_puzzle_state *state) {
+init_puzzle(Slide_Puzzle_State *state) {
     // NOTE(diego): Default puzzle.
     
     s8 len = SLIDE_PUZZLE_BOARD_COUNT*SLIDE_PUZZLE_BOARD_COUNT;
-    slide_puzzle_tile *tiles = (slide_puzzle_tile *) state->board.tiles;
+    Slide_Puzzle_Tile *tiles = (Slide_Puzzle_Tile *) state->board.tiles;
     
     s8 solution_index = 0;
     s8 number = 1;
     
     // NOTE(diego): First tile should be empty!!
-    for (slide_puzzle_tile *tile = tiles + 1; tile != tiles + len; tile++) {
+    for (Slide_Puzzle_Tile *tile = tiles + 1; tile != tiles + len; tile++) {
         tile->id = number;
         if (number < 10) {
             tile->content[0] = number + '0';
@@ -49,34 +49,34 @@ init_puzzle(slide_puzzle_state *state) {
     //
     for (int i = len - 1; i >= 1; --i) {
         int j = random_int_in_range(1, len - 1);
-        slide_puzzle_tile *a = tiles + i;
-        slide_puzzle_tile *b = tiles + j;
-        slide_puzzle_tile aux = *a;
+        Slide_Puzzle_Tile *a = tiles + i;
+        Slide_Puzzle_Tile *b = tiles + j;
+        Slide_Puzzle_Tile aux = *a;
         *a = *b;
         *b = aux;
     }
 }
 
 internal void
-init_puzzle(slide_puzzle_state *state, b32 animated) {
+init_puzzle(Slide_Puzzle_State *state, b32 animated) {
     if (animated) generate_puzzle(state);
     else init_puzzle(state);
 }
 
 internal void
-update_generating(slide_puzzle_state *state) {
+update_generating(Slide_Puzzle_State *state) {
     
-    slide_puzzle_gen *generation = &state->generation;
+    Slide_Puzzle_Gen *generation = &state->generation;
     
     s8 len = SLIDE_PUZZLE_BOARD_COUNT*SLIDE_PUZZLE_BOARD_COUNT;
     
     real32 speed = 26.f;
     
-    slide_puzzle_tile *tiles = (slide_puzzle_tile *) state->board.tiles;
+    Slide_Puzzle_Tile *tiles = (Slide_Puzzle_Tile *) state->board.tiles;
     if (generation->fill_t >= generation->fill_target) {
         generation->fill_t -= generation->fill_target;
         
-        slide_puzzle_tile *tile = tiles + generation->tile_index;
+        Slide_Puzzle_Tile *tile = tiles + generation->tile_index;
         tile->id = generation->number;
         if (generation->number < 10) {
             tile->content[0] = generation->number + '0';
@@ -104,9 +104,9 @@ update_generating(slide_puzzle_state *state) {
             //     exchange a[j] and a[i]
             //
             int j = random_int_in_range(1, len - 1);
-            slide_puzzle_tile *a = tiles + generation->shuffle_index;
-            slide_puzzle_tile *b = tiles + j;
-            slide_puzzle_tile aux = *a;
+            Slide_Puzzle_Tile *a = tiles + generation->shuffle_index;
+            Slide_Puzzle_Tile *b = tiles + j;
+            Slide_Puzzle_Tile aux = *a;
             *a = *b;
             *b = aux;
             
@@ -122,9 +122,9 @@ update_generating(slide_puzzle_state *state) {
 }
 
 internal void
-draw_board(slide_puzzle_state *state) {
+draw_board(Slide_Puzzle_State *state) {
     
-    v2i dim = state->dimensions;
+    Vector2i dim = state->dimensions;
     
     real32 pad;
     if (dim.width > dim.height) {
@@ -138,15 +138,15 @@ draw_board(slide_puzzle_state *state) {
     real32 tile_size = (max_height - SLIDE_PUZZLE_BOARD_COUNT * pad) / (real32) SLIDE_PUZZLE_BOARD_COUNT;
     real32 board_size = tile_size * SLIDE_PUZZLE_BOARD_COUNT;
     
-    v2 start = make_v2((dim.width  - tile_size * SLIDE_PUZZLE_BOARD_COUNT) / 2.f,
-                       (dim.height - tile_size * SLIDE_PUZZLE_BOARD_COUNT) / 2.f);
+    Vector2 start = make_vector2((dim.width  - tile_size * SLIDE_PUZZLE_BOARD_COUNT) / 2.f,
+                                 (dim.height - tile_size * SLIDE_PUZZLE_BOARD_COUNT) / 2.f);
     
     //
     // Draw tiles
     //
     immediate_begin();
     
-    immediate_quad(make_v2(.0f, 0.f), make_v2((real32) dim.width, (real32) dim.height), make_color(0xff022c56));
+    immediate_quad(make_vector2(.0f, 0.f), make_vector2((real32) dim.width, (real32) dim.height), make_color(0xff022c56));
     
     b32 should_animate_slide = state->swap.to_index != -1 && state->swap.from_index != -1;
     int from_tile_x = state->swap.from_index % SLIDE_PUZZLE_BOARD_COUNT;
@@ -154,38 +154,38 @@ draw_board(slide_puzzle_state *state) {
     int to_tile_x = state->swap.to_index % SLIDE_PUZZLE_BOARD_COUNT;
     int to_tile_y = state->swap.to_index / SLIDE_PUZZLE_BOARD_COUNT;
     
-    v2 board_min = make_v2(start.x, start.y);
-    v2 board_max = make_v2(board_min.x + board_size, board_min.y + board_size);
+    Vector2 board_min = make_vector2(start.x, start.y);
+    Vector2 board_max = make_vector2(board_min.x + board_size, board_min.y + board_size);
     
     immediate_quad(board_min, board_max, make_color(0xff008200));
     
     for (s8 tile_y = 0; tile_y < SLIDE_PUZZLE_BOARD_COUNT; ++tile_y) {
         for (s8 tile_x = 0; tile_x < SLIDE_PUZZLE_BOARD_COUNT; ++tile_x) {
-            slide_puzzle_tile tile = state->board.tiles[tile_x][tile_y];
+            Slide_Puzzle_Tile tile = state->board.tiles[tile_x][tile_y];
             if (!tile.id) {
                 continue;
             }
             
-            v2 min = make_v2(tile_size * tile_x + pad,       
-                             tile_size * tile_y + pad);
-            v2 max = make_v2(tile_size * tile_x + tile_size, 
-                             tile_size * tile_y + tile_size);
+            Vector2 min = make_vector2(tile_size * tile_x + pad,       
+                                       tile_size * tile_y + pad);
+            Vector2 max = make_vector2(tile_size * tile_x + tile_size, 
+                                       tile_size * tile_y + tile_size);
             
             // @Copy 'n' Paste
             if (should_animate_slide) {
                 b32 from_this = tile_x == from_tile_x && tile_y == from_tile_y;
                 b32 to_this   = tile_x == to_tile_x   && tile_y == to_tile_y;
                 if (from_this || to_this) {
-                    v2 from_min = make_v2(tile_size * from_tile_x + pad,       
-                                          tile_size * from_tile_y + pad);
-                    v2 from_max = make_v2(tile_size * from_tile_x + tile_size, 
-                                          tile_size * from_tile_y + tile_size);
-                    v2 to_min = make_v2(tile_size * to_tile_x + pad,       
-                                        tile_size * to_tile_y + pad);
-                    v2 to_max = make_v2(tile_size * to_tile_x + tile_size, 
-                                        tile_size * to_tile_y + tile_size);
-                    min = lerp_v2(to_min, state->sliding_t, from_min);
-                    max = lerp_v2(to_max, state->sliding_t, from_max);
+                    Vector2 from_min = make_vector2(tile_size * from_tile_x + pad,       
+                                                    tile_size * from_tile_y + pad);
+                    Vector2 from_max = make_vector2(tile_size * from_tile_x + tile_size, 
+                                                    tile_size * from_tile_y + tile_size);
+                    Vector2 to_min = make_vector2(tile_size * to_tile_x + pad,       
+                                                  tile_size * to_tile_y + pad);
+                    Vector2 to_max = make_vector2(tile_size * to_tile_x + tile_size, 
+                                                  tile_size * to_tile_y + tile_size);
+                    min = lerp_vector2(to_min, state->sliding_t, from_min);
+                    max = lerp_vector2(to_max, state->sliding_t, from_max);
                 }
             }
             
@@ -203,39 +203,39 @@ draw_board(slide_puzzle_state *state) {
     // Draw tile content
     //
     
-    v4 white = make_color(0xffffffff);
+    Vector4 white = make_color(0xffffffff);
     
     real32 half_tile_size = tile_size * .5f;
-    loaded_font *tile_font = &state->assets.tile_font;
+    Loaded_Font *tile_font = &state->assets.tile_font;
     
     for (s8 tile_y = 0; tile_y < SLIDE_PUZZLE_BOARD_COUNT; ++tile_y) {
         for (s8 tile_x = 0; tile_x < SLIDE_PUZZLE_BOARD_COUNT; ++tile_x) {
             
-            slide_puzzle_tile tile = state->board.tiles[tile_x][tile_y];
+            Slide_Puzzle_Tile tile = state->board.tiles[tile_x][tile_y];
             if (!tile.id) {
                 continue;
             }
             
-            v2 min = make_v2(tile_size * tile_x + pad,       
-                             tile_size * tile_y + pad);
-            v2 max = make_v2(tile_size * tile_x + tile_size, 
-                             tile_size * tile_y + tile_size);
+            Vector2 min = make_vector2(tile_size * tile_x + pad,       
+                                       tile_size * tile_y + pad);
+            Vector2 max = make_vector2(tile_size * tile_x + tile_size, 
+                                       tile_size * tile_y + tile_size);
             
             // @Copy 'n' Paste
             if (should_animate_slide) {
                 b32 from_this = tile_x == from_tile_x && tile_y == from_tile_y;
                 b32 to_this   = tile_x == to_tile_x   && tile_y == to_tile_y;
                 if (from_this || to_this) {
-                    v2 from_min = make_v2(tile_size * from_tile_x + pad,       
-                                          tile_size * from_tile_y + pad);
-                    v2 from_max = make_v2(tile_size * from_tile_x + tile_size, 
-                                          tile_size * from_tile_y + tile_size);
-                    v2 to_min = make_v2(tile_size * to_tile_x + pad,       
-                                        tile_size * to_tile_y + pad);
-                    v2 to_max = make_v2(tile_size * to_tile_x + tile_size, 
-                                        tile_size * to_tile_y + tile_size);
-                    min = lerp_v2(to_min, state->sliding_t, from_min);
-                    max = lerp_v2(to_max, state->sliding_t, from_max);
+                    Vector2 from_min = make_vector2(tile_size * from_tile_x + pad,       
+                                                    tile_size * from_tile_y + pad);
+                    Vector2 from_max = make_vector2(tile_size * from_tile_x + tile_size, 
+                                                    tile_size * from_tile_y + tile_size);
+                    Vector2 to_min = make_vector2(tile_size * to_tile_x + pad,       
+                                                  tile_size * to_tile_y + pad);
+                    Vector2 to_max = make_vector2(tile_size * to_tile_x + tile_size, 
+                                                  tile_size * to_tile_y + tile_size);
+                    min = lerp_vector2(to_min, state->sliding_t, from_min);
+                    max = lerp_vector2(to_max, state->sliding_t, from_max);
                 }
             }
             
@@ -259,25 +259,25 @@ draw_board(slide_puzzle_state *state) {
 }
 
 internal void
-draw_game_view(slide_puzzle_state *state) {
-    if (state->game_mode == GameMode_Playing) {
+draw_game_view(Slide_Puzzle_State *state) {
+    if (state->Game_Mode == GameMode_Playing) {
         draw_board(state);
     } else {
-        draw_menu(SLIDE_PUZZLE_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(SLIDE_PUZZLE_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
 internal void
-slide_puzzle_menu_art(app_state *state, v2 min, v2 max) {
-    v4 background = make_color(0xff172e56);
+slide_puzzle_menu_art(App_State *state, Vector2 min, Vector2 max) {
+    Vector4 background = make_color(0xff172e56);
     immediate_begin();
     immediate_textured_quad(min, max, state->menu_art.slide_puzzle);
     immediate_flush();
 }
 
 internal void
-slide_puzzle_game_restart(slide_puzzle_state *state) {
-    state->game_mode = GameMode_Playing;
+slide_puzzle_game_restart(Slide_Puzzle_State *state) {
+    state->Game_Mode = GameMode_Playing;
     
     //
     // Re-init
@@ -295,22 +295,22 @@ slide_puzzle_game_restart(slide_puzzle_state *state) {
 }
 
 internal void
-slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
+slide_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
-    slide_puzzle_state *state = (slide_puzzle_state *) memory->permanent_storage;
+    Slide_Puzzle_State *state = (Slide_Puzzle_State *) memory->permanent_storage;
     if (!memory->initialized) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        state = (slide_puzzle_state *) game_alloc(memory, megabytes(12));
+        state = (Slide_Puzzle_State *) game_alloc(memory, megabytes(12));
         
-        slide_puzzle_assets assets = {};
+        Slide_Puzzle_Assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         assets.generating_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 42.f);
         assets.tile_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 32.f);
         
-        state->game_mode = GameMode_Playing;
+        state->Game_Mode = GameMode_Playing;
         state->mode = SlidePuzzleMode_Generating;
         state->assets = assets;
         
@@ -329,12 +329,12 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
     // Update
     //
     
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         if (state->mode == SlidePuzzleMode_Generating) {
             update_generating(state);
         } else if (state->mode == SlidePuzzleMode_Ready) {
             if (pressed(Button_Escape)) {
-                state->game_mode = GameMode_Menu;
+                state->Game_Mode = GameMode_Menu;
             } else {
                 if (state->sliding_t == 0.f) {
                     //
@@ -371,8 +371,8 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                         b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
                         // Check if new_empty_index is valid
                         if (valid && changed) {
-                            slide_puzzle_tile old_tile = state->board.tiles[old_board_x][old_board_y];
-                            slide_puzzle_tile new_tile = state->board.tiles[new_board_x][new_board_y];
+                            Slide_Puzzle_Tile old_tile = state->board.tiles[old_board_x][old_board_y];
+                            Slide_Puzzle_Tile new_tile = state->board.tiles[new_board_x][new_board_y];
                             
                             state->board.tiles[old_board_x][old_board_y] = new_tile;
                             state->board.tiles[new_board_x][new_board_y] = old_tile;
@@ -385,7 +385,7 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                             state->sliding_t += time_info.dt;
                         }
                     } else {
-                        state->game_mode = GameMode_Menu;
+                        state->Game_Mode = GameMode_Menu;
                     }
                     
                 } else {
@@ -398,7 +398,7 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                 }
             }
         }
-    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
+    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -406,10 +406,10 @@ slide_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
+            if (state->Game_Mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = GameMode_Playing;
+                state->Game_Mode = GameMode_Playing;
             }
         }
         

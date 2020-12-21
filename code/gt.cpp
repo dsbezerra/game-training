@@ -6,23 +6,23 @@
 #include "gt_profiler.cpp"
 #include "gt_mesh.cpp"
 
-global_variable game_time_info time_info = {};
+global_variable Game_Time_Info time_info = {};
 
 #include "gt_camera.cpp"
 
-global_variable loaded_font menu_title_font;
-global_variable loaded_font menu_item_font;
+global_variable Loaded_Font menu_title_font;
+global_variable Loaded_Font menu_item_font;
 
 global_variable real32 global_press_t = .0f;
 
 internal void
-draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 quit_was_selected) {
+draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item, b32 quit_was_selected) {
     
     render_2d_right_handed(dim.width, dim.height);
     
-    v4 white          = make_color(0xffffffff);
-    v4 default_color  = make_color(0xffaaaaaa);
-    v4 selected_color = make_color(0xffffff00);
+    Vector4 white          = make_color(0xffffffff);
+    Vector4 default_color  = make_color(0xffaaaaaa);
+    Vector4 selected_color = make_color(0xffffff00);
     
     char *menu_title = mode == GameMode_GameOver ? "Game Over" : game_title;
     real32 menu_title_width = get_text_width(&menu_title_font, menu_title);
@@ -48,14 +48,14 @@ draw_menu(char *game_title, v2i dim, game_mode mode, s8 menu_selected_item, b32 
         real32 width = get_text_width(&menu_item_font, text);
         
         if (menu_selected_item == menu_item) {
-            v4 non_white = make_color(0xffffde00);
+            Vector4 non_white = make_color(0xffffde00);
             
             real32 now = cosf(time_info.current_time);
             real32 t = cosf(now * 3);
             t *= t;
             
             t = .4f + .54f * t;
-            v4 front_color = lerp_color(non_white, t, white);
+            Vector4 front_color = lerp_color(non_white, t, white);
             
             // Also draw an extra background item.
             real32 offset = menu_item_font.line_height / 40;
@@ -95,7 +95,7 @@ load_texture(char *filename) {
 }
 
 internal void
-load_menu_arts(app_state *state) {
+load_menu_arts(App_State *state) {
     state->menu_art.dodger          = load_texture("./data/menu_arts/dodger.png");
     state->menu_art.memory_puzzle   = load_texture("./data/menu_arts/memory_puzzle.png");
     state->menu_art.slide_puzzle    = load_texture("./data/menu_arts/slide_puzzle.png");
@@ -106,7 +106,7 @@ load_menu_arts(app_state *state) {
 }
 
 internal void
-free_menu_arts(app_state *state) {
+free_menu_arts(App_State *state) {
     const GLuint arts[] = {
         state->menu_art.dodger,
         state->menu_art.memory_puzzle,
@@ -146,8 +146,8 @@ global_variable char* game_titles[] = {
 //
 // Game menu art table
 //
-void stub_menu_art(app_state *state, v2 min, v2 max) { assert(false); }
-void (*menu_table[])(app_state *state, v2 min, v2 max) = {
+void stub_menu_art(App_State *state, Vector2 min, Vector2 max) { assert(false); }
+void (*menu_table[])(App_State *state, Vector2 min, Vector2 max) = {
     stub_menu_art,
     dodger_menu_art,
     memory_puzzle_menu_art,
@@ -162,8 +162,8 @@ void (*menu_table[])(app_state *state, v2 min, v2 max) = {
 //
 // Game custom free table
 // 
-void stub_game_free(game_memory *memory) { assert(false); }
-void (*game_free_table[])(game_memory *memory) = {
+void stub_game_free(Game_Memory *memory) { assert(false); }
+void (*game_free_table[])(Game_Memory *memory) = {
     0, // None
     0, // Dodger
     0, // Memory Puzzle 
@@ -178,8 +178,8 @@ void (*game_free_table[])(game_memory *memory) = {
 // 
 // Game update and render table
 //
-void stub_game_update_and_render(game_memory *memory, game_input *input) { assert(false); }
-void (*game_table[])(game_memory *memory, game_input *input) = {
+void stub_game_update_and_render(Game_Memory *memory, Game_Input *input) { assert(false); }
+void (*game_table[])(Game_Memory *memory, Game_Input *input) = {
     stub_game_update_and_render,
     dodger_game_update_and_render,
     memory_puzzle_game_update_and_render,
@@ -192,7 +192,7 @@ void (*game_table[])(game_memory *memory, game_input *input) = {
 };
 
 internal void *
-game_alloc(game_memory *memory, u64 size) {
+game_alloc(Game_Memory *memory, u64 size) {
     memory->permanent_storage_size = size;
     memory->permanent_storage = platform_alloc(size);
     memory->initialized = true;
@@ -200,7 +200,7 @@ game_alloc(game_memory *memory, u64 size) {
 }
 
 internal void
-game_free(game_memory *memory, game current_game) {
+game_free(Game_Memory *memory, game current_game) {
     if (!memory) {
         return;
     }
@@ -217,7 +217,7 @@ game_free(game_memory *memory, game current_game) {
 }
 
 internal void
-game_quit(app_state *state, game_memory *memory) {
+game_quit(App_State *state, Game_Memory *memory) {
     state->current_selecting_game = state->current_game;
     state->current_mode = Mode_SelectingGame;
     load_menu_arts(state);
@@ -233,7 +233,7 @@ advance_menu_choice(s8 *current_choice, s8 delta) {
 }
 
 internal void
-advance_game(app_state *state, int value) {
+advance_game(App_State *state, int value) {
     int new_game = ((int) state->current_selecting_game) + value;
     if (new_game < Game_None) {
         new_game = (int) (Game_Count - 1);
@@ -246,12 +246,12 @@ advance_game(app_state *state, int value) {
 
 // TODO(diego): Add sound
 internal void
-game_output_sound(game_sound_output_buffer *sound_buffer) {
+game_output_sound(Game_Sound_Output_Buffer *sound_buffer) {
     
 }
 
 internal void
-update_mode_selecting(app_state *state, game_input *input) {
+update_mode_selecting(App_State *state, Game_Input *input) {
     
     real32 press_t_target = 0.2f;
     
@@ -289,7 +289,7 @@ update_mode_selecting(app_state *state, game_input *input) {
 }
 
 internal void
-render_mode_selecting(app_state *state) {
+render_mode_selecting(App_State *state) {
     real32 selection_width = max(250.f, state->window_dimensions.width / 4.f);
     real32 selection_height = selection_width * 16.f / 9.f;
     
@@ -302,18 +302,18 @@ render_mode_selecting(app_state *state) {
     t *= t;
     t = .4f + t;
     
-    v4 border_color = make_v4(1.f, 1.0f, 1.f, .4f);
-    v4 border_color_almost_transparent = make_v4(1.f, 1.0f, 1.f, .2f);
+    Vector4 border_color = make_vector4(1.f, 1.0f, 1.f, .4f);
+    Vector4 border_color_almost_transparent = make_vector4(1.f, 1.0f, 1.f, .2f);
     
     real32 offset = (real32) (selection_width * (int) state->current_selecting_game);
-    mat4 translation = translate(make_v2(-offset + state->window_dimensions.width * .5f, -remaining * .5f));
+    Mat4 translation = translate(make_vector2(-offset + state->window_dimensions.width * .5f, -remaining * .5f));
     
 #if 0
     real32 tCos = cosf(time_info.current_time);
     tCos *= tCos;
     tCos = .95f + .05f * tCos;
-    mat4 center = translate(make_v2(state->window_dimensions.width * 0.5f - offset, .0f));
-    view_matrix = view_matrix * center * scale(make_v2(tCos, tCos));
+    Mat4 center = translate(make_vector2(state->window_dimensions.width * 0.5f - offset, .0f));
+    view_matrix = view_matrix * center * scale(make_vector2(tCos, tCos));
 #else
     view_matrix = view_matrix * translation;
 #endif
@@ -322,35 +322,35 @@ render_mode_selecting(app_state *state) {
     
     for (int index = 1; index < array_count(game_titles); ++index) {
         real32 x = (real32) index * selection_width;
-        v2 min  = make_v2(x, 0.f);
-        v2 max = make_v2(x + selection_width, selection_height);
+        Vector2 min  = make_vector2(x, 0.f);
+        Vector2 max = make_vector2(x + selection_width, selection_height);
         
         if (index < array_count(menu_table)) {
             menu_table[index](state, min, max);
         }
         if (index == (int) state->current_selecting_game) {
-            v2 top_min = make_v2(min.x, min.y);
-            v2 top_max = make_v2(max.x, min.y + border_width);
+            Vector2 top_min = make_vector2(min.x, min.y);
+            Vector2 top_max = make_vector2(max.x, min.y + border_width);
             
-            v2 bottom_min = make_v2(min.x, max.y - border_width);
-            v2 bottom_max = make_v2(max.x, max.y);
+            Vector2 bottom_min = make_vector2(min.x, max.y - border_width);
+            Vector2 bottom_max = make_vector2(max.x, max.y);
             
-            v2 left_min = make_v2(min.x, top_max.y);
-            v2 left_max = make_v2(min.x + border_width, bottom_min.y);
+            Vector2 left_min = make_vector2(min.x, top_max.y);
+            Vector2 left_max = make_vector2(min.x + border_width, bottom_min.y);
             
-            v2 right_min = make_v2(max.x - border_width, top_max.y);
-            v2 right_max = make_v2(max.x, bottom_min.y);
+            Vector2 right_min = make_vector2(max.x - border_width, top_max.y);
+            Vector2 right_max = make_vector2(max.x, bottom_min.y);
             
             immediate_begin();
             
             // Draw select quad
             
-            v4 a = make_v4(1.f, 1.0f, 1.f, .2f);
-            v4 b = make_v4(1.f, 1.0f, 1.f, .0f);
+            Vector4 a = make_vector4(1.f, 1.0f, 1.f, .2f);
+            Vector4 b = make_vector4(1.f, 1.0f, 1.f, .0f);
             immediate_quad(min, max, lerp_color(b, t, a));
             
             // Draw select borders
-            v4 border_t_color = lerp_color(border_color, t, border_color_almost_transparent);
+            Vector4 border_t_color = lerp_color(border_color, t, border_color_almost_transparent);
             immediate_quad(left_min, left_max, border_t_color);
             immediate_quad(right_min, right_max, border_t_color);
             immediate_quad(top_min, top_max, border_t_color);
@@ -362,8 +362,8 @@ render_mode_selecting(app_state *state) {
         char* title = game_titles[index];
         real32 size = get_text_width(&state->game_title_font, title);
         
-        v4 text_color = make_color(0xffffffff);
-        v4 backing_color = make_color(0xff111111);
+        Vector4 text_color = make_color(0xffffffff);
+        Vector4 backing_color = make_color(0xff111111);
         
         real32 text_x = (min.x + max.x - size) * .5f;
         real32 text_y = max.height * 0.2f; 
@@ -374,7 +374,7 @@ render_mode_selecting(app_state *state) {
 }
 
 internal void
-game_update_and_render(app_state *state, game_memory *memory, game_input *input) {
+game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input) {
     
     if (!state->initialized) {
         state->current_mode = Mode_SelectingGame;
@@ -383,8 +383,8 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
         
         // @Cleanup
         //
-        // Pass these inside app_state?
-        // Make app_state visible and accessible to games?
+        // Pass these inside App_State?
+        // Make App_State visible and accessible to games?
         //
         menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
         menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
@@ -409,7 +409,7 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
     render_2d_right_handed(width, height);
     
     immediate_begin();
-    mode m = state->current_mode;
+    App_Mode m = state->current_mode;
     if (m == Mode_SelectingGame) {
         render_mode_selecting(state);
     } else if (m == Mode_PlayingGame) {
@@ -419,5 +419,16 @@ game_update_and_render(app_state *state, game_memory *memory, game_input *input)
             game_table[state->current_game](memory, input);
         }
         immediate_flush();
+    }
+    
+    //
+    // Temporary reload shaders after time
+    //
+    // TODO(diego): Implement proper hotloader
+    local_persist real32 t = 0.f;
+    t += time_info.dt;
+    if (t >= 1.f) {
+        reload_shaders();
+        t -= 1.f;
     }
 }

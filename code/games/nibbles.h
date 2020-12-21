@@ -14,7 +14,7 @@ Variants: Add walls to the level, instead of just a blank rectangle. Add power u
 #define NIBBLES_WORLD_X_COUNT 32
 #define NIBBLES_WORLD_Y_COUNT 16
 
-enum nibbles_snake_direction {
+enum Nibbles_Snake_Direction {
     NibblesSnakeDirection_None,
     NibblesSnakeDirection_Up,
     NibblesSnakeDirection_Down,
@@ -22,7 +22,7 @@ enum nibbles_snake_direction {
     NibblesSnakeDirection_Right,
 };
 
-enum nibbles_entity_kind {
+enum Nibbles_Entity_Kind {
     NibblesEntity_None,
     
     NibblesEntity_Apple,
@@ -31,20 +31,20 @@ enum nibbles_entity_kind {
     NibblesEntity_Count,
 };
 
-struct nibbles_entity {
-    nibbles_entity_kind kind;
+struct Nibbles_Entity {
+    Nibbles_Entity_Kind kind;
     u8 x;
     u8 y;
 };
 
-struct nibbles_state {
-    v2i dimensions;
+struct Nibbles_State {
+    Vector2i dimensions;
     
     u8 snake_length;
-    nibbles_entity snake[NIBBLES_WORLD_Y_COUNT * NIBBLES_WORLD_X_COUNT];
-    nibbles_snake_direction direction;
+    Nibbles_Entity snake[NIBBLES_WORLD_Y_COUNT * NIBBLES_WORLD_X_COUNT];
+    Nibbles_Snake_Direction direction;
     
-    nibbles_entity apple;
+    Nibbles_Entity apple;
     
     real32 last_eaten_apple_time;
     
@@ -52,22 +52,22 @@ struct nibbles_state {
     real32 step_t_target;
     real32 step_dt;
     
-    game_mode game_mode;
+    Game_Mode Game_Mode;
     s8 menu_selected_item;
     b32 quit_was_selected;
 };
 
-internal nibbles_entity make_entity(nibbles_entity_kind kind, u8 x, u8 y);
-internal void init_board(nibbles_state *state);
-internal void init_game(nibbles_state *state);
-internal b32 is_occupied(nibbles_state *state, u8 x, u8 y);
-internal void advance_snake(nibbles_state *state);
+internal Nibbles_Entity make_entity(Nibbles_Entity_Kind kind, u8 x, u8 y);
+internal void init_board(Nibbles_State *state);
+internal void init_game(Nibbles_State *state);
+internal b32 is_occupied(Nibbles_State *state, u8 x, u8 y);
+internal void advance_snake(Nibbles_State *state);
 
-internal void draw_apple(nibbles_state *state, nibbles_entity *apple);
-internal void draw_snake(nibbles_state *state);
-internal void draw_board(nibbles_state *state);
-internal void draw_game_view(nibbles_state *state);
+internal void draw_apple(Nibbles_State *state, Nibbles_Entity *apple);
+internal void draw_snake(Nibbles_State *state);
+internal void draw_board(Nibbles_State *state);
+internal void draw_game_view(Nibbles_State *state);
 
-internal void nibbles_menu_art(app_state *state, v2 min, v2 max);
-internal void nibbles_game_restart(nibbles_state *state);
-internal void nibbles_game_update_and_render(game_memory *memory, game_input *input);
+internal void nibbles_menu_art(App_State *state, Vector2 min, Vector2 max);
+internal void nibbles_game_restart(Nibbles_State *state);
+internal void nibbles_game_update_and_render(Game_Memory *memory, Game_Input *input);

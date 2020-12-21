@@ -5,8 +5,8 @@
 //
 
 struct Render_Material {
-    v3 ambient_color;
-    v3 diffuse_color;
+    Vector3 ambient_color;
+    Vector3 diffuse_color;
 };
 
 enum Texture_Type {
@@ -31,14 +31,14 @@ struct Triangle_Mesh {
     char *filepath;
     
     // Vertex data
-    v3 *vertices;
-    v3 *normals;
-    v2 *uvs;
+    Vector3 *vertices;
+    Vector3 *normals;
+    Vector2 *uvs;
     
     // Index data
     u32 *indices;
     
-    v4 *colors;
+    Vector4 *colors;
     
     Triangle_List_Info *list;
     

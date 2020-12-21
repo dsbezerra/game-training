@@ -81,6 +81,7 @@ typedef int type_glCreateProgram();
 typedef void type_glAttachShader(GLuint program, GLuint shader);
 typedef GLuint type_glLinkProgram(GLuint program);
 typedef void type_glUseProgram(GLuint program);
+typedef void type_glDeleteProgram(GLuint program);
 typedef void type_glGenBuffers(GLsizei n, GLuint * buffers);
 typedef void type_glDeleteBuffers(GLsizei n, GLuint * buffers);
 typedef void type_glBindVertexArray(GLuint array);
@@ -141,19 +142,19 @@ typedef BOOL WINAPI wgl_choose_pixel_format_arb(HDC hdc,
 #define opengl_function(name) type_##name *name
 #define opengl_get_function(name) open_gl->name = (type_##name *) wglGetProcAddress(#name)
 
-struct opengl_info {
+struct Opengl_Info {
     char *vendor;
     char *renderer;
     char *version;
 };
 
-struct opengl_memory_info {
+struct Opengl_Memory_Info {
     GLint total_memory_in_kb;
     GLint current_available_memory_in_kb;
 };
 
-struct opengl {
-    opengl_info info;
+struct Opengl {
+    Opengl_Info info;
     opengl_function(glGetShaderInfoLog);
     opengl_function(glGetShaderiv);
     opengl_function(glGetProgramiv);
@@ -167,6 +168,7 @@ struct opengl {
     opengl_function(glAttachShader);
     opengl_function(glLinkProgram);
     opengl_function(glUseProgram);
+    opengl_function(glDeleteProgram);
     opengl_function(glGenBuffers);
     opengl_function(glDeleteBuffers);
     opengl_function(glBindVertexArray);

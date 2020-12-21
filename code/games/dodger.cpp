@@ -1,7 +1,7 @@
 
 internal void
-dodger_game_restart(dodger_state *state) {
-    state->game_mode = GameMode_Playing;
+dodger_game_restart(Dodger_State *state) {
+    state->Game_Mode = GameMode_Playing;
     state->score = 0;
     state->quit_was_selected = false;
     state->menu_selected_item = 0;
@@ -15,45 +15,45 @@ dodger_game_restart(dodger_state *state) {
 }
 
 internal void
-init_player(dodger_state *state) {
-    dodger_player player = {};
+init_player(Dodger_State *state) {
+    Dodger_Player player = {};
     
-    v2i dim = state->world.dimensions;
-    player.position = make_v2(dim.width / 2.f, dim.height * .2f);
-    player.size = make_v2(25.f, 25.0f);
+    Vector2i dim = state->world.dimensions;
+    player.position = make_vector2(dim.width / 2.f, dim.height * .2f);
+    player.size = make_vector2(25.f, 25.0f);
     
     state->player = player;
 }
 
 internal void
-init_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
-    v2i dim = state->world.dimensions;
-    v2 position = make_v2(random_real32_in_range(0.f, dim.width * 1.f), random_real32_in_range((real32) -dim.height, -dim.height / 2.f));
+init_bad_guy(Dodger_State *state, Dodger_Bad_Guy *bad_guy) {
+    Vector2i dim = state->world.dimensions;
+    Vector2 position = make_vector2(random_real32_in_range(0.f, dim.width * 1.f), random_real32_in_range((real32) -dim.height, -dim.height / 2.f));
     real32 wh = random_real32_in_range(20.f, 50.f);
-    v2 size = make_v2(wh, wh);
+    Vector2 size = make_vector2(wh, wh);
     bad_guy->position = position;
     bad_guy->size = size;
 }
 
 internal void
-init_bad_guys(dodger_state *state) {
+init_bad_guys(Dodger_State *state) {
     for (u32 bad_guy_index = 0; 
          bad_guy_index < array_count(state->bad_guys);
          ++bad_guy_index) {
-        dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index]; 
+        Dodger_Bad_Guy *bad_guy = &state->bad_guys[bad_guy_index]; 
         init_bad_guy(state, bad_guy);
     }
 }
 
 internal void
-update_player(dodger_state *state, game_input *input) {
+update_player(Dodger_State *state, Game_Input *input) {
     
-    dodger_player *player = &state->player;
+    Dodger_Player *player = &state->player;
     
-    v2i dim = state->world.dimensions;
+    Vector2i dim = state->world.dimensions;
     
-    game_mouse mouse = input->mouse;
-    v2 velocity = make_v2(mouse.sensitivity * mouse.velocity.x, mouse.sensitivity * mouse.velocity.y);
+    Game_Mouse mouse = input->mouse;
+    Vector2 velocity = make_vector2(mouse.sensitivity * mouse.velocity.x, mouse.sensitivity * mouse.velocity.y);
     
     real32 speed = 100.f * time_info.dt;
     if (is_down(Button_Space)) {
@@ -72,20 +72,20 @@ update_player(dodger_state *state, game_input *input) {
         velocity.y += speed;
     }
     
-    v2 new_position = player->position + velocity;
+    Vector2 new_position = player->position + velocity;
     new_position.x = clampf(0.f, new_position.x, ((real32) dim.width) - player->size.width);
     new_position.y = clampf(0.f, new_position.y, ((real32) dim.height) - player->size.height);
     player->position = new_position;
 }
 
 internal void
-update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
-    v2 velocity = {};
+update_bad_guy(Dodger_State *state, Dodger_Bad_Guy *bad_guy) {
+    Vector2 velocity = {};
     real32 speed = 100.f * time_info.dt;
     
     bad_guy->position.y += speed;
     
-    v2i dim = state->world.dimensions;
+    Vector2i dim = state->world.dimensions;
     if (bad_guy->position.y > dim.height) {
         // Re-use bad guy
         init_bad_guy(state, bad_guy);
@@ -97,16 +97,16 @@ update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy) {
 }
 
 internal b32
-check_for_collision(dodger_player *player, dodger_bad_guy *bad_guy) {
+check_for_collision(Dodger_Player *player, Dodger_Bad_Guy *bad_guy) {
     b32 result = 0;
     
-    box player_box = box{
+    Box player_box = Box{
         player->position.x,
         player->position.y,
         player->size.width,
         player->size.height,
     };
-    box guy_box = box{
+    Box guy_box = Box{
         bad_guy->position.x,
         bad_guy->position.y,
         bad_guy->size.width,
@@ -119,20 +119,20 @@ check_for_collision(dodger_player *player, dodger_bad_guy *bad_guy) {
 }
 
 internal void
-draw_player(dodger_player *player) {
-    v4 color = make_color(0xffffffff);
+draw_player(Dodger_Player *player) {
+    Vector4 color = make_color(0xffffffff);
     immediate_quad(player->position, player->position + player->size, color);
 }
 
 internal void
-draw_bad_guy(dodger_bad_guy *bad_guy) {
-    v4 color = make_color(0xff66ff66);
+draw_bad_guy(Dodger_Bad_Guy *bad_guy) {
+    Vector4 color = make_color(0xff66ff66);
     immediate_quad(bad_guy->position, bad_guy->position + bad_guy->size, color);
 }
 
 internal void
-draw_game_view(dodger_state *state) {
-    if (state->game_mode == GameMode_Playing) {
+draw_game_view(Dodger_State *state) {
+    if (state->Game_Mode == GameMode_Playing) {
         immediate_begin();
         draw_player(&state->player);
         for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
@@ -144,21 +144,21 @@ draw_game_view(dodger_state *state) {
         // Draw HUD
         //
         
-        v2i dim = state->world.dimensions;
+        Vector2i dim = state->world.dimensions;
         char buffer[256];
         // TODO: Platform specific sprintf()
         wsprintfA(buffer, "Top Score: %d\nScore: %d", (int) state->top_score, (int) state->score);
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
     } else {
-        draw_menu(DODGER_TITLE, state->world.dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(DODGER_TITLE, state->world.dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
 internal void
-dodger_menu_art(app_state *state, v2 min, v2 max) {
+dodger_menu_art(App_State *state, Vector2 min, Vector2 max) {
     
-    v4 background = make_color(0xff141414);
+    Vector4 background = make_color(0xff141414);
     
     immediate_begin();
     
@@ -166,33 +166,33 @@ dodger_menu_art(app_state *state, v2 min, v2 max) {
     immediate_quad(min, max, background, 1.f);
     
     {
-        v4 color = make_color(0xff66ff66);
-        v2 size = make_v2(24.f, 24.f);
-        dodger_bad_guy guys[] = {
-            dodger_bad_guy{make_v2(min.x + size.width * 5.f, max.y - max.y * .2f), size},
-            dodger_bad_guy{make_v2(max.x - size.width * 3.f, max.y - max.y * .5f), size},
-            dodger_bad_guy{make_v2(min.x + size.width * 1.2f, max.y - max.y * .6f), size},
-            dodger_bad_guy{make_v2(max.x - size.width * 1.2f, max.y - max.y * .6f), size},
-            dodger_bad_guy{make_v2(min.x + size.width * 1.4f, max.y - max.y * .33f), size},
-            dodger_bad_guy{make_v2(max.x - size.width * 1.4f, max.y - max.y * .33f), size},
-            dodger_bad_guy{make_v2(min.x + size.width * 1.2f, max.y - max.y * .5f), size},
-            dodger_bad_guy{make_v2(max.x - size.width * 2.9f, max.y - max.y * .8f), size},
-            dodger_bad_guy{make_v2(min.x + size.width * 1.9f, max.y - max.y * .8f), size},
-            dodger_bad_guy{make_v2(max.x - size.width * 1.55f, max.y - max.y * .12f), size},
-            dodger_bad_guy{make_v2(min.x + size.width * 8.55f, max.y - max.y * .12f), size},
-            dodger_bad_guy{make_v2(max.x - size.width * 4.11f, max.y - max.y * .2f), size},
+        Vector4 color = make_color(0xff66ff66);
+        Vector2 size = make_vector2(24.f, 24.f);
+        Dodger_Bad_Guy guys[] = {
+            Dodger_Bad_Guy{make_vector2(min.x + size.width * 5.f, max.y - max.y * .2f), size},
+            Dodger_Bad_Guy{make_vector2(max.x - size.width * 3.f, max.y - max.y * .5f), size},
+            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.2f, max.y - max.y * .6f), size},
+            Dodger_Bad_Guy{make_vector2(max.x - size.width * 1.2f, max.y - max.y * .6f), size},
+            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.4f, max.y - max.y * .33f), size},
+            Dodger_Bad_Guy{make_vector2(max.x - size.width * 1.4f, max.y - max.y * .33f), size},
+            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.2f, max.y - max.y * .5f), size},
+            Dodger_Bad_Guy{make_vector2(max.x - size.width * 2.9f, max.y - max.y * .8f), size},
+            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.9f, max.y - max.y * .8f), size},
+            Dodger_Bad_Guy{make_vector2(max.x - size.width * 1.55f, max.y - max.y * .12f), size},
+            Dodger_Bad_Guy{make_vector2(min.x + size.width * 8.55f, max.y - max.y * .12f), size},
+            Dodger_Bad_Guy{make_vector2(max.x - size.width * 4.11f, max.y - max.y * .2f), size},
         };
         for (int i = 0; i < array_count(guys); ++i) {
-            dodger_bad_guy guy = guys[i];
+            Dodger_Bad_Guy guy = guys[i];
             immediate_quad(guy.position, add_v2(guy.position, guy.size), color, 1.f);
         }
     }
     
     {
         // Player
-        v2 size = make_v2(24.f, 24.f);
-        v2 position = make_v2((min.x + max.x - size.width) / 2.f, (min.y + max.y - size.height) / 2.f);
-        v4 color = make_color(0xffffffff);
+        Vector2 size = make_vector2(24.f, 24.f);
+        Vector2 position = make_vector2((min.x + max.x - size.width) / 2.f, (min.y + max.y - size.height) / 2.f);
+        Vector4 color = make_color(0xffffffff);
         immediate_quad(position, add_v2(position, size), color);
     }
 #endif
@@ -203,23 +203,23 @@ dodger_menu_art(app_state *state, v2 min, v2 max) {
 }
 
 internal void
-dodger_game_update_and_render(game_memory *memory, game_input *input) {
+dodger_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
-    dodger_state *state = (dodger_state *) memory->permanent_storage;
+    Dodger_State *state = (Dodger_State *) memory->permanent_storage;
     if (!memory->initialized) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         
         // Init Dodger state
-        state = (dodger_state *) game_alloc(memory, megabytes(64));
+        state = (Dodger_State *) game_alloc(memory, megabytes(64));
         
-        dodger_assets assets = {};
+        Dodger_Assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         
-        dodger_world world = {};
+        Dodger_World world = {};
         world.dimensions = memory->window_dimensions;
         
-        state->game_mode = GameMode_Playing;
+        state->Game_Mode = GameMode_Playing;
         state->assets = assets;
         state->world = world;
         state->score = 0;
@@ -235,7 +235,7 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
     // NOTE(diego): Lock mouse to center of screen and use new position
     // to calculate velocity and move our player with it.
     {
-        v2i new_mouse_position;
+        Vector2i new_mouse_position;
         platform_get_cursor_position(&new_mouse_position);
         
         input->mouse.velocity = new_mouse_position - input->mouse.position;
@@ -254,21 +254,21 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Update
     //
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
+            state->Game_Mode = GameMode_Menu;
         } else {
             update_player(state, input);
             for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
-                dodger_bad_guy *bad_guy = &state->bad_guys[bad_guy_index];
+                Dodger_Bad_Guy *bad_guy = &state->bad_guys[bad_guy_index];
                 update_bad_guy(state, bad_guy);
                 if (check_for_collision(&state->player, bad_guy)) {
-                    state->game_mode = GameMode_GameOver;
+                    state->Game_Mode = GameMode_GameOver;
                     break;
                 }
             }
         }
-    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
+    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -276,10 +276,10 @@ dodger_game_update_and_render(game_memory *memory, game_input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
+            if (state->Game_Mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = GameMode_Playing;
+                state->Game_Mode = GameMode_Playing;
             }
         }
         

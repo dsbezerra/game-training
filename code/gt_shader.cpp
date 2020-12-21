@@ -1,12 +1,12 @@
-global_variable shader global_shader;
-global_variable shader global_basic_3d_shader;
-global_variable shader global_basic_3d_light_shader;
+global_variable Shader global_shader;
+global_variable Shader global_basic_3d_shader;
+global_variable Shader global_basic_3d_light_shader;
 
-internal shader_source
+internal Shader_Source
 parse_shader(char *filepath) {
-    shader_source result = {};
+    Shader_Source result = {};
     
-    file_contents file = platform_read_entire_file(filepath);
+    File_Contents file = platform_read_entire_file(filepath);
     
     char *at = (char *) file.contents;
     u8 type = 0;
@@ -126,10 +126,10 @@ delete_shaders(int n, ...) {
     va_end(ap);
 }
 
-internal shader
+internal Shader
 load_shader(char *filepath) {
-    shader_source source = parse_shader(filepath);
-    shader result = {};
+    Shader_Source source = parse_shader(filepath);
+    Shader result = {};
     
     int vertex_shader = compile_shader(GL_VERTEX_SHADER, source.vertex);
     int fragment_shader = compile_shader(GL_FRAGMENT_SHADER, source.fragment);
@@ -148,13 +148,33 @@ load_shader(char *filepath) {
     result.color_loc    = 1;
     result.uv_loc       = 2;
     result.normal_loc   = 3;
+    result.loaded       = true;
     
     return result;
 }
 
 internal void
-init_shaders() {
+unload_shader(Shader *shader) {
+    if (!shader->loaded) return;
+    
+    open_gl->glDeleteProgram(shader->program);
+    
+    shader->loaded = false;
+}
+
+internal void
+reload_shaders() {
+    unload_shader(&global_shader);
+    unload_shader(&global_basic_3d_shader);
+    unload_shader(&global_basic_3d_light_shader);
+    
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
     global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");
     global_basic_3d_light_shader = load_shader("./data/shaders/basic_3d_light.glsl");
+}
+
+
+internal void
+init_shaders() {
+    reload_shaders();
 }

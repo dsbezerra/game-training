@@ -1,18 +1,18 @@
 /* date = September 27th 2020 1:34 pm */
 
-enum profiler_item {
+enum Profiler_Item {
     ProfilerItem_Input,
     ProfilerItem_GameUpdateAndRender,
     ProfilerItem_Count,
 };
 
-struct profiling_data {
+struct Profiling_Data {
     u64 hit_count;
     u64 begin_timer;
     real32 timer;
 };
 
-struct profiling_font {
-    loaded_font font;
+struct Profiling_Font {
+    Loaded_Font font;
     b32 loaded;
 };

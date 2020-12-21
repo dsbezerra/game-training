@@ -27,9 +27,9 @@ struct Obj_Face_Spec {
 struct Obj_Element {
     Obj_Element_Kind kind;
     union {
-        v3 vertex;
-        v3 normal;
-        v2 uv;
+        Vector3 vertex;
+        Vector3 normal;
+        Vector2 uv;
         
         Obj_Face_Spec face_spec;
         
@@ -40,9 +40,9 @@ struct Obj_Element {
 };
 
 struct Obj_Material {
-    v3 Ka;
-    v3 Kd;
-    v3 Ks;
+    Vector3 Ka;
+    Vector3 Kd;
+    Vector3 Ks;
     
     float Ns;
     
@@ -69,9 +69,9 @@ struct Obj_Model {
     
     Obj_Index_Table *table;
     
-    v3 *vertices;
-    v3 *normals;
-    v2 *uvs;
+    Vector3 *vertices;
+    Vector3 *normals;
+    Vector2 *uvs;
     Obj_Face_Spec *faces;
     
     u32 vertex_count;

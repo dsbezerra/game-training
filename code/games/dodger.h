@@ -15,30 +15,32 @@ Variations: Have enemies fall at different rates and be different sizes. Have en
 
 #define DODGER_TITLE "Dodger"
 
-struct dodger_assets {
-    loaded_font primary_font;
+struct Dodger_Assets {
+    Loaded_Font primary_font;
 };
 
-struct dodger_world {
-    v2i dimensions;
+struct Dodger_World {
+    Vector2i dimensions;
 };
 
-struct dodger_player {
-    v2 position;
-    v2 size;
+struct Dodger_Player {
+    Vector2 position;
+    Vector2 size;
 };
 
-struct dodger_bad_guy {
-    v2 position;
-    v2 size;
+struct Dodger_Bad_Guy {
+    Vector2 position;
+    Vector2 size;
 };
 
-struct dodger_state {
-    game_mode game_mode;
-    dodger_assets assets;
-    dodger_world world;
-    dodger_player player;
-    dodger_bad_guy bad_guys[32];
+struct Dodger_State {
+    Game_Mode Game_Mode;
+    
+    Dodger_Assets assets;
+    
+    Dodger_World world;
+    Dodger_Player player;
+    Dodger_Bad_Guy bad_guys[32];
     
     u64 score;
     u64 top_score;
@@ -47,21 +49,21 @@ struct dodger_state {
     b32 quit_was_selected;
 };
 
-internal void dodger_game_restart(dodger_state *state);
+internal void dodger_game_restart(Dodger_State *state);
 
-internal void dodger_menu_art(app_state *state, v2 min, v2 max);
-internal void dodger_game_update_and_render(game_memory *memory, game_input *input);
+internal void dodger_menu_art(App_State *state, Vector2 min, Vector2 max);
+internal void dodger_game_update_and_render(Game_Memory *memory, Game_Input *input);
 
-internal void init_world(dodger_state *state);
-internal void init_player(dodger_state *state);
-internal void init_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy);
-internal void init_bad_guys(dodger_state *state);
+internal void init_world(Dodger_State *state);
+internal void init_player(Dodger_State *state);
+internal void init_bad_guy(Dodger_State *state, Dodger_Bad_Guy *bad_guy);
+internal void init_bad_guys(Dodger_State *state);
 
-internal void update_player(dodger_state *state, game_input *input, real32 dt);
-internal void update_bad_guy(dodger_state *state, dodger_bad_guy *bad_guy, real32 dt);
+internal void update_player(Dodger_State *state, Game_Input *input, real32 dt);
+internal void update_bad_guy(Dodger_State *state, Dodger_Bad_Guy *bad_guy, real32 dt);
 
-internal void draw_player(dodger_player *player);
-internal void draw_bad_guy(dodger_bad_guy *bad_guy);
+internal void draw_player(Dodger_Player *player);
+internal void draw_bad_guy(Dodger_Bad_Guy *bad_guy);
 
-internal void draw_game_view(dodger_state *state);
-internal void draw_game_over(dodger_state *state);
+internal void draw_game_view(Dodger_State *state);
+internal void draw_game_over(Dodger_State *state);

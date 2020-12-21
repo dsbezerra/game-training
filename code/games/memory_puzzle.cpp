@@ -1,13 +1,13 @@
 
 internal void
-init_level(memory_puzzle_state *state) {
+init_level(Memory_Puzzle_State *state) {
     state->current_level = {};
     state->current_level.max_tries = 100;
 }
 
 internal void
-memory_puzzle_game_restart(memory_puzzle_state *state) {
-    state->game_mode = GameMode_Playing;
+memory_puzzle_game_restart(Memory_Puzzle_State *state) {
+    state->Game_Mode = GameMode_Playing;
     state->flip_count = 0;
     state->quit_was_selected = false;
     state->menu_selected_item = 0;
@@ -20,10 +20,10 @@ memory_puzzle_game_restart(memory_puzzle_state *state) {
     init_level(state);
 }
 
-internal v4
+internal Vector4
 get_random_card_color() {
     real32 t = random_real32_in_range(0.f, 2.f);
-    v4 result = {};
+    Vector4 result = {};
     
     if (t >= 2.f) {
         result = make_color(0xffc19c8e); 
@@ -69,9 +69,9 @@ get_random_card_color() {
     return result;
 }
 
-internal memory_card
+internal Memory_Card
 get_random_card() {
-    memory_card result = {};
+    Memory_Card result = {};
     
     while (result.kind == MemoryCard_None) {
         if (random_choice(1)) {
@@ -102,20 +102,20 @@ get_random_card() {
     return result;
 }
 
-internal memory_puzzle_world
+internal Memory_Puzzle_World
 init_world() {
-    memory_puzzle_world world = {}; // Ensure zero
+    Memory_Puzzle_World world = {}; // Ensure zero
     
     int x_count = array_count(world.field);
     int y_count = array_count(world.field[0]);
     int size = x_count * y_count;
     
-    memory_card *cards = (memory_card *) world.field;
-    for (memory_card *card = cards; card != cards + size;) {
-        memory_card new_card = get_random_card();
+    Memory_Card *cards = (Memory_Card *) world.field;
+    for (Memory_Card *card = cards; card != cards + size;) {
+        Memory_Card new_card = get_random_card();
         
         b32 contains = false;
-        for (memory_card *c = cards; c != cards + size; c++) {
+        for (Memory_Card *c = cards; c != cards + size; c++) {
             if (c->kind == new_card.kind && c->color == new_card.color) {
                 contains = true;
                 break;
@@ -136,9 +136,9 @@ init_world() {
     //
     for (int i = size - 1; i >= 0; --i) {
         int j = random_int_in_range(0, size - 1);
-        memory_card *first = cards + i;
-        memory_card *second = cards + j;
-        memory_card aux = *first;
+        Memory_Card *first = cards + i;
+        Memory_Card *second = cards + j;
+        Memory_Card aux = *first;
         *first = *second;
         *second = aux;
     }
@@ -146,8 +146,8 @@ init_world() {
     return world;
 }
 
-internal memory_card *
-get_current_selected_card(memory_puzzle_state *state) {
+internal Memory_Card *
+get_current_selected_card(Memory_Puzzle_State *state) {
     int field_x = state->current_selected % array_count(state->world.field);
     int field_y = state->current_selected / array_count(state->world.field);
     
@@ -155,7 +155,7 @@ get_current_selected_card(memory_puzzle_state *state) {
 }
 
 internal b32
-flipped_cards_match(memory_card *first, memory_card *second) {
+flipped_cards_match(Memory_Card *first, Memory_Card *second) {
     if (!first || !second) return false;
     if (!first->flipped || !second->flipped) return false;
     
@@ -163,31 +163,31 @@ flipped_cards_match(memory_card *first, memory_card *second) {
 }
 
 internal void
-draw_square(memory_card *card, v2 min, v2 max) {
-    v2 square_size = (max - min) * 0.25f; 
+draw_square(Memory_Card *card, Vector2 min, Vector2 max) {
+    Vector2 square_size = (max - min) * 0.25f; 
     
-    v2 square_min = min + square_size;
-    v2 square_max = max - square_size;
+    Vector2 square_min = min + square_size;
+    Vector2 square_max = max - square_size;
     
     immediate_quad(square_min, square_max, card->color);
 }
 
 internal void
-draw_oval(memory_card *card, v2 min, v2 max) {
-    v2 radius = max - min;
-    v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
-    immediate_circle_filled(center, make_v2(radius.x * 0.6f, radius.y * 0.3f), card->color);
+draw_oval(Memory_Card *card, Vector2 min, Vector2 max) {
+    Vector2 radius = max - min;
+    Vector2 center = make_vector2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+    immediate_circle_filled(center, make_vector2(radius.x * 0.6f, radius.y * 0.3f), card->color);
 }
 
 internal void
-draw_donut(memory_card *card, v2 min, v2 max) {
-    v2 radius = max - min;
-    v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+draw_donut(Memory_Card *card, Vector2 min, Vector2 max) {
+    Vector2 radius = max - min;
+    Vector2 center = make_vector2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle(center, radius.x * 0.15f, radius.y * 0.4f, card->color);
 }
 
 internal void
-draw_lines(memory_card *card, v2 min, v2 max) {
+draw_lines(Memory_Card *card, Vector2 min, Vector2 max) {
     
     real32 height = max.y - min.y;
     real32 line_height = 1.f;
@@ -198,7 +198,7 @@ draw_lines(memory_card *card, v2 min, v2 max) {
     real32 y_cursor = min.y;
     
 #if 0
-    v2 default_uv = make_v2(1.f, 1.f);
+    Vector2 default_uv = make_vector2(1.f, 1.f);
     real32 angle = -45.f;
 #endif
     
@@ -206,12 +206,12 @@ draw_lines(memory_card *card, v2 min, v2 max) {
         
         // STUDY(diego): How to clip this properly to max min sizes...
 #if 0
-        v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+        Vector2 center = make_vector2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
         
-        v2 top_left = rotate_v2_around(make_v2(min.x, y_cursor), center, angle);
-        v2 top_right = rotate_v2_around(make_v2(max.x, y_cursor), center, angle);
-        v2 bottom_left = rotate_v2_around(make_v2(min.x, y_cursor + line_height), center, angle);
-        v2 bottom_right = rotate_v2_around(make_v2(max.x, y_cursor + line_height), center, angle);
+        Vector2 top_left = rotate_v2_around(make_vector2(min.x, y_cursor), center, angle);
+        Vector2 top_right = rotate_v2_around(make_vector2(max.x, y_cursor), center, angle);
+        Vector2 bottom_left = rotate_v2_around(make_vector2(min.x, y_cursor + line_height), center, angle);
+        Vector2 bottom_right = rotate_v2_around(make_vector2(max.x, y_cursor + line_height), center, angle);
         
         immediate_vertex(top_left, card->color, default_uv, 1.f);
         immediate_vertex(bottom_left, card->color, default_uv, 1.f);
@@ -222,8 +222,8 @@ draw_lines(memory_card *card, v2 min, v2 max) {
         immediate_vertex(top_left, card->color, default_uv, 1.f);
 #endif
         
-        v2 line_min = make_v2(min.x, y_cursor);
-        v2 line_max = make_v2(max.x, y_cursor + line_height);
+        Vector2 line_min = make_vector2(min.x, y_cursor);
+        Vector2 line_max = make_vector2(max.x, y_cursor + line_height);
         immediate_quad(line_min, line_max, card->color);
         
         y_cursor += advance_y;
@@ -231,56 +231,56 @@ draw_lines(memory_card *card, v2 min, v2 max) {
 }
 
 internal void
-draw_double_square(memory_card *card, v2 min, v2 max) {
-    v2 size = (max - min) * 0.5f; 
-    v2 first_min = min;
-    v2 first_max = first_min + size;
+draw_double_square(Memory_Card *card, Vector2 min, Vector2 max) {
+    Vector2 size = (max - min) * 0.5f; 
+    Vector2 first_min = min;
+    Vector2 first_max = first_min + size;
     
-    v2 second_min = first_max;
-    v2 second_max = second_min + size;
+    Vector2 second_min = first_max;
+    Vector2 second_max = second_min + size;
     
     immediate_quad(first_min, first_max, card->color);
     immediate_quad(second_min, second_max, card->color);
 }
 
 internal void
-draw_circle(memory_card *card, v2 min, v2 max) {
-    v2 radius = (max - min) * 0.5f;
-    v2 center = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+draw_circle(Memory_Card *card, Vector2 min, Vector2 max) {
+    Vector2 radius = (max - min) * 0.5f;
+    Vector2 center = make_vector2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
     immediate_circle_filled(center, radius, card->color);
 }
 
 internal void
-draw_diamond(memory_card *card, v2 min, v2 max) {
-    v2 half = make_v2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
-    v2 default_uv = make_v2(-1.f, -1.f);
+draw_diamond(Memory_Card *card, Vector2 min, Vector2 max) {
+    Vector2 half = make_vector2((min.x + max.x) / 2.f, (min.y + max.y) / 2.f);
+    Vector2 default_uv = make_vector2(-1.f, -1.f);
     
     // First triangle
     real32 z_index = 1.f;
-    immediate_vertex(make_v3(half.x, min.y, z_index), card->color, default_uv);
-    immediate_vertex(make_v3(min.x, half.y, z_index), card->color, default_uv);
-    immediate_vertex(make_v3(half.x, max.y, z_index), card->color, default_uv);
+    immediate_vertex(make_vector3(half.x, min.y, z_index), card->color, default_uv);
+    immediate_vertex(make_vector3(min.x, half.y, z_index), card->color, default_uv);
+    immediate_vertex(make_vector3(half.x, max.y, z_index), card->color, default_uv);
     
     // Second triangle
-    immediate_vertex(make_v3(half.x, min.y, z_index), card->color, default_uv);
-    immediate_vertex(make_v3(half.x, max.y, z_index), card->color, default_uv);
-    immediate_vertex(make_v3(max.x, half.y, z_index), card->color, default_uv);
+    immediate_vertex(make_vector3(half.x, min.y, z_index), card->color, default_uv);
+    immediate_vertex(make_vector3(half.x, max.y, z_index), card->color, default_uv);
+    immediate_vertex(make_vector3(max.x, half.y, z_index), card->color, default_uv);
 }
 
 internal void
-memory_puzzle_menu_art(app_state *state, v2 min, v2 max) {
+memory_puzzle_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
     immediate_textured_quad(min, max, state->menu_art.memory_puzzle);
     immediate_flush();
 }
 
 internal void
-draw_game_view(memory_puzzle_state *state) {
+draw_game_view(Memory_Puzzle_State *state) {
     //
     // Draw field
     //
-    if (state->game_mode == GameMode_Playing) {
-        memory_puzzle_world world = state->world;
+    if (state->Game_Mode == GameMode_Playing) {
+        Memory_Puzzle_World world = state->world;
         
         real32 pad;
         if (world.dimensions.width > world.dimensions.height) {
@@ -295,19 +295,19 @@ draw_game_view(memory_puzzle_state *state) {
         real32 max_height = world.dimensions.height * 0.8f;
         real32 card_size = (max_height - y_count * pad) / y_count;
         
-        v2 start = make_v2((world.dimensions.width - card_size * x_count) / 2.f, (world.dimensions.height - card_size * y_count) / 2.f);
+        Vector2 start = make_vector2((world.dimensions.width - card_size * x_count) / 2.f, (world.dimensions.height - card_size * y_count) / 2.f);
         immediate_begin();
         for (int field_y = 0; field_y < array_count(world.field[0]); ++field_y) {
             for (int field_x = 0; field_x < array_count(world.field); ++field_x) {
-                v2 min = make_v2(card_size * field_x + pad, card_size * field_y + pad);
-                v2 max = make_v2(card_size * field_x + card_size, field_y * card_size + card_size);
+                Vector2 min = make_vector2(card_size * field_x + pad, card_size * field_y + pad);
+                Vector2 max = make_vector2(card_size * field_x + card_size, field_y * card_size + card_size);
                 
                 min = min + start;
                 max = max + start;
                 
-                memory_card card = world.field[field_x][field_y];
+                Memory_Card card = world.field[field_x][field_y];
                 if (!card.flipped) {
-                    v4 white = make_color(0xffffffff);
+                    Vector4 white = make_color(0xffffffff);
                     immediate_quad(min, max, white);
                     continue;
                 }
@@ -348,8 +348,8 @@ draw_game_view(memory_puzzle_state *state) {
             int field_x = state->current_selected % array_count(world.field);
             int field_y = state->current_selected / array_count(world.field);
             
-            v2 min = make_v2(card_size * field_x, card_size * field_y);
-            v2 max = make_v2(card_size * field_x + card_size, field_y * card_size + card_size);
+            Vector2 min = make_vector2(card_size * field_x, card_size * field_y);
+            Vector2 max = make_vector2(card_size * field_x + card_size, field_y * card_size + card_size);
             
             min = min + start;
             max = max + start;
@@ -364,19 +364,19 @@ draw_game_view(memory_puzzle_state *state) {
             min.y += stroke;
             max.y += stroke;
             
-            v4 color = make_color(0xff0000ff);
+            Vector4 color = make_color(0xff0000ff);
             
-            v2 left_min = make_v2(min.x, min.y);
-            v2 left_max = make_v2(min.x + half_stroke, max.y);
+            Vector2 left_min = make_vector2(min.x, min.y);
+            Vector2 left_max = make_vector2(min.x + half_stroke, max.y);
             
-            v2 right_min = make_v2(max.x, min.y);
-            v2 right_max = make_v2(max.x - half_stroke, max.y);
+            Vector2 right_min = make_vector2(max.x, min.y);
+            Vector2 right_max = make_vector2(max.x - half_stroke, max.y);
             
-            v2 top_min = make_v2(min.x, min.y);
-            v2 top_max = make_v2(max.x, min.y + half_stroke);
+            Vector2 top_min = make_vector2(min.x, min.y);
+            Vector2 top_max = make_vector2(max.x, min.y + half_stroke);
             
-            v2 bottom_min = make_v2(min.x, max.y);
-            v2 bottom_max = make_v2(max.x, max.y - half_stroke);
+            Vector2 bottom_min = make_vector2(min.x, max.y);
+            Vector2 bottom_max = make_vector2(max.x, max.y - half_stroke);
             
             immediate_quad(left_min, left_max, color);
             immediate_quad(right_min, right_max, color);
@@ -390,9 +390,9 @@ draw_game_view(memory_puzzle_state *state) {
         // Draw HUD
         //
         
-        memory_puzzle_level level = state->current_level;
+        Memory_Puzzle_Level level = state->current_level;
         
-        v2i dim = state->world.dimensions;
+        Vector2i dim = state->world.dimensions;
         
         char buffer[256];
         // TODO: Platform specific sprintf()
@@ -400,24 +400,24 @@ draw_game_view(memory_puzzle_state *state) {
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
     } else {
-        draw_menu(MEMORY_PUZZLE_TITLE, state->world.dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(MEMORY_PUZZLE_TITLE, state->world.dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
 internal void
-memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
+memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
-    memory_puzzle_state *state = (memory_puzzle_state *) memory->permanent_storage;
+    Memory_Puzzle_State *state = (Memory_Puzzle_State *) memory->permanent_storage;
     if (!memory->initialized) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         
-        state = (memory_puzzle_state *) game_alloc(memory, megabytes(12));
+        state = (Memory_Puzzle_State *) game_alloc(memory, megabytes(12));
         
-        memory_puzzle_assets assets = {};
+        Memory_Puzzle_Assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         
-        state->game_mode = GameMode_Playing;
+        state->Game_Mode = GameMode_Playing;
         state->assets = assets;
         state->checking_cards_target = 1.f;
         
@@ -433,10 +433,10 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
     // Update
     //
     
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         
         if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
+            state->Game_Mode = GameMode_Menu;
         } else {
             //
             // Update field
@@ -458,14 +458,14 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                 if (state->checking_cards_t > state->checking_cards_target) {
                     state->checking_cards_t = .0f;
                     
-                    memory_card *first = state->first_flipped;
-                    memory_card *second = state->second_flipped;
+                    Memory_Card *first = state->first_flipped;
+                    Memory_Card *second = state->second_flipped;
                     if (flipped_cards_match(first, second)) {
                         state->flip_count++;
                     } else {
                         state->current_level.tries++;
                         if (state->current_level.tries >= state->current_level.max_tries) {
-                            state->game_mode = GameMode_GameOver;
+                            state->Game_Mode = GameMode_GameOver;
                         }
                         
                         first->flipped = false;
@@ -477,7 +477,7 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                 
             } else {
                 if (pressed(Button_Space)) {
-                    memory_card *card = get_current_selected_card(state);
+                    Memory_Card *card = get_current_selected_card(state);
                     if (card && !card->flipped) {
                         card->flipped = !card->flipped;
                         if (!state->first_flipped) {
@@ -493,7 +493,7 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
                 }
             }
         }
-    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
+    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -501,10 +501,10 @@ memory_puzzle_game_update_and_render(game_memory *memory, game_input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
+            if (state->Game_Mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = GameMode_Playing;
+                state->Game_Mode = GameMode_Playing;
             }
         }
         

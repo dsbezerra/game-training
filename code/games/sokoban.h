@@ -11,53 +11,52 @@ Variant: Add all sorts of level gimmicks: teleport tiles, conveyor belts, button
 
 #define SOKOBAN_TITLE "Sokoban"
 
-enum sokoban_entity_kind {
+enum Sokoban_Entity_Kind {
     SokobanEntityKind_None,
     SokobanEntityKind_Tile,
     SokobanEntityKind_Light,
     SokobanEntityKind_Count,
 };
 
-struct sokoban_entity {
-    sokoban_entity_kind kind;
-    v3 position;
-    v4 color;
+struct Sokoban_Entity {
+    Sokoban_Entity_Kind kind;
+    Vector3 position;
+    Vector4 color;
 };
 
-struct sokoban_assets {
+struct Sokoban_Assets {
     GLint none;
     GLint container;
     GLint container_specular;
 };
 
-struct sokoban_player {
-    v3 position;
-    v3 velocity;
+struct Sokoban_Player {
+    Vector3 position;
+    Vector3 velocity;
     
     Triangle_Mesh mesh;
 };
 
-struct sokoban_state {
-    v2i dimensions;
+struct Sokoban_State {
+    Game_Mode Game_Mode;
     
-    camera cam;
+    Sokoban_Assets assets;
+    Sokoban_Player player;
+    Sokoban_Entity entities[16 * 16];
+
+    Camera cam;
     
-    sokoban_assets assets;
-    
-    sokoban_entity entities[16 * 16];
-    
-    sokoban_player player;
-    
-    game_mode game_mode;
+    Vector2i dimensions;
+
     s8 menu_selected_item;
     b32 quit_was_selected;
 };
 
-internal void init_game(sokoban_state *state);
-internal void update_game(sokoban_state *state, game_input *input);
+internal void init_game(Sokoban_State *state);
+internal void update_game(Sokoban_State *state, Game_Input *input);
 
-internal void draw_game_view(sokoban_state *state);
+internal void draw_game_view(Sokoban_State *state);
 
-internal void sokoban_menu_art(v2 min, v2 max);
-internal void sokoban_game_restart(sokoban_state *state);
-internal void sokoban_game_update_and_render(game_memory *memory, game_input *input);
+internal void sokoban_menu_art(Vector2 min, Vector2 max);
+internal void sokoban_game_restart(Sokoban_State *state);
+internal void sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input);

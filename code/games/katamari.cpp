@@ -1,34 +1,34 @@
-internal katamari_entity
-make_entity(katamari_entity_kind kind) {
+internal Katamari_Entity
+make_entity(Katamari_Entity_Kind kind) {
     
-    katamari_entity result = {};
+    Katamari_Entity result = {};
     result.kind = kind;
     result.alive = true;
     
     switch (kind) {
         case KatamariEntity_Player: {
-            result.half_size = make_v2(KATAMARI_PLAYER_SIZE/2.f, KATAMARI_PLAYER_SIZE/2.f);
+            result.half_size = make_vector2(KATAMARI_PLAYER_SIZE/2.f, KATAMARI_PLAYER_SIZE/2.f);
         } break;
         
         case KatamariEntity_Squirrel1: {
-            result.half_size = make_v2(KATAMARI_SQUIRREL_MAX_SIZE / 3.f, KATAMARI_SQUIRREL_MAX_SIZE / 3.f);
+            result.half_size = make_vector2(KATAMARI_SQUIRREL_MAX_SIZE / 3.f, KATAMARI_SQUIRREL_MAX_SIZE / 3.f);
         } break;
         
         case KatamariEntity_Squirrel2: {
-            result.half_size = make_v2(KATAMARI_SQUIRREL_MAX_SIZE / 2.f, KATAMARI_SQUIRREL_MAX_SIZE / 2.f);
+            result.half_size = make_vector2(KATAMARI_SQUIRREL_MAX_SIZE / 2.f, KATAMARI_SQUIRREL_MAX_SIZE / 2.f);
         } break;
         
         case KatamariEntity_Squirrel3: {
-            result.half_size = make_v2(KATAMARI_SQUIRREL_MAX_SIZE, KATAMARI_SQUIRREL_MAX_SIZE);
+            result.half_size = make_vector2(KATAMARI_SQUIRREL_MAX_SIZE, KATAMARI_SQUIRREL_MAX_SIZE);
         } break;
         
         case KatamariEntity_Grass1: {
-            result.half_size = make_v2(60.f / 2.f, 24.f / 2.f);
+            result.half_size = make_vector2(60.f / 2.f, 24.f / 2.f);
         } break;
         
         case KatamariEntity_Grass2:
         case KatamariEntity_Grass3: {
-            result.half_size = make_v2(52.f / 2.f, 48.f / 2.f);
+            result.half_size = make_vector2(52.f / 2.f, 48.f / 2.f);
         } break;
         
         default: invalid_code_path;
@@ -37,11 +37,11 @@ make_entity(katamari_entity_kind kind) {
     return result;
 }
 
-internal katamari_entity
-make_grass(katamari_entity_kind kind, real32 x, real32 y) {
+internal Katamari_Entity
+make_grass(Katamari_Entity_Kind kind, real32 x, real32 y) {
     assert(kind == KatamariEntity_Grass1 || kind == KatamariEntity_Grass2 || kind == KatamariEntity_Grass3);
     
-    katamari_entity result = make_entity(kind);
+    Katamari_Entity result = make_entity(kind);
     
     result.position.x = x;
     result.position.y = y;
@@ -49,10 +49,10 @@ make_grass(katamari_entity_kind kind, real32 x, real32 y) {
     return result;
 }
 
-internal katamari_entity*
-find_first_entity(katamari_state *state, katamari_entity_kind kind) {
+internal Katamari_Entity*
+find_first_entity(Katamari_State *state, Katamari_Entity_Kind kind) {
     for (int entity_index = 0; entity_index < array_count(state->entities); ++entity_index) {
-        katamari_entity *entity = &state->entities[entity_index];
+        Katamari_Entity *entity = &state->entities[entity_index];
         if (entity->kind == kind) {
             return entity;
         }
@@ -61,9 +61,9 @@ find_first_entity(katamari_state *state, katamari_entity_kind kind) {
 }
 
 internal void
-spawn_squirrel(katamari_state *state, u32 count) {
+spawn_squirrel(Katamari_State *state, u32 count) {
     
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
     
     u32 past_squirrel_index = KatamariEntity_Squirrel3 + 1;
     for (u32 i = 0; i < count; ++i) {
@@ -81,13 +81,13 @@ spawn_squirrel(katamari_state *state, u32 count) {
         }
         
         assert(squirrel_index >= KATAMARI_SQUIRREL_BASE_INDEX && squirrel_index < array_count(state->entities));
-        katamari_entity_kind kind = (katamari_entity_kind) (random_u32() % past_squirrel_index);
+        Katamari_Entity_Kind kind = (Katamari_Entity_Kind) (random_u32() % past_squirrel_index);
         if (kind < KatamariEntity_Squirrel1) {
-            kind = (katamari_entity_kind) (kind + KatamariEntity_Squirrel1);
+            kind = (Katamari_Entity_Kind) (kind + KatamariEntity_Squirrel1);
         }
         assert(kind >= KatamariEntity_Squirrel1 && kind <= KatamariEntity_Squirrel3);
         
-        katamari_entity new_squirrel = make_entity(kind);
+        Katamari_Entity new_squirrel = make_entity(kind);
         
         new_squirrel.position.x = random_real32_in_range(-center.x, center.x);
         new_squirrel.position.y = random_real32_in_range(-center.y, center.y);
@@ -121,16 +121,16 @@ spawn_squirrel(katamari_state *state, u32 count) {
         while (y_direction == 0) {
             y_direction = random_int_in_range(-1, 1);
         }
-        new_squirrel.direction  = make_v2((real32) x_direction,
-                                          (real32) y_direction);
+        new_squirrel.direction  = make_vector2((real32) x_direction,
+                                               (real32) y_direction);
         state->entities[squirrel_index] = new_squirrel;
     }
 }
 
 internal b32
-squirrel_collided(katamari_state *state, katamari_entity *squirrel, u8 wall_number) {
+squirrel_collided(Katamari_State *state, Katamari_Entity *squirrel, u8 wall_number) {
     
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
     
     b32 result = false;
     
@@ -157,19 +157,19 @@ squirrel_collided(katamari_state *state, katamari_entity *squirrel, u8 wall_numb
 
 #if DEBUG_BOX
 internal void
-draw_box_outline(katamari_state *state, box b) {
+draw_box_outline(Katamari_State *state, box b) {
     
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
     
     real32 stwidth = 2.f;
     
-    v2 tmin = make_v2(center.x + b.x, center.y + b.y);
-    v2 tmax = make_v2(tmin.x + b.width, tmin.y + stwidth);
+    Vector2 tmin = make_vector2(center.x + b.x, center.y + b.y);
+    Vector2 tmax = make_vector2(tmin.x + b.width, tmin.y + stwidth);
     
-    v2 bmin = make_v2(center.x + b.x, center.y + b.y + b.height);
-    v2 bmax = make_v2(bmin.x + b.width, bmin.y - stwidth);
+    Vector2 bmin = make_vector2(center.x + b.x, center.y + b.y + b.height);
+    Vector2 bmax = make_vector2(bmin.x + b.width, bmin.y - stwidth);
     
-    v4 color = make_color(0xFFFFFF00);
+    Vector4 color = make_color(0xFFFFFF00);
     
     real32 z_index = -5.f;
     
@@ -181,15 +181,15 @@ draw_box_outline(katamari_state *state, box b) {
 #endif
 
 internal void
-squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel) {
+squirrel_handle_collision(Katamari_State *state, Katamari_Entity *player, Katamari_Entity *squirrel) {
     
-    box sbox = {};
+    Box sbox = {};
     sbox.x = squirrel->position.x - squirrel->half_size.x;
     sbox.y = squirrel->position.y - squirrel->half_size.y;
     sbox.width = squirrel->half_size.x; 
     sbox.height = squirrel->half_size.y;
     
-    box pbox = {};
+    Box pbox = {};
     pbox.x = player->position.x - player->half_size.x;
     pbox.y = player->position.y - player->half_size.y;
     pbox.width = player->half_size.x; 
@@ -207,7 +207,7 @@ squirrel_handle_collision(katamari_state *state, katamari_entity *player, katama
         if (ls > lp) {
             state->health--;
             if (state->health < 1) {
-                state->game_mode = GameMode_GameOver;
+                state->Game_Mode = GameMode_GameOver;
                 return;
             }
         } else {
@@ -244,11 +244,11 @@ squirrel_handle_collision(katamari_state *state, katamari_entity *player, katama
 }
 
 internal void
-init_game(katamari_state *state) {
-    state->game_mode = GameMode_Playing;
+init_game(Katamari_State *state) {
+    state->Game_Mode = GameMode_Playing;
     state->health = 3;
     
-    katamari_entity player = make_entity(KatamariEntity_Player);
+    Katamari_Entity player = make_entity(KatamariEntity_Player);
     
     init_textures(&state->assets);
     
@@ -274,7 +274,7 @@ init_game(katamari_state *state) {
 }
 
 internal void
-init_textures(katamari_assets *assets) {
+init_textures(Katamari_Assets *assets) {
     assets->grass[0] = load_texture("./data/textures/katamari/grass_01.png");
     assets->grass[1] = load_texture("./data/textures/katamari/grass_02.png");
     assets->grass[2] = load_texture("./data/textures/katamari/grass_03.png");
@@ -283,7 +283,7 @@ init_textures(katamari_assets *assets) {
 }
 
 internal void
-free_textures(katamari_assets *assets) {
+free_textures(Katamari_Assets *assets) {
     assert(assets);
     
     glDeleteTextures(array_count(assets->grass), assets->grass);
@@ -291,12 +291,12 @@ free_textures(katamari_assets *assets) {
 }
 
 internal void
-update_game(katamari_state *state, game_input *input) {
+update_game(Katamari_State *state, Game_Input *input) {
     
-    katamari_entity *player = find_first_entity(state, KatamariEntity_Player);
+    Katamari_Entity *player = find_first_entity(state, KatamariEntity_Player);
     assert(player);
     
-    v2 acceleration = {};
+    Vector2 acceleration = {};
     
     if (is_down(Button_Left)) {
         acceleration.x = -1.f;
@@ -326,18 +326,18 @@ update_game(katamari_state *state, game_input *input) {
     //
     
     for (u32 squirrel_index = KATAMARI_SQUIRREL_BASE_INDEX; squirrel_index < array_count(state->entities); ++squirrel_index) {
-        katamari_entity *squirrel = &state->entities[squirrel_index];
+        Katamari_Entity *squirrel = &state->entities[squirrel_index];
         if (!squirrel->alive) continue;
         
-        v2 vel = {};
+        Vector2 vel = {};
         if (squirrel->movement_pattern == KatamariMovementPattern_LeftRight) {
             vel.x += squirrel->direction.x * squirrel->speed * time_info.dt;
         } else if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
             vel.y += squirrel->direction.y * squirrel->speed * time_info.dt;
         } else if (squirrel->movement_pattern == KatamariMovementPattern_FollowPlayer) {
-            v2 distance = player->position - squirrel->position;
+            Vector2 distance = player->position - squirrel->position;
             if (length(distance) < 50.f) {
-                v2 normalized = normalize(distance);
+                Vector2 normalized = normalize(distance);
                 vel.x += normalized.x * squirrel->speed * time_info.dt;
                 vel.y += normalized.y * squirrel->speed * time_info.dt;
             }
@@ -372,7 +372,7 @@ update_game(katamari_state *state, game_input *input) {
     
     if (player->half_size.x > state->dimensions.width &&
         player->half_size.y > state->dimensions.height) {
-        state->game_mode = GameMode_GameOver;
+        state->Game_Mode = GameMode_GameOver;
     }
     
     if (state->spawn_t >= state->spawn_t_target) {
@@ -384,14 +384,14 @@ update_game(katamari_state *state, game_input *input) {
 }
 
 internal void
-draw_player(katamari_state *state, katamari_entity *entity) {
+draw_player(Katamari_State *state, Katamari_Entity *entity) {
     
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
-    v2 min = make_v2(center.x + entity->position.x - entity->half_size.x,
-                     center.y + entity->position.y - entity->half_size.y);
-    v2 max = make_v2(min.x + entity->half_size.x, min.y + entity->half_size.y);
+    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2 min = make_vector2(center.x + entity->position.x - entity->half_size.x,
+                               center.y + entity->position.y - entity->half_size.y);
+    Vector2 max = make_vector2(min.x + entity->half_size.x, min.y + entity->half_size.y);
     
-    v4 color = make_color(0xFFFFFFFF);
+    Vector4 color = make_color(0xFFFFFFFF);
     
     immediate_begin();
     immediate_quad(min, max, color);
@@ -399,11 +399,11 @@ draw_player(katamari_state *state, katamari_entity *entity) {
 }
 
 internal void
-draw_squirrel(katamari_state *state, katamari_entity *entity) {
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
-    v2 min = make_v2(center.x + entity->position.x - entity->half_size.x,
-                     center.y + entity->position.y - entity->half_size.y);
-    v2 max = make_v2(min.x + entity->half_size.x, min.y + entity->half_size.y);
+draw_squirrel(Katamari_State *state, Katamari_Entity *entity) {
+    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2 min = make_vector2(center.x + entity->position.x - entity->half_size.x,
+                               center.y + entity->position.y - entity->half_size.y);
+    Vector2 max = make_vector2(min.x + entity->half_size.x, min.y + entity->half_size.y);
     
     GLuint texture = state->assets.squirrel[0];
     if (entity->direction.x < 0) {
@@ -418,11 +418,11 @@ draw_squirrel(katamari_state *state, katamari_entity *entity) {
 }
 
 internal void
-draw_grass(katamari_state *state, katamari_entity *entity) {
-    v2 center = make_v2(state->dimensions.width * .5f, state->dimensions.height * .5f);
-    v2 min = make_v2(center.x + entity->position.x - entity->half_size.x,
-                     center.y + entity->position.y - entity->half_size.y);
-    v2 max = make_v2(min.x + entity->half_size.x, min.y + entity->half_size.y);
+draw_grass(Katamari_State *state, Katamari_Entity *entity) {
+    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2 min = make_vector2(center.x + entity->position.x - entity->half_size.x,
+                               center.y + entity->position.y - entity->half_size.y);
+    Vector2 max = make_vector2(min.x + entity->half_size.x, min.y + entity->half_size.y);
     
     int index = (int) (entity->kind - KatamariEntity_Grass1);
     assert(index >= 0 && index < array_count(state->assets.grass));
@@ -435,7 +435,7 @@ draw_grass(katamari_state *state, katamari_entity *entity) {
 }
 
 internal void
-draw_entity(katamari_state *state, katamari_entity *entity) {
+draw_entity(Katamari_State *state, Katamari_Entity *entity) {
     if (!entity) return;
     if (!entity->alive) return;
     
@@ -456,7 +456,7 @@ draw_entity(katamari_state *state, katamari_entity *entity) {
 }
 
 internal void
-draw_hud(katamari_state *state) {
+draw_hud(Katamari_State *state) {
     immediate_begin();
     
     real32 health_x_margin = 20.f;
@@ -467,19 +467,19 @@ draw_hud(katamari_state *state) {
     real32 health_width = 10.f;
     real32 health_height = 10.f;
     
-    v4 color = make_color(0xFFFF0000);
-    v4 backing_color = make_color(0xFFFFFFFF);
+    Vector4 color = make_color(0xFFFF0000);
+    Vector4 backing_color = make_color(0xFFFFFFFF);
     
-    v2 backing_min = make_v2(health_x_margin - 2.f, health_y_margin);
-    v2 backing_max = make_v2(backing_min.x + health_width + health_pad, backing_min.y + state->health * health_height + health_pad * state->health);
+    Vector2 backing_min = make_vector2(health_x_margin - 2.f, health_y_margin);
+    Vector2 backing_max = make_vector2(backing_min.x + health_width + health_pad, backing_min.y + state->health * health_height + health_pad * state->health);
     
     immediate_quad(backing_min, backing_max, backing_color);
     
     real32 y_cursor = health_y_margin + health_pad * .5f;
     
     for (u8 h = 0; h < state->health; ++h) {
-        v2 min = make_v2(health_x_margin, y_cursor);
-        v2 max = make_v2(min.x + health_width, min.y + health_height);
+        Vector2 min = make_vector2(health_x_margin, y_cursor);
+        Vector2 max = make_vector2(min.x + health_width, min.y + health_height);
         immediate_quad(min, max, color);
         
         y_cursor += health_pad + health_height;
@@ -489,14 +489,14 @@ draw_hud(katamari_state *state) {
 }
 
 internal void
-draw_game_view(katamari_state *state) {
-    if (state->game_mode == GameMode_Playing) {
+draw_game_view(Katamari_State *state) {
+    if (state->Game_Mode == GameMode_Playing) {
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff14ce00));
         immediate_flush();
         
         for (int entity_index = 0; entity_index < array_count(state->entities); ++entity_index) {
-            katamari_entity *entity = &state->entities[entity_index];
+            Katamari_Entity *entity = &state->entities[entity_index];
             if (entity->kind != KatamariEntity_None) {
                 draw_entity(state, entity);
             }
@@ -504,32 +504,32 @@ draw_game_view(katamari_state *state) {
         
         draw_hud(state);
     } else {
-        draw_menu(KATAMARI_DAMACY_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(KATAMARI_DAMACY_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
 internal void
-katamari_menu_art(app_state *state, v2 min, v2 max) {
+katamari_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
     immediate_textured_quad(min, max, state->menu_art.katamari);
     immediate_flush();
 }
 
 internal void
-katamari_game_restart(katamari_state *state) {
+katamari_game_restart(Katamari_State *state) {
     init_game(state);
 }
 
 internal void
-katamari_game_update_and_render(game_memory *memory, game_input *input) {
+katamari_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
-    katamari_state *state = (katamari_state *) memory->permanent_storage;
+    Katamari_State *state = (Katamari_State *) memory->permanent_storage;
     if (!memory->initialized) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        state = (katamari_state *) game_alloc(memory, megabytes(12));
+        state = (Katamari_State *) game_alloc(memory, megabytes(12));
         
         init_game(state);
     }
@@ -538,13 +538,13 @@ katamari_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Update
     //
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
+            state->Game_Mode = GameMode_Menu;
         } else {
             update_game(state, input);
         }
-    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
+    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -552,10 +552,10 @@ katamari_game_update_and_render(game_memory *memory, game_input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
+            if (state->Game_Mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = GameMode_Playing;
+                state->Game_Mode = GameMode_Playing;
             }
         }
         if (pressed(Button_Enter)) {
@@ -595,10 +595,10 @@ katamari_game_update_and_render(game_memory *memory, game_input *input) {
 }
 
 internal void
-katamari_game_free(game_memory *memory) {
+katamari_game_free(Game_Memory *memory) {
     if (!memory) return;
     
-    katamari_state *state = (katamari_state *) memory->permanent_storage;
+    Katamari_State *state = (Katamari_State *) memory->permanent_storage;
     if (!state) return;
     
     free_textures(&state->assets);

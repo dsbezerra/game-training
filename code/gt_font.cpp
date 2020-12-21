@@ -1,11 +1,11 @@
-internal loaded_font
+internal Loaded_Font
 load_font(char *fontpath, real32 size) {
-    loaded_font result = {};
+    Loaded_Font result = {};
     
     u32 buffer_size = 1 << 20;
     u8 *bitmap = (u8 *) platform_alloc(BITMAP_SIZE * BITMAP_SIZE);
     
-    file_contents font_contents = platform_read_entire_file(fontpath); 
+    File_Contents font_contents = platform_read_entire_file(fontpath); 
     
     int ascent, descent, line_gap;
     stbtt_InitFont(&result.info, font_contents.contents, 0);
@@ -31,7 +31,7 @@ load_font(char *fontpath, real32 size) {
 }
 
 internal real32
-get_char_width(loaded_font *font, char c) {
+get_char_width(Loaded_Font *font, char c) {
     real32 result = 0.f;
     
     if (c >= 32 && c < 255) 
@@ -42,7 +42,7 @@ get_char_width(loaded_font *font, char c) {
 
 
 internal real32
-get_text_width(loaded_font *font, char *text, int *line_count) {
+get_text_width(Loaded_Font *font, char *text, int *line_count) {
     real32 result = 0.f;
     real32 w = 0.f;
     
@@ -78,6 +78,6 @@ get_text_width(loaded_font *font, char *text, int *line_count) {
 
 
 internal real32
-get_text_width(loaded_font *font, char *text) {
+get_text_width(Loaded_Font *font, char *text) {
     return get_text_width(font, text, 0);
 }

@@ -3,7 +3,7 @@
 
 #define BITMAP_SIZE 512
 
-struct loaded_font {
+struct Loaded_Font {
     GLuint texture;
     stbtt_bakedchar cdata[224];
     stbtt_fontinfo info;
@@ -11,4 +11,4 @@ struct loaded_font {
     real32 line_height;
 };
 
-internal loaded_font load_font(char *fontpath, real32 size);
+internal Loaded_Font load_font(char *fontpath, real32 size);

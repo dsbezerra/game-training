@@ -16,14 +16,14 @@
 #define STBI_ASSERT assert
 #include "stb/stb_image.h"
 
-struct game_time_info {
+struct Game_Time_Info {
     real32 dt;
     real32 current_time;
 };
 
-struct game_sound_output_buffer;
+struct Game_Sound_Output_Buffer;
 
-struct game_menu_art {
+struct Game_Menu_Art {
     GLuint dodger;
     GLuint memory_puzzle;
     GLuint slide_puzzle;
@@ -33,25 +33,25 @@ struct game_menu_art {
     GLuint katamari;
 };
 
-struct game_button_state {
+struct Game_Button_State {
     b32 is_down;
     b32 changed;
 };
 
-enum game_menu_item {
+enum Game_Menu_Item {
     GameMenuItem_Retry,
     GameMenuItem_Quit,
     
     GameMenuItem_Count,
 };
 
-enum game_mode {
+enum Game_Mode {
     GameMode_Menu,
     GameMode_Playing,
     GameMode_GameOver,
 };
 
-enum button {
+enum Button {
     Button_Escape,
     Button_Enter,
     Button_Space,
@@ -71,47 +71,47 @@ enum button {
     Button_Count
 };
 
-struct game_mouse {
-    v2i    velocity;
-    v2i    position;
-    real32 sensitivity;
-    b32    lock;
+struct Game_Mouse {
+    Vector2i    velocity;
+    Vector2i    position;
+    real32      sensitivity;
+    b32         lock;
 };
 
-struct game_input {
-    game_mouse mouse;
+struct Game_Input {
+    Game_Mouse mouse;
     union {
-        game_button_state buttons[Button_Count];
+        Game_Button_State buttons[Button_Count];
         struct {
-            game_button_state escape;
-            game_button_state enter;
-            game_button_state space;
+            Game_Button_State escape;
+            Game_Button_State enter;
+            Game_Button_State space;
             
-            game_button_state up;
-            game_button_state down;
-            game_button_state left;
-            game_button_state right;
+            Game_Button_State up;
+            Game_Button_State down;
+            Game_Button_State left;
+            Game_Button_State right;
             
-            game_button_state w;
-            game_button_state a;
-            game_button_state s;
-            game_button_state d;
+            Game_Button_State w;
+            Game_Button_State a;
+            Game_Button_State s;
+            Game_Button_State d;
             
-            game_button_state mouse1;
+            Game_Button_State mouse1;
         };
     };
 };
 
-enum mode {
+enum App_Mode {
     Mode_SelectingGame,
     Mode_PlayingGame,
     
     Mode_Count,
 };
 
-struct game_memory {
-    v2i window_center;
-    v2i window_dimensions;
+struct Game_Memory {
+    Vector2i window_center;
+    Vector2i window_dimensions;
     
     b32 initialized;
     b32 asked_to_quit;
@@ -134,31 +134,31 @@ enum game {
     Game_Count,
 };
 
-struct app_state {
-    v2i window_dimensions;
-    v2i window_center;
+struct App_State {
+    Vector2i window_dimensions;
+    Vector2i window_center;
     
-    mode current_mode;
+    App_Mode current_mode;
     game current_game;
     game current_selecting_game;
     
-    game_menu_art menu_art;
+    Game_Menu_Art menu_art;
     
     b32 initialized;
     
-    loaded_font game_title_font;
-    game_memory *memory;
+    Loaded_Font game_title_font;
+    Game_Memory *memory;
 };
 
 #include "gt_camera.h" // TODO(diego): Refactor so this can be up there with other h files.
 #include "gt_games.h"
 
-internal void game_output_sound(game_sound_output_buffer *sound_buffer);
-internal void game_update_and_render(app_state *state, game_memory *memory, game_input *input);
+internal void game_output_sound(Game_Sound_Output_Buffer *sound_buffer);
+internal void game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input);
 
-internal void *game_alloc(game_memory *memory, u64 size);
-internal void game_free(game_memory *memory, game current_game);
-internal void game_quit(app_state *state);
+internal void *game_alloc(Game_Memory *memory, u64 size);
+internal void game_free(Game_Memory *memory, game current_game);
+internal void game_quit(App_State *state);
 
 internal void advance_menu_choice(s8 *current_choice, s8 delta);
 

@@ -1,9 +1,9 @@
-internal tetris_piece 
-make_piece(tetromino kind, s8 offset = -4) {
+internal Tetris_Piece 
+make_piece(Tetromino kind, s8 offset = -4) {
     assert(kind != Tetromino_None);
     assert(kind < Tetromino_Count);
     
-    tetris_piece result = {};
+    Tetris_Piece result = {};
     
     result.rotation = TetrisPieceRotation_0;
     
@@ -91,7 +91,7 @@ make_piece(tetromino kind, s8 offset = -4) {
     s8 max_x = 0;
     s8 max_y = 0;
     for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block *block = &result.blocks[block_index];
+        Tetris_Block *block = &result.blocks[block_index];
         if (block->x < min_x) {
             min_x = block->x;
         }
@@ -112,9 +112,9 @@ make_piece(tetromino kind, s8 offset = -4) {
     return result;
 }
 
-internal tetris_piece
+internal Tetris_Piece
 random_piece() {
-    tetromino kind = Tetromino_None;
+    Tetromino kind = Tetromino_None;
     while (kind == Tetromino_None) {
         if (random_choice(1)) {
             kind = Tetromino_I;
@@ -142,7 +142,7 @@ random_piece() {
 }
 
 internal void
-spawn_piece(tetris_state *state, b32 make_current) {
+spawn_piece(Tetris_State *state, b32 make_current) {
     if (make_current) {
         state->current_piece = random_piece();
     }
@@ -151,8 +151,8 @@ spawn_piece(tetris_state *state, b32 make_current) {
 }
 
 internal void
-init_game(tetris_state *state) {
-    state->game_mode = GameMode_Playing;
+init_game(Tetris_State *state) {
+    state->Game_Mode = GameMode_Playing;
     state->move_t = .0f;
     state->move_t_target = 1.f;
     state->move_dt = 2.f;
@@ -170,7 +170,7 @@ init_game(tetris_state *state) {
 }
 
 internal b32
-is_row_complete(tetris_state *state, s8 row) {
+is_row_complete(Tetris_State *state, s8 row) {
     b32 result = true;
     for (u8 col = 0; col < TETRIS_GRID_X_COUNT; ++col) {
         if (!state->grid[row][col].placed) {
@@ -192,10 +192,10 @@ is_inside_grid(s8 x, s8 y) {
 }
 
 internal b32
-is_piece_position_valid(tetris_state *state, tetris_piece *piece) {
+is_piece_position_valid(Tetris_State *state, Tetris_Piece *piece) {
     b32 result = true;
     for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block block = piece->blocks[block_index];
+        Tetris_Block block = piece->blocks[block_index];
         if (!is_inside_grid(block.x, block.y) || state->grid[block.y][block.x].placed) {
             result = false;
             break;
@@ -205,7 +205,7 @@ is_piece_position_valid(tetris_state *state, tetris_piece *piece) {
 }
 
 internal b32
-is_valid_position(tetris_state *state, s8 x, s8 y, s8 adx, s8 ady) {
+is_valid_position(Tetris_State *state, s8 x, s8 y, s8 adx, s8 ady) {
     x = x + adx;
     y = y + ady;
     if (adx != 0 && (x < 0 || x >= TETRIS_GRID_X_COUNT))
@@ -217,10 +217,10 @@ is_valid_position(tetris_state *state, s8 x, s8 y, s8 adx, s8 ady) {
 }
 
 internal b32
-place_piece(tetris_state *state) {
-    tetris_piece piece = state->current_piece;
+place_piece(Tetris_State *state) {
+    Tetris_Piece piece = state->current_piece;
     for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block block = piece.blocks[block_index];
+        Tetris_Block block = piece.blocks[block_index];
         if (!is_inside_grid(block.x, block.y)) {
             return true;
         }
@@ -255,11 +255,11 @@ place_piece(tetris_state *state) {
 }
 
 internal b32
-is_move_allowed(tetris_state *state, s8 x, s8 y) {
+is_move_allowed(Tetris_State *state, s8 x, s8 y) {
     b32 result = true;
     
     for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block block = state->current_piece.blocks[block_index];
+        Tetris_Block block = state->current_piece.blocks[block_index];
         if (!is_valid_position(state, block.x, block.y, x, y)) {
             result = false;
             break;
@@ -269,11 +269,11 @@ is_move_allowed(tetris_state *state, s8 x, s8 y) {
 }
 
 internal b32
-current_will_land(tetris_state *state) {
+current_will_land(Tetris_State *state) {
     b32 result = false;
     
     for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block block = state->current_piece.blocks[block_index];
+        Tetris_Block block = state->current_piece.blocks[block_index];
         s8 new_y = block.y + 1;
         if (new_y >= 0) {
             if (new_y >= TETRIS_GRID_Y_COUNT - 1 || state->grid[new_y][block.x].placed) {
@@ -286,9 +286,9 @@ current_will_land(tetris_state *state) {
     return result;
 }
 
-internal tetris_piece
-rotate_I(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
+internal Tetris_Piece
+rotate_I(Tetris_Piece *piece) {
+    Tetris_Piece rotated = *piece;
     
     if (rotated.rotation == TetrisPieceRotation_0) {
         rotated.blocks[0].x = rotated.blocks[0].x;
@@ -319,9 +319,9 @@ rotate_I(tetris_piece *piece) {
     return rotated;
 }
 
-internal tetris_piece
-rotate_T(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
+internal Tetris_Piece
+rotate_T(Tetris_Piece *piece) {
+    Tetris_Piece rotated = *piece;
     if (rotated.rotation == TetrisPieceRotation_0) {
         rotated.blocks[1].x = rotated.blocks[2].x;
         rotated.blocks[1].y += 1;
@@ -347,9 +347,9 @@ rotate_T(tetris_piece *piece) {
     return rotated;
 }
 
-internal tetris_piece
-rotate_S(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
+internal Tetris_Piece
+rotate_S(Tetris_Piece *piece) {
+    Tetris_Piece rotated = *piece;
     if (rotated.rotation == TetrisPieceRotation_0) {
         rotated.blocks[0].y += 1;
         rotated.blocks[1].x += 1;
@@ -365,9 +365,9 @@ rotate_S(tetris_piece *piece) {
     return rotated;
 }
 
-internal tetris_piece
-rotate_Z(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
+internal Tetris_Piece
+rotate_Z(Tetris_Piece *piece) {
+    Tetris_Piece rotated = *piece;
     if (rotated.rotation == TetrisPieceRotation_0) {
         rotated.blocks[0].y += 1;
         rotated.blocks[1].x -= 1;
@@ -384,9 +384,9 @@ rotate_Z(tetris_piece *piece) {
     return rotated;
 }
 
-internal tetris_piece
-rotate_L(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
+internal Tetris_Piece
+rotate_L(Tetris_Piece *piece) {
+    Tetris_Piece rotated = *piece;
     if (rotated.rotation == TetrisPieceRotation_0) {
         rotated.blocks[0].x += 2; rotated.blocks[0].y += 1;
         rotated.blocks[1].x += 1;
@@ -414,9 +414,9 @@ rotate_L(tetris_piece *piece) {
     return rotated;
 }
 
-internal tetris_piece
-rotate_J(tetris_piece *piece) {
-    tetris_piece rotated = *piece;
+internal Tetris_Piece
+rotate_J(Tetris_Piece *piece) {
+    Tetris_Piece rotated = *piece;
     if (rotated.rotation == TetrisPieceRotation_0) {
         rotated.blocks[0].x += 1; rotated.blocks[0].y += 2;
         rotated.blocks[1].y += 1;
@@ -447,9 +447,9 @@ rotate_J(tetris_piece *piece) {
 }
 
 internal void
-rotate_piece(tetris_state *state) {
-    tetris_piece *piece = &state->current_piece;
-    tetris_piece rotated = *piece;
+rotate_piece(Tetris_State *state) {
+    Tetris_Piece *piece = &state->current_piece;
+    Tetris_Piece rotated = *piece;
     
     switch (piece->kind) {
         case Tetromino_I: rotated = rotate_I(piece); break;
@@ -467,10 +467,10 @@ rotate_piece(tetris_state *state) {
 }
 
 internal void
-move_piece(tetris_state *state, tetris_move_direction direction = TetrisMoveDirection_Down) {
+move_piece(Tetris_State *state, Tetris_Move_Direction direction = TetrisMoveDirection_Down) {
     assert(direction >= TetrisMoveDirection_Down && direction <= TetrisMoveDirection_Left);
     
-    tetris_piece *piece = &state->current_piece;
+    Tetris_Piece *piece = &state->current_piece;
     
     if (direction == TetrisMoveDirection_Left  && !is_move_allowed(state, -1, 0))
         return;
@@ -480,13 +480,13 @@ move_piece(tetris_state *state, tetris_move_direction direction = TetrisMoveDire
     if (direction == TetrisMoveDirection_Down && current_will_land(state)) {
         b32 game_over = place_piece(state);
         if (game_over) {
-            state->game_mode = GameMode_GameOver;
+            state->Game_Mode = GameMode_GameOver;
         }
         return;
     }
     
     for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block *block = &piece->blocks[block_index];
+        Tetris_Block *block = &piece->blocks[block_index];
         if (direction == TetrisMoveDirection_Right) {
             block->x++;
         } else if (direction == TetrisMoveDirection_Left) {
@@ -498,9 +498,9 @@ move_piece(tetris_state *state, tetris_move_direction direction = TetrisMoveDire
 }
 
 internal void
-draw_grid(tetris_state *state) {
+draw_grid(Tetris_State *state) {
     
-    v2i dim = state->dimensions;
+    Vector2i dim = state->dimensions;
     
     real32 width  = dim.width  * .7f;
     real32 height = dim.height * .7f;
@@ -518,48 +518,48 @@ draw_grid(tetris_state *state) {
     
     for (int y = 0; y < TETRIS_GRID_Y_COUNT; ++y) {
         for (int x = 0; x < TETRIS_GRID_X_COUNT; ++x) {
-            tetris_block block = state->grid[y][x];
+            Tetris_Block block = state->grid[y][x];
             if (!block.placed) {
                 continue;
             }
-            v2 min = make_v2(start_x + x * block_size, start_y + y * block_size);
-            v2 max = make_v2(min.x + block_size, min.y + block_size);
+            Vector2 min = make_vector2(start_x + x * block_size, start_y + y * block_size);
+            Vector2 max = make_vector2(min.x + block_size, min.y + block_size);
             immediate_quad(min, max, block.color);
         }
     }
     
     real32 border_size = 2.f;
-    v4 border_color = make_color(0xff0000ff);
+    Vector4 border_color = make_color(0xff0000ff);
     {
         // Top border
-        v2 min = make_v2(start_x, start_y);
-        v2 max = make_v2(min.x + grid_w, min.y + border_size);
+        Vector2 min = make_vector2(start_x, start_y);
+        Vector2 max = make_vector2(min.x + grid_w, min.y + border_size);
         immediate_quad(min, max, border_color); 
     }
     {
         // Bottom border
-        v2 min = make_v2(start_x, start_y + grid_h - border_size);
-        v2 max = make_v2(min.x + grid_w, min.y + border_size);
+        Vector2 min = make_vector2(start_x, start_y + grid_h - border_size);
+        Vector2 max = make_vector2(min.x + grid_w, min.y + border_size);
         immediate_quad(min, max, border_color); 
     }
     {
         // Left border
-        v2 min = make_v2(start_x, start_y);
-        v2 max = make_v2(min.x + border_size, min.y + grid_h);
+        Vector2 min = make_vector2(start_x, start_y);
+        Vector2 max = make_vector2(min.x + border_size, min.y + grid_h);
         immediate_quad(min, max, border_color); 
     }
     {
         // Right border
-        v2 min = make_v2(start_x + grid_w - border_size, start_y);
-        v2 max = make_v2(min.x + border_size, min.y + grid_h);
+        Vector2 min = make_vector2(start_x + grid_w - border_size, start_y);
+        Vector2 max = make_vector2(min.x + border_size, min.y + grid_h);
         immediate_quad(min, max, border_color); 
     }
 }
 
 internal void
-draw_current_piece(tetris_state *state) {
+draw_current_piece(Tetris_State *state) {
     
-    v2i dim = state->dimensions;
+    Vector2i dim = state->dimensions;
     
     real32 width  = dim.width  * .7f;
     real32 height = dim.height * .7f;
@@ -569,12 +569,12 @@ draw_current_piece(tetris_state *state) {
         block_size = (real32) height / (real32) TETRIS_GRID_Y_COUNT;
     }
     
-    v2 start = make_v2((dim.width - block_size * TETRIS_GRID_X_COUNT) / 2.f, dim.height - height);
+    Vector2 start = make_vector2((dim.width - block_size * TETRIS_GRID_X_COUNT) / 2.f, dim.height - height);
     
     for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block block = state->current_piece.blocks[block_index];
-        v2 min = make_v2(block.x * block_size, block.y * block_size);
-        v2 max = make_v2(min.x + block_size, min.y + block_size);
+        Tetris_Block block = state->current_piece.blocks[block_index];
+        Vector2 min = make_vector2(block.x * block_size, block.y * block_size);
+        Vector2 max = make_vector2(min.x + block_size, min.y + block_size);
         min = min + start;
         max = max + start;
         immediate_quad(min, max, state->current_piece.color);
@@ -582,7 +582,7 @@ draw_current_piece(tetris_state *state) {
 }
 
 internal void
-draw_next_piece(tetris_state *state) {
+draw_next_piece(Tetris_State *state) {
     immediate_begin();
     
     real32 width  = state->dimensions.width  * .7f;
@@ -597,9 +597,9 @@ draw_next_piece(tetris_state *state) {
     real32 start_y = height * .62f;
     
     for (int block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        tetris_block block = state->next_piece.blocks[block_index];
-        v2 min = make_v2(start_x + block.x * block_size, start_y + block.y * block_size);
-        v2 max = make_v2(min.x + block_size, min.y + block_size);
+        Tetris_Block block = state->next_piece.blocks[block_index];
+        Vector2 min = make_vector2(start_x + block.x * block_size, start_y + block.y * block_size);
+        Vector2 max = make_vector2(min.x + block_size, min.y + block_size);
         immediate_quad(min, max, state->next_piece.color);
     }
     
@@ -607,7 +607,7 @@ draw_next_piece(tetris_state *state) {
 }
 
 internal void
-draw_hud(tetris_state *state) {
+draw_hud(Tetris_State *state) {
     draw_next_piece(state);
     
     real32 width  = state->dimensions.width  * .7f;
@@ -616,7 +616,7 @@ draw_hud(tetris_state *state) {
     real32 start_x = width  * .9f;
     real32 y_cursor = height * .2f;
     
-    v4 white = make_color(0xffffffff);
+    Vector4 white = make_color(0xffffffff);
     
     char score[256];
     wsprintf(score, "Score: %d", state->score);
@@ -633,8 +633,8 @@ draw_hud(tetris_state *state) {
 }
 
 internal void
-draw_game_view(tetris_state *state) {
-    if (state->game_mode == GameMode_Playing) {
+draw_game_view(Tetris_State *state) {
+    if (state->Game_Mode == GameMode_Playing) {
         
         immediate_begin();
         draw_current_piece(state);
@@ -643,32 +643,32 @@ draw_game_view(tetris_state *state) {
         
         draw_hud(state);
     } else {
-        draw_menu(TETRIS_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(TETRIS_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
 internal void
-tetris_menu_art(app_state *state, v2 min, v2 max) {
+tetris_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
     immediate_textured_quad(min, max, state->menu_art.tetris);
     immediate_flush();
 }
 
 internal void
-tetris_game_restart(tetris_state *state) {
+tetris_game_restart(Tetris_State *state) {
     init_game(state);
 }
 
 internal void
-tetris_game_update_and_render(game_memory *memory, game_input *input) {
+tetris_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
-    tetris_state *state = (tetris_state *) memory->permanent_storage;
+    Tetris_State *state = (Tetris_State *) memory->permanent_storage;
     if (!memory->initialized) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        state = (tetris_state *) game_alloc(memory, megabytes(12));
+        state = (Tetris_State *) game_alloc(memory, megabytes(12));
         state->assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 12.f);
         state->assets.hud_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         
@@ -679,9 +679,9 @@ tetris_game_update_and_render(game_memory *memory, game_input *input) {
     //
     // Update
     //
-    if (state->game_mode == GameMode_Playing) {
+    if (state->Game_Mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
+            state->Game_Mode = GameMode_Menu;
         } else {
             if (pressed(Button_Left)) {
                 move_piece(state, TetrisMoveDirection_Left);
@@ -707,7 +707,7 @@ tetris_game_update_and_render(game_memory *memory, game_input *input) {
                 state->move_t += time_info.dt * state->move_dt;
             }
         }
-    } else if (state->game_mode == GameMode_Menu || state->game_mode == GameMode_GameOver) {
+    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -715,10 +715,10 @@ tetris_game_update_and_render(game_memory *memory, game_input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
+            if (state->Game_Mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->game_mode = GameMode_Playing;
+                state->Game_Mode = GameMode_Playing;
             }
         }
         

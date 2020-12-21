@@ -41,7 +41,7 @@ parse_mtl(char *filepath) {
     copy_string(mtlpath, filepath);
     put_string_at(mtlpath, "mtl", len - 3);
     
-    file_contents obj_file = platform_read_entire_file(mtlpath);
+    File_Contents obj_file = platform_read_entire_file(mtlpath);
     assert(obj_file.file_size > 0);
     
     // We don't need mtlpath anymore.
@@ -146,7 +146,7 @@ load_mesh_from_obj(char *filepath) {
     assert(string_length(filepath) != 0);
     assert(string_ends_with(filepath, ".obj"));
     
-    file_contents obj_file = platform_read_entire_file(filepath);
+    File_Contents obj_file = platform_read_entire_file(filepath);
     assert(obj_file.file_size > 0);
     
     u32 num_lines = count_lines(obj_file.contents);
@@ -183,21 +183,21 @@ load_mesh_from_obj(char *filepath) {
             
         } else if (r.lhs[0] == 'v') {
             if (r.lhs[1] == 't') {
-                v2 uv = {};
+                Vector2 uv = {};
                 sscanf(r.rhs, "%f %f", &uv.x, &uv.y);
                 element->kind = ObjElementKind_UV;
                 element->uv = uv;
                 model.uv_count++;
                 
             } else if (r.lhs[1] == 'n') {
-                v3 normal = {};
+                Vector3 normal = {};
                 sscanf(r.rhs, "%f %f %f", &normal.x, &normal.y, &normal.z);
                 
                 element->kind = ObjElementKind_Normal;
                 element->normal = normal;
                 model.normal_count++;
             } else {
-                v3 v = {};
+                Vector3 v = {};
                 sscanf(r.rhs, "%f %f %f", &v.x, &v.y, &v.z);
                 element->kind = ObjElementKind_Vertex;
                 element->vertex = v;
@@ -241,9 +241,9 @@ load_mesh_from_obj(char *filepath) {
     //
     // Load vertices, uvs, normals and faces into model structure.
     //
-    model.vertices = (v3 *) platform_alloc(model.vertex_count * sizeof(v3));
-    model.uvs      = (v2 *) platform_alloc(model.uv_count * sizeof(v2));
-    model.normals  = (v3 *) platform_alloc(model.normal_count * sizeof(v3));
+    model.vertices = (Vector3 *) platform_alloc(model.vertex_count * sizeof(Vector3));
+    model.uvs      = (Vector2 *) platform_alloc(model.uv_count * sizeof(Vector2));
+    model.normals  = (Vector3 *) platform_alloc(model.normal_count * sizeof(Vector3));
     model.faces    = (Obj_Face_Spec *) platform_alloc(model.face_count * sizeof(Obj_Face_Spec));
     
     model.table    = index_table_create(model.face_count * 3);
@@ -261,10 +261,10 @@ load_mesh_from_obj(char *filepath) {
     mesh.vertex_count = model.face_count * 3;
     mesh.index_count  = mesh.vertex_count;
     
-    mesh.vertices  = (v3 *)  platform_alloc(mesh.vertex_count * sizeof(v3));
+    mesh.vertices  = (Vector3 *)  platform_alloc(mesh.vertex_count * sizeof(Vector3));
     mesh.indices   = (u32 *) platform_alloc(mesh.index_count  * sizeof(u32));
-    mesh.uvs       = (v2 *)  platform_alloc(mesh.vertex_count * sizeof(v2));
-    mesh.normals   = (v3 *)  platform_alloc(mesh.vertex_count * sizeof(v3));
+    mesh.uvs       = (Vector2 *)  platform_alloc(mesh.vertex_count * sizeof(Vector2));
+    mesh.normals   = (Vector3 *)  platform_alloc(mesh.vertex_count * sizeof(Vector3));
     
     //
     // Setup triangle list
@@ -438,7 +438,7 @@ hash_djb2(u8 *str) {
 internal void
 insert_vertex(Triangle_Mesh *mesh, Obj_Model *model, Obj_Index idx) {
     
-    v3 vertex = model->vertices[idx.vertex_index];
+    Vector3 vertex = model->vertices[idx.vertex_index];
     
     bool32 has_normals = model->normal_count > 0;
     bool32 has_uvs     = model->uv_count > 0;

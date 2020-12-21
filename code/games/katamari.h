@@ -16,7 +16,7 @@ Description: The original Katamari Damacy game was in a 3d world, but a 2d versi
 
 #define KATAMARI_SQUIRREL_SPEED 50.f
 
-enum katamari_entity_kind {
+enum Katamari_Entity_Kind {
     KatamariEntity_None,
     
     KatamariEntity_Player,
@@ -30,7 +30,7 @@ enum katamari_entity_kind {
     KatamariEntity_Count,
 };
 
-enum katamari_movement_pattern {
+enum Katamari_Movement_Pattern {
     KatamariMovementPattern_None,
     KatamariMovementPattern_ZigZag,
     KatamariMovementPattern_LeftRight,
@@ -39,13 +39,13 @@ enum katamari_movement_pattern {
     KatamariMovementPattern_Count,
 };
 
-struct katamari_entity {
-    katamari_entity_kind kind;
-    katamari_movement_pattern movement_pattern;
-    v2 position;
-    v2 velocity;
-    v2 direction;
-    v2 half_size;
+struct Katamari_Entity {
+    Katamari_Entity_Kind kind;
+    Katamari_Movement_Pattern movement_pattern;
+    Vector2 position;
+    Vector2 velocity;
+    Vector2 direction;
+    Vector2 half_size;
     b32 alive;
     
     real32 speed;
@@ -56,20 +56,20 @@ struct katamari_entity {
     real32 stopped_t_target;
 };
 
-struct katamari_assets {
+struct Katamari_Assets {
     GLuint grass[3];
     GLuint squirrel[2];
 };
 
-struct katamari_state {
-    v2i dimensions;
+struct Katamari_State {
+    Vector2i dimensions;
     
-    game_mode game_mode;
+    Game_Mode Game_Mode;
     
-    katamari_assets assets;
+    Katamari_Assets assets;
     
     // NOTE(diego): Slots above 32 are reserved to squirrels.
-    katamari_entity entities[64];
+    Katamari_Entity entities[64];
     
     real32 spawn_t;
     real32 spawn_t_target;
@@ -80,27 +80,27 @@ struct katamari_state {
     b32 quit_was_selected;
 };
 
-internal katamari_entity make_entity(katamari_entity_kind kind);
-internal katamari_entity make_grass(katamari_entity_kind kind, real32 x, real32 y);
-internal katamari_entity* find_first_entity(katamari_state *state, katamari_entity_kind kind);
+internal Katamari_Entity make_entity(Katamari_Entity_Kind kind);
+internal Katamari_Entity make_grass(Katamari_Entity_Kind kind, real32 x, real32 y);
+internal Katamari_Entity* find_first_entity(Katamari_State *state, Katamari_Entity_Kind kind);
 
-internal void spawn_squirrel(katamari_state *state, u32 count);
-internal b32 squirrel_collided(katamari_state *state, katamari_entity *squirrel, u8 wall_number);
-internal void squirrel_handle_collision(katamari_state *state, katamari_entity *player, katamari_entity *squirrel);
+internal void spawn_squirrel(Katamari_State *state, u32 count);
+internal b32 squirrel_collided(Katamari_State *state, Katamari_Entity *squirrel, u8 wall_number);
+internal void squirrel_handle_collision(Katamari_State *state, Katamari_Entity *player, Katamari_Entity *squirrel);
 
-internal void init_game(katamari_state *state);
-internal void init_textures(katamari_assets *assets);
-internal void free_textures(katamari_assets *assets);
-internal void update_game(katamari_state *state, game_input *input);
+internal void init_game(Katamari_State *state);
+internal void init_textures(Katamari_Assets *assets);
+internal void free_textures(Katamari_Assets *assets);
+internal void update_game(Katamari_State *state, Game_Input *input);
 
-internal void draw_game_view(katamari_state *state);
-internal void draw_player(katamari_state *state, katamari_entity *entity);
-internal void draw_squirrel(katamari_state *state, katamari_entity *entity);
-internal void draw_grass(katamari_state *state, katamari_entity *entity);
-internal void draw_entity(katamari_state *state, katamari_entity *entity);
-internal void draw_hud(katamari_state *state);
+internal void draw_game_view(Katamari_State *state);
+internal void draw_player(Katamari_State *state, Katamari_Entity *entity);
+internal void draw_squirrel(Katamari_State *state, Katamari_Entity *entity);
+internal void draw_grass(Katamari_State *state, Katamari_Entity *entity);
+internal void draw_entity(Katamari_State *state, Katamari_Entity *entity);
+internal void draw_hud(Katamari_State *state);
 
-internal void katamari_menu_art(app_state *state, v2 min, v2 max);
-internal void katamari_game_restart(katamari_state *state);
-internal void katamari_game_update_and_render(game_memory *memory, game_input *input);
-internal void katamari_game_free(game_memory *memory);
+internal void katamari_menu_art(App_State *state, Vector2 min, Vector2 max);
+internal void katamari_game_restart(Katamari_State *state);
+internal void katamari_game_update_and_render(Game_Memory *memory, Game_Input *input);
+internal void katamari_game_free(Game_Memory *memory);

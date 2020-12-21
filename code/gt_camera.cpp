@@ -1,21 +1,21 @@
 internal void
-init_camera(camera *cam) {
+init_camera(Camera *cam) {
     cam->yaw       = -90.f;
     cam->pitch     = 0.f;
     cam->fov       = 45.f;
-    cam->world_up  = make_v3(0.f, 1.f, 0.f);
-    cam->front     = make_v3(0.f, 0.f, -1.f);
+    cam->world_up  = make_vector3(0.f, 1.f, 0.f);
+    cam->front     = make_vector3(0.f, 0.f, -1.f);
     update_vectors(cam);
 }
 
 internal void
-update_vectors(camera *cam) {
+update_vectors(Camera *cam) {
     assert(cam);
     
     real32 yrad = angle_to_radians(cam->yaw);
     real32 prad = angle_to_radians(cam->pitch);
     
-    v3 front = {};
+    Vector3 front = {};
     
     front.x = cosf(yrad) * cosf(prad);
     front.y = sinf(prad);
@@ -27,14 +27,14 @@ update_vectors(camera *cam) {
 }
 
 internal void
-update_camera(camera *cam, game_input *input) {
+update_camera(Camera *cam, Game_Input *input) {
     
     assert(cam);
     
     switch (cam->mode) {
         case CameraMode_Free: {
             
-            game_mouse *mouse = &input->mouse;
+            Game_Mouse *mouse = &input->mouse;
             
             real32 xoff = mouse->sensitivity * mouse->velocity.x;
             real32 yoff = mouse->sensitivity * mouse->velocity.y;
@@ -71,17 +71,17 @@ update_camera(camera *cam, game_input *input) {
 }
 
 internal void
-set_camera_mode(camera *cam, camera_mode mode) {
+set_camera_mode(Camera *cam, Camera_Mode mode) {
     assert(cam);
     
     cam->mode = mode;
 }
 
-internal mat4
-get_view_matrix(camera *cam) {
+internal Mat4
+get_view_matrix(Camera *cam) {
     assert(cam);
     
-    mat4 result;
+    Mat4 result;
     
     result = look_at(cam->position, cam->position + cam->front, cam->up);
     

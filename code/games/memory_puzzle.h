@@ -10,11 +10,11 @@ Variations: Provide "hints" in the form of four possible matching cards after th
 
 #define MEMORY_PUZZLE_TITLE "Memory Puzzle"
 
-struct memory_puzzle_assets {
-    loaded_font primary_font;
+struct Memory_Puzzle_Assets {
+    Loaded_Font primary_font;
 };
 
-enum memory_card_kind {
+enum Memory_Card_Kind {
     MemoryCard_None,
     MemoryCard_Donut,
     MemoryCard_Square,
@@ -27,32 +27,32 @@ enum memory_card_kind {
     MemoryCard_Count,
 };
 
-struct memory_card {
-    memory_card_kind kind;
+struct Memory_Card {
+    Memory_Card_Kind kind;
     b32 flipped;
-    v4 color;
+    Vector4 color;
 };
 
-struct memory_puzzle_world {
-    memory_card field[10][6];
-    v2i dimensions;
+struct Memory_Puzzle_World {
+    Memory_Card field[10][6];
+    Vector2i dimensions;
 };
 
-struct memory_puzzle_level {
+struct Memory_Puzzle_Level {
     u32 max_tries;
     u32 tries;
 };
 
-struct memory_puzzle_state {
-    game_mode game_mode;
+struct Memory_Puzzle_State {
+    Game_Mode Game_Mode;
     
-    memory_puzzle_assets assets;
-    memory_puzzle_world world;
-    memory_puzzle_level current_level;
+    Memory_Puzzle_Assets assets;
+    Memory_Puzzle_World world;
+    Memory_Puzzle_Level current_level;
     
     s8 current_selected;
-    memory_card *first_flipped;
-    memory_card *second_flipped;
+    Memory_Card *first_flipped;
+    Memory_Card *second_flipped;
     
     real32 checking_cards_t;
     real32 checking_cards_target;
@@ -63,7 +63,8 @@ struct memory_puzzle_state {
     b32 quit_was_selected;
 };
 
-internal memory_puzzle_world init_world();
+internal Memory_Puzzle_World init_world();
 
-internal void draw_game_view(memory_puzzle_state *state);
-internal void memory_puzzle_game_update_and_render(game_memory *memory, game_input *input);
+internal void draw_game_view(Memory_Puzzle_State *state);
+internal void memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input);
+// TODO(diego): Add prototypes.

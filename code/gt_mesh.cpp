@@ -5,15 +5,15 @@ internal void
 init_mesh(Triangle_Mesh *mesh) {
     assert(mesh);
     
-    vertex *dest_buffer = new vertex[mesh->vertex_count];
+    Vertex *dest_buffer = new Vertex[mesh->vertex_count];
     
     for (u32 index = 0; index < mesh->vertex_count; ++index) {
-        vertex *dest = &dest_buffer[index];
+        Vertex *dest = &dest_buffer[index];
         
         if (mesh->vertices) {
             dest->position = mesh->vertices[index];
         } else {
-            dest->position = make_v3(0.f, 0.f, 0.f);
+            dest->position = make_vector3(0.f, 0.f, 0.f);
         }
         
         if (mesh->colors) {
@@ -25,13 +25,13 @@ init_mesh(Triangle_Mesh *mesh) {
         if (mesh->uvs) {
             dest->uv = mesh->uvs[index];
         } else {
-            dest->uv = make_v2(0.f, 0.f);
+            dest->uv = make_vector2(0.f, 0.f);
         }
         
         if (mesh->normals) {
             dest->normal = mesh->normals[index];
         } else {
-            dest->normal = make_v3(0.f, 0.f, 0.f);
+            dest->normal = make_vector3(0.f, 0.f, 0.f);
         }
     }
     
@@ -54,16 +54,16 @@ init_mesh(Triangle_Mesh *mesh) {
     GLint uv_loc = immediate->current_shader.uv_loc;
     GLint normal_loc = immediate->current_shader.normal_loc;
     
-    open_gl->glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), 0);
+    open_gl->glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
     open_gl->glEnableVertexAttribArray(position_loc);
     
-    open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*) sizeof(v3));
+    open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) sizeof(Vector3));
     open_gl->glEnableVertexAttribArray(color_loc);	
     
-    open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v3) + sizeof(v4)));
+    open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(Vector3) + sizeof(Vector4)));
     open_gl->glEnableVertexAttribArray(uv_loc);
     
-    open_gl->glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void*)(sizeof(v3) + sizeof(v4) + sizeof(v2)));
+    open_gl->glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(Vector3) + sizeof(Vector4) + sizeof(Vector2)));
     open_gl->glEnableVertexAttribArray(normal_loc);	
     
     open_gl->glBindVertexArray(0);
@@ -102,7 +102,7 @@ internal Triangle_Mesh
 gen_mesh_cube(float width, float height, float length) {
     Triangle_Mesh mesh = { 0 };
     
-    v3 vertices[] = {
+    Vector3 vertices[] = {
         -width/2, -height/2, length/2,
         width/2, -height/2, length/2,
         width/2, height/2, length/2,
@@ -183,14 +183,14 @@ gen_mesh_cube(float width, float height, float length) {
         -1.0f, 0.0f, 0.0f
     };
     
-    mesh.vertices = (v3 *)platform_alloc(24*sizeof(v3));
-    memcpy(mesh.vertices, vertices, 24*sizeof(v3));
+    mesh.vertices = (Vector3 *)platform_alloc(24*sizeof(Vector3));
+    memcpy(mesh.vertices, vertices, 24*sizeof(Vector3));
     
-    mesh.uvs = (v2 *)platform_alloc(24*sizeof(v2));
-    memcpy(mesh.uvs, texcoords, 24*sizeof(v2));
+    mesh.uvs = (Vector2 *)platform_alloc(24*sizeof(Vector2));
+    memcpy(mesh.uvs, texcoords, 24*sizeof(Vector2));
     
-    mesh.normals = (v3 *)platform_alloc(24*sizeof(v3));
-    memcpy(mesh.normals, normals, 24*sizeof(v3));
+    mesh.normals = (Vector3 *)platform_alloc(24*sizeof(Vector3));
+    memcpy(mesh.normals, normals, 24*sizeof(Vector3));
     
     mesh.indices = (u32 *)platform_alloc(36*sizeof(u32));
     

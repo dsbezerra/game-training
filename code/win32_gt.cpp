@@ -11,8 +11,8 @@ global_variable HCURSOR default_cursor;
 global_variable wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
 global_variable wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
 
-global_variable app_state state = {};
-global_variable game_input input = {};
+global_variable App_State state = {};
+global_variable Game_Input input = {};
 
 #define process_button(vk, b) \
 if (vk_code == vk) {\
@@ -46,12 +46,12 @@ platform_show_cursor(b32 show) {
 }
 
 internal void
-platform_set_cursor_position(v2i position) {
+platform_set_cursor_position(Vector2i position) {
     SetCursorPos(position.x, position.y);
 }
 
 internal void
-platform_get_cursor_position(v2i *position) {
+platform_get_cursor_position(Vector2i *position) {
     assert(position);
     
     POINT point;
@@ -63,9 +63,9 @@ platform_get_cursor_position(v2i *position) {
     position->x = point.x;
     position->y = point.y;
 }
-internal file_contents
+internal File_Contents
 platform_read_entire_file(char *filepath) {
-    file_contents result = {};
+    File_Contents result = {};
     
     HANDLE file_handle = CreateFileA(filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if (file_handle == INVALID_HANDLE_VALUE) {
@@ -88,16 +88,14 @@ platform_read_entire_file(char *filepath) {
 }
 
 internal inline real32
-win32_get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end)
-{
+win32_get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end) {
     real32 result = ((real32) (end.QuadPart - start.QuadPart) /
                      (real32) global_perf_count_frequency);
     return result;
 }
 
 internal inline LARGE_INTEGER
-win32_get_wallclock(void)
-{
+win32_get_wallclock() {
     LARGE_INTEGER result;
     QueryPerformanceCounter(&result);
     return result;
@@ -137,6 +135,7 @@ win32_opengl_get_functions() {
     opengl_get_function(glAttachShader);
     opengl_get_function(glLinkProgram);
     opengl_get_function(glUseProgram);
+    opengl_get_function(glDeleteProgram);
     opengl_get_function(glGenBuffers);
     opengl_get_function(glDeleteBuffers);
     opengl_get_function(glBindVertexArray);
@@ -330,7 +329,7 @@ win32_load_wgl_extensions() {
 internal void
 win32_init_opengl(HWND window) {
     
-    open_gl = (opengl *) VirtualAlloc(0, sizeof(open_gl), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    open_gl = (Opengl *) VirtualAlloc(0, sizeof(Opengl), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
     HDC window_dc = GetDC(window);
     win32_load_wgl_extensions();
@@ -506,7 +505,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             
             global_running = true;
             
-            game_memory memory = {};
+            Game_Memory memory = {};
             
             state.memory = &memory;
             

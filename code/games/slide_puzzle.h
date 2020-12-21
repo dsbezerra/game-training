@@ -13,32 +13,32 @@ Variants: Instead of numbers, you can have a scrambled picture cut up into 4x4 t
 
 #define SLIDE_PUZZLE_BOARD_COUNT 4
 
-enum slide_puzzle_mode {
+enum Slide_Puzzle_Mode {
     SlidePuzzleMode_Ready,
     SlidePuzzleMode_Generating,
     
     SlidePuzzleMode_Count,
 };
 
-struct slide_puzzle_assets {
-    loaded_font primary_font;
-    loaded_font generating_font;
-    loaded_font tile_font;
+struct Slide_Puzzle_Assets {
+    Loaded_Font primary_font;
+    Loaded_Font generating_font;
+    Loaded_Font tile_font;
 };
 
-struct slide_puzzle_tile {
+struct Slide_Puzzle_Tile {
     u8 id; // NOTE(diego): 0 equals empty tile.
     char content[4];
 };
 
-struct slide_puzzle_board {
+struct Slide_Puzzle_Board {
     u8 empty_index;
-    slide_puzzle_tile tiles[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
+    Slide_Puzzle_Tile tiles[SLIDE_PUZZLE_BOARD_COUNT][SLIDE_PUZZLE_BOARD_COUNT];
     // NOTE(diego): Save ids in correct order.
     s8 solution[SLIDE_PUZZLE_BOARD_COUNT * SLIDE_PUZZLE_BOARD_COUNT];
 };
 
-struct slide_puzzle_gen {
+struct Slide_Puzzle_Gen {
     s8 number;
     real32 shuffle_t;
     real32 shuffle_target;
@@ -50,40 +50,39 @@ struct slide_puzzle_gen {
     s8 tile_index;
 };
 
-struct slide_puzzle_swap {
+struct Slide_Puzzle_Swap {
     s8 from_index;
     s8 to_index;
 };
 
-struct slide_puzzle_state {
-    slide_puzzle_assets assets;
-    slide_puzzle_board board;
+struct Slide_Puzzle_State {
+    Game_Mode Game_Mode;
+
+    Slide_Puzzle_Mode mode;
+    Slide_Puzzle_Assets assets;
+    Slide_Puzzle_Board board;
+    Slide_Puzzle_Gen generation;
+    Slide_Puzzle_Swap swap;
     
-    v2i dimensions;
-    
-    slide_puzzle_mode mode;
+    Vector2i dimensions;
     
     real32 sliding_t;
     real32 sliding_target;
     real32 sliding_t_rate;
     
-    slide_puzzle_gen generation;
-    slide_puzzle_swap swap;
-    
-    game_mode game_mode;
     s8 menu_selected_item;
     b32 quit_was_selected;
 };
 
-internal void generate_puzzle(slide_puzzle_state *state);
-internal void init_puzzle(slide_puzzle_state *state);
-internal void init_puzzle(slide_puzzle_state *state, b32 animated);
+internal void generate_puzzle(Slide_Puzzle_State *state);
+internal void init_puzzle(Slide_Puzzle_State *state);
+internal void init_puzzle(Slide_Puzzle_State *state, b32 animated);
 
-internal void update_generating(slide_puzzle_state *state);
+internal void update_generating(Slide_Puzzle_State *state);
 
-internal void draw_board(slide_puzzle_state *state);
-internal void draw_game_view(slide_puzzle_state *state);
+internal void draw_board(Slide_Puzzle_State *state);
+internal void draw_game_view(Slide_Puzzle_State *state);
 
-internal void slide_puzzle_menu_art(app_state *state, v2 min, v2 max);
-internal void slide_puzzle_game_restart(slide_puzzle_state *state);
-internal void slide_puzzle_game_update_and_render(game_memory *memory, game_input *input);
+internal void slide_puzzle_menu_art(App_State *state, Vector2 min, Vector2 max);
+internal void slide_puzzle_game_restart(Slide_Puzzle_State *state);
+internal void slide_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input);
