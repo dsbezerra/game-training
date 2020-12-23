@@ -1,37 +1,22 @@
 #include "gt_obj_loader.h"
 
-#define MAX_MATERIALS 1000
-Obj_Material materials[MAX_MATERIALS];
-
-internal void
-clear_materials() {
-    for (int i = 0; i < array_count(materials); i++) {
-        Obj_Material *material = &materials[i];
-        if (material->name) platform_free(material->name);
-        if (material->texture_map_name) platform_free(material->texture_map_name);
-    }
-}
-
-internal Obj_Material*
-get_material_at(int index) {
-    if (index < 0 || index >= MAX_MATERIALS) {
-        return 0;
-    }
-    Obj_Material *mat = &materials[index];
-    if (!mat->name) return 0;
+internal Render_Material
+as_render_material(Obj_Material *material) {
+    Render_Material result = {};
+    result.ambient_color = material->Ka;
+    result.diffuse_color = material->Kd;
+    result.specular_color = material->Ks;
+    result.shininess = material->Ns;
     
-    return mat;
-}
-
-internal int
-find_material_index(char *name) {
-    // @Speed make this use hash table if necessary.
-    for (int i = 0; i < MAX_MATERIALS; i++) {
-        Obj_Material *mat = &materials[i];
-        if (strings_are_equal(mat->name, name))
-            return i;
-    }
-    return -1;
+    result.name = (char *) platform_alloc(string_length(material->name) * sizeof(char));
+    copy_string(result.name, material->name);
+    
+    //result.diffuse_map = ; Load texture and get a pointer to it!
+    
+    platform_free(material->name);
+    platform_free(material->texture_map_name); // TODO(diego): Load as texture map
+    
+    return result;
 }
 
 internal void
@@ -80,7 +65,7 @@ parse_mtl(char *filepath) {
             continue;
         } else if (strings_are_equal(r.lhs, "newmtl")) {
             if (newmtl_count > 0) {
-                materials[newmtl_count - 1] = current_material;
+                materials[newmtl_count - 1] = as_render_material(&current_material);
             }
             //
             // We assume that all of our mtl files have # Material Count in the second comment.
@@ -115,7 +100,7 @@ parse_mtl(char *filepath) {
     
     // Add last one
     if (newmtl_count > 0) {
-        materials[newmtl_count - 1] = current_material;
+        materials[newmtl_count - 1] = as_render_material(&current_material);
     }
     
     platform_free(handler.data);

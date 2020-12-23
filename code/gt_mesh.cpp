@@ -1,5 +1,36 @@
-
 #include "gt_obj_loader.cpp"
+
+internal Render_Material *
+get_material_at(int index) {
+    if (index < 0 || index >= MAX_MATERIALS) {
+        return 0;
+    }
+    Render_Material *rm = &materials[index];
+    if (!rm->name) return 0;
+    
+    return rm;
+}
+
+internal int
+find_material_index(char *name) {
+    // @Speed make this use hash table if necessary.
+    for (int i = 0; i < MAX_MATERIALS; i++) {
+        Render_Material *rm = &materials[i];
+        if (strings_are_equal(rm->name, name))
+            return i;
+    }
+    return -1;
+}
+
+internal void
+clear_materials() {
+    for (int i = 0; i < array_count(materials); i++) {
+        Render_Material *rm = &materials[i];
+        if (rm->name) platform_free(rm->name);
+        if (rm->diffuse_map) platform_free(rm->diffuse_map);
+        if (rm->specular_map) platform_free(rm->specular_map);
+    }
+}
 
 internal void
 init_mesh(Triangle_Mesh *mesh) {
@@ -85,11 +116,11 @@ draw_mesh(Triangle_Mesh *mesh) {
         
         if (mesh->list[li].material_index > -1) {
             // TODO(diego): Change to Render_Material
-            Obj_Material *mat = &materials[mesh->list[li].material_index];
-            set_float3("material.ambient", mat->Ka);
-            set_float3("material.diffuse", mat->Kd);
-            set_float3("material.specular", mat->Ks);
-            set_float("material.shininess", mat->Ns);
+            Render_Material *rm = &materials[mesh->list[li].material_index];
+            set_float3("material.ambient", rm->ambient_color);
+            set_float3("material.diffuse", rm->diffuse_color);
+            set_float3("material.specular", rm->specular_color);
+            set_float("material.shininess", rm->shininess);
         }
         
         s32 index = mesh->list[li].start_index * index_size;
@@ -99,7 +130,7 @@ draw_mesh(Triangle_Mesh *mesh) {
 }
 
 internal Triangle_Mesh
-gen_mesh_cube(float width, float height, float length) {
+gen_mesh_cube(real32 width, real32 height, real32 length) {
     Triangle_Mesh mesh = { 0 };
     
     Vector3 vertices[] = {
@@ -129,7 +160,7 @@ gen_mesh_cube(float width, float height, float length) {
         -width/2, height/2, -length/2
     };
     
-    float texcoords[] = {
+    real32 texcoords[] = {
         0.0f, 0.0f,
         1.0f, 0.0f,
         1.0f, 1.0f,
@@ -156,7 +187,7 @@ gen_mesh_cube(float width, float height, float length) {
         0.0f, 1.0f
     };
     
-    float normals[] = {
+    real32 normals[] = {
         0.0f, 0.0f, 1.0f,
         0.0f, 0.0f, 1.0f,
         0.0f, 0.0f, 1.0f,

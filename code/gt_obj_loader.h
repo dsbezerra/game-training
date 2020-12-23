@@ -96,7 +96,6 @@ struct Obj_Model {
 //
 // Private
 //
-internal void clear_materials();
 internal void parse_mtl(Obj_Material *materials);
 internal void free_elements(Obj_Element *elements, u32 count);
 internal Triangle_Mesh load_mesh_from_obj(char *filepath);
