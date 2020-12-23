@@ -228,7 +228,7 @@ draw_game_view(Sokoban_State *state) {
         local_persist real32 angle = time_info.dt;
         
         model_matrix = y_rotation(angle_to_radians(angle));
-        set_Mat4("model", model_matrix);
+        set_mat4("model", model_matrix);
         
         angle += time_info.dt * 30.f;
         if (angle > 360.f) {

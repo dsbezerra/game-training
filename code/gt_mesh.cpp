@@ -1,8 +1,107 @@
 #include "gt_obj_loader.cpp"
 
 internal void
-init_mesh(Triangle_Mesh *mesh) {
-    assert(mesh);
+init_texture_catalog() {
+    texture_catalog.size = TEXTURE_CATALOG_SIZE;
+    texture_catalog.data = (Texture_Map *) platform_alloc(texture_catalog.size * sizeof(Texture_Map));
+}
+
+internal char *
+get_filename(char *filepath) {
+    return filepath;
+}
+
+internal void
+add_texture(Texture_Map *texture) {
+    if (!texture_catalog.data) {
+        init_texture_catalog();
+    }
+    for (u32 i = 0; i < texture_catalog.size; ++i) {
+        Texture_Map *map = &texture_catalog.data[i];
+        if (!map->loaded) {
+            *map = *texture;
+            break;
+        }
+    }
+}
+
+internal Texture_Map*
+load_texture_map(char *filepath) {
+    char *map_name = get_filename(filepath);
+    assert(map_name);
+    
+    Texture_Map *texture = find_texture(map_name);
+    if (texture) return texture;
+    
+    int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
+    u8 *data = stbi_load(filepath, &width, &height, &nrChannels, 4);
+    if (!data) {
+        return 0;
+    }
+    
+    texture = (Texture_Map *) platform_alloc(sizeof(Texture_Map));
+    glGenTextures(1, &texture->id);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    open_gl->glGenerateMipmap(GL_TEXTURE_2D);
+    
+    stbi_image_free(data);
+    
+    texture->name = map_name;
+    texture->width = width;
+    texture->height = height;
+    texture->loaded = true;
+    texture->full_path = (char *) platform_alloc(string_length(filepath) * sizeof(char));
+    copy_string(texture->full_path, filepath);
+    
+    add_texture(texture);
+    
+    return texture;
+}
+
+internal Texture_Map *
+find_texture(char *map_name) {
+    if (!map_name) return 0;
+    if (!texture_catalog.data) return 0;
+    if (texture_catalog.size == 0) return 0;
+    
+    for (u32 i = 0; i < texture_catalog.size; ++i) {
+        Texture_Map *map = &texture_catalog.data[i];
+        if (!map->name || !map->loaded) continue;
+        if (strings_are_equal(map->name, map_name)) {
+            return map;
+        }
+    }
+    return 0;
+}
+
+internal void
+load_textures_for_mesh(Triangle_Mesh *mesh) {
+    for (u32 i = 0; i < mesh->triangle_list_count; ++i) {
+        Triangle_List_Info *info = &mesh->triangle_list_info[i];
+        if (!info) continue;
+        
+        Render_Material *rm = &mesh->material_info[info->material_index];
+        if (!rm) continue;
+        
+        info->diffuse_map = find_texture(rm->texture_map_names[TEXTURE_MAP_DIFFUSE]);
+        if (!info->diffuse_map) {
+            // TODO(diego): Logging
+        }
+        
+        // TODO(diego): Add other maps here
+        
+    }
+}
+
+internal void
+make_vertex_buffers(Triangle_Mesh *mesh) {
     
     Vertex *dest_buffer = new Vertex[mesh->vertex_count];
     
@@ -71,6 +170,35 @@ init_mesh(Triangle_Mesh *mesh) {
 }
 
 internal void
+init_mesh(Triangle_Mesh *mesh) {
+    assert(mesh);
+    
+    make_vertex_buffers(mesh);
+    load_textures_for_mesh(mesh);
+}
+
+internal void
+set_texture(char *name, Texture_Map *map) {
+    
+    u32 texture_unit = 0;
+    
+    if (strings_are_equal(name, "diffuse")) {
+        texture_unit = 0;
+    } else if (strings_are_equal(name, "specular")) {
+        texture_unit = 1;
+    }
+    
+    if (map) {
+        open_gl->glActiveTexture(GL_TEXTURE0 + texture_unit);
+        set_int1(name, texture_unit);
+        glBindTexture(GL_TEXTURE_2D, map->id);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    
+}
+
+internal void
 draw_mesh(Triangle_Mesh *mesh) {
     assert(mesh);
     
@@ -82,16 +210,19 @@ draw_mesh(Triangle_Mesh *mesh) {
     u32 index_size = sizeof(mesh->indices[0]);
     for (u32 li = 0; li < mesh->triangle_list_count; ++li) {
         Triangle_List_Info *tli = &mesh->triangle_list_info[li];
+        
         if (tli->material_index > -1) {
             Render_Material *rm = &mesh->material_info[tli->material_index];
             set_float3("material.ambient", rm->ambient_color);
-            set_float3("material.diffuse", rm->diffuse_color);
             set_float3("material.specular", rm->specular_color);
             set_float("material.shininess", rm->shininess);
         }
+        // TODO: Refactor?
+        set_texture("material.diffuse", tli->diffuse_map);
         
         s32 index = tli->start_index * index_size;
         open_gl->glDrawElements(GL_TRIANGLES, tli->num_indices, GL_UNSIGNED_INT, (void *) index);
+        open_gl->glActiveTexture(GL_TEXTURE0);
     }
     open_gl->glBindVertexArray(0);
 }

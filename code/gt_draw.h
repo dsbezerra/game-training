@@ -70,7 +70,7 @@ internal void set_shader(Shader new_shader);
 internal void refresh_shader_transform();
 
 
-internal void set_Mat4(char *name, Mat4 matrix);
+internal void set_mat4(char *name, Mat4 matrix);
 
 internal void set_int1(char *name, int value);
 internal void set_float(char *name, real32 value);

@@ -54,7 +54,7 @@ immediate_free() {
 }
 
 internal void
-set_Mat4(char *name, Mat4 matrix) {
+set_mat4(char *name, Mat4 matrix) {
     GLint location = open_gl->glGetUniformLocation(immediate->current_shader.program, name);
     open_gl->glUniformMatrix4fv(location, 1, GL_FALSE, matrix.e);
 }
@@ -370,8 +370,8 @@ refresh_shader_transform() {
         return;
     }
     
-    set_Mat4("view", view_matrix);
-    set_Mat4("projection", projection_matrix);
+    set_mat4("view", view_matrix);
+    set_mat4("projection", projection_matrix);
 }
 
 internal void

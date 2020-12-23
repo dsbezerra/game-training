@@ -313,7 +313,11 @@ load_mesh_from_obj(char *filepath) {
     mesh.material_info_count = model.material_count;
     mesh.material_info = (Render_Material *) platform_alloc(mesh.material_info_count * sizeof(Render_Material));
     for (u32 mi = 0; mi < model.material_count; ++mi) {
-        mesh.material_info[mi] = as_render_material(&model.materials[mi]);
+        Render_Material rm = as_render_material(&model.materials[mi]);
+        if (rm.texture_map_names[TEXTURE_MAP_DIFFUSE]) {
+            load_texture_map(rm.texture_map_names[TEXTURE_MAP_DIFFUSE]);
+        }
+        mesh.material_info[mi] = rm;
     }
     release(&model);
     
