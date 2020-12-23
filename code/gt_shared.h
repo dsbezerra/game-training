@@ -1,7 +1,7 @@
 internal int
 string_length(char *str) {
 	int count = 0;
-	while (str[count])
+	while (str && str[count])
 		count++;
 	return count;
 }

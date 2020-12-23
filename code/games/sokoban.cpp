@@ -64,7 +64,7 @@ init_game(Sokoban_State *state) {
     //
     // Load mesh
     //
-    player.mesh = load_mesh("./data/models/colored_cube.obj");
+    player.mesh = load_mesh("./data/models/monkey_t.obj");
     
     state->player = player;
 }

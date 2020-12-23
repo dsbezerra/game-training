@@ -48,9 +48,7 @@ struct Obj_Material {
     
     char *name;
     
-    char *texture_map_name;
-    char *normal_map_name;
-    char *specular_map_name;
+    char *texture_map_names[TEXTURE_MAP_NAME_COUNT];
 };
 
 struct Obj_Index_Entry {
@@ -67,13 +65,16 @@ struct Obj_Index_Table {
 struct Obj_Model {
     char *filepath;
     
-    Obj_Index_Table *table;
-    
     Vector3 *vertices;
     Vector3 *normals;
     Vector2 *uvs;
-    Obj_Face_Spec *faces;
     
+    Obj_Face_Spec *faces;
+    Obj_Element *elements;
+    Obj_Material *materials;
+    Obj_Index_Table *table;
+    
+    // Count
     u32 vertex_count;
     u32 normal_count;
     u32 uv_count;
@@ -82,8 +83,7 @@ struct Obj_Model {
     u32 object_count;
     u32 group_count;
     u32 material_count;
-    
-    u32 triangle_list_count_count;
+    u32 element_count;
     
     u32 material_index;
     
@@ -96,8 +96,8 @@ struct Obj_Model {
 //
 // Private
 //
-internal void parse_mtl(Obj_Material *materials);
-internal void free_elements(Obj_Element *elements, u32 count);
+internal int find_material_index(Obj_Model *model, char *name);
+internal void parse_mtl(Obj_Model *model);
 internal Triangle_Mesh load_mesh_from_obj(char *filepath);
 
 internal u64 hash(Obj_Index_Table *table, Obj_Index idx);
@@ -106,6 +106,8 @@ internal Obj_Index_Entry* index_table_get(Obj_Index_Table *table, Obj_Index key)
 internal void index_table_set(Obj_Index_Table *table, Obj_Index key, u32 value);
 internal Obj_Index_Entry* index_table_pair(Obj_Index key, u32 value);
 internal void index_table_free(Obj_Index_Table *table);
+
+internal void release(Obj_Model *model);
 
 inline b32
 operator==(Obj_Index a, Obj_Index b) {

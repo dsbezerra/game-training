@@ -8,14 +8,28 @@ enum Texture_Type {
 };
 
 struct Texture_Map {
+    u32 width;
+    u32 height;
+    // flags field?
     u32 id;
+    
+    
     Texture_Type type;
+    
+    char *name;
+    char *full_path;
     b32 loaded;
 };
 
 //
 // TODO(diego): Move to specific file?
 //
+
+#define TEXTURE_MAP_NAME_COUNT 3
+
+#define TEXTURE_MAP_DIFFUSE  0
+#define TEXTURE_MAP_SPECULAR 1
+#define TEXTURE_MAP_NORMAL   2
 
 struct Render_Material {
     Vector3 ambient_color;
@@ -26,12 +40,8 @@ struct Render_Material {
     
     char *name;
     
-    Texture_Map *diffuse_map;
-    Texture_Map *specular_map;
+    char *texture_map_names[TEXTURE_MAP_NAME_COUNT];
 };
-
-#define MAX_MATERIALS 1000
-Render_Material materials[MAX_MATERIALS];
 
 struct Triangle_List_Info {
     s32 start_index;
@@ -52,13 +62,15 @@ struct Triangle_Mesh {
     
     Vector4 *colors;
     
-    Triangle_List_Info *list;
+    Triangle_List_Info *triangle_list_info;
+    Render_Material    *material_info;
     
     // Count stuff.
     u32 vertex_count; // Count for vertices, normals and uvs
     u32 index_count;
     u32 texture_count;
     
+    u32 material_info_count;
     u32 triangle_list_count;
     
     // OpenGL stuff.
@@ -66,13 +78,6 @@ struct Triangle_Mesh {
     u32 vbo;
     u32 ebo;
 };
-
-//
-// Materials
-//
-internal Render_Material * get_material_at(int index);
-internal int find_material_index(char *name);
-internal void clear_materials();
 
 //
 // Mesh

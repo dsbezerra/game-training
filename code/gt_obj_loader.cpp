@@ -11,19 +11,34 @@ as_render_material(Obj_Material *material) {
     result.name = (char *) platform_alloc(string_length(material->name) * sizeof(char));
     copy_string(result.name, material->name);
     
-    //result.diffuse_map = ; Load texture and get a pointer to it!
-    
-    platform_free(material->name);
-    platform_free(material->texture_map_name); // TODO(diego): Load as texture map
+    {
+        result.texture_map_names[TEXTURE_MAP_DIFFUSE]
+            = material->texture_map_names[TEXTURE_MAP_DIFFUSE];
+        result.texture_map_names[TEXTURE_MAP_SPECULAR]
+            = material->texture_map_names[TEXTURE_MAP_SPECULAR];
+        result.texture_map_names[TEXTURE_MAP_NORMAL]
+            = material->texture_map_names[TEXTURE_MAP_NORMAL];
+    }
     
     return result;
 }
 
+internal int
+find_material_index(Obj_Model *model, char *name) {
+    // @Speed make this use hash table if necessary.
+    for (u32 i = 0; i < model->material_count; i++) {
+        Obj_Material *m = &model->materials[i];
+        if (strings_are_equal(m->name, name))
+            return i;
+    }
+    return -1;
+}
+
 internal void
-parse_mtl(char *filepath) {
-    int len = string_length(filepath);
+parse_mtl(Obj_Model *model) {
+    int len = string_length(model->filepath);
     char *mtlpath = (char *) platform_alloc(len * sizeof(char *));
-    copy_string(mtlpath, filepath);
+    copy_string(mtlpath, model->filepath);
     put_string_at(mtlpath, "mtl", len - 3);
     
     File_Contents obj_file = platform_read_entire_file(mtlpath);
@@ -55,22 +70,22 @@ parse_mtl(char *filepath) {
             //
             // # Material Count: X
             //
-            if (r.rhs[0] == 'M' && !materials) {
+            if (r.rhs[0] == 'M' && !model->materials) {
                 r = break_by_tok(r.rhs, ':'); 
                 if (strings_are_equal(r.lhs, "Material Count")) {
-                    int count = atoi(r.rhs);
-                    assert(count < MAX_MATERIALS);
+                    model->material_count = atoi(r.rhs);
+                    model->materials = (Obj_Material *) platform_alloc(model->material_count * sizeof(Obj_Material));
                 }
             }
             continue;
         } else if (strings_are_equal(r.lhs, "newmtl")) {
             if (newmtl_count > 0) {
-                materials[newmtl_count - 1] = as_render_material(&current_material);
+                model->materials[newmtl_count - 1] = current_material;
             }
             //
             // We assume that all of our mtl files have # Material Count in the second comment.
             //
-            if (materials) {
+            if (model->materials) {
                 current_material.name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
                 copy_string(current_material.name, r.rhs);
             }
@@ -92,38 +107,26 @@ parse_mtl(char *filepath) {
         } else if (strings_are_equal(r.lhs, "illum")) {
             // Ignored.
         } else if (strings_are_equal(r.lhs, "map_Kd")) {
-            // TODO(diego): Get only the texture name!!
-            current_material.texture_map_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
-            copy_string(current_material.texture_map_name, r.rhs);
+            char **name = &current_material.texture_map_names[TEXTURE_MAP_DIFFUSE];
+            *name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
+            copy_string(*name, r.rhs);
+        } else if (strings_are_equal(r.lhs, "map_Ks")) {
+            char **name = &current_material.texture_map_names[TEXTURE_MAP_SPECULAR];
+            *name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
+            copy_string(*name, r.rhs);
+        } else if (strings_are_equal(r.lhs, "map_bump")) {
+            char **name = &current_material.texture_map_names[TEXTURE_MAP_NORMAL];
+            *name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char *));
+            copy_string(*name, r.rhs);
         }
     }
     
     // Add last one
     if (newmtl_count > 0) {
-        materials[newmtl_count - 1] = as_render_material(&current_material);
+        model->materials[newmtl_count - 1] = current_material;
     }
     
     platform_free(handler.data);
-}
-
-internal void
-free_elements(Obj_Element *elements, u32 count) {
-    if (!elements) return;
-    
-    for (u32 index = 0; index < count; ++index) {
-        Obj_Element *e = &elements[index];
-        if (!e) continue;
-        switch (e->kind) {
-            case ObjElementKind_Object: if (e->object_name)   platform_free(e->object_name);    break;
-            case ObjElementKind_Group:  if (e->group_name)    platform_free(e->group_name);     break;
-            case ObjElementKind_Usemtl: if (e->material_name) platform_free(e->material_name);  break;
-            default: {
-                // Continue
-            } break;
-        }
-    }
-    
-    platform_free(elements);
 }
 
 internal Triangle_Mesh
@@ -138,7 +141,8 @@ load_mesh_from_obj(char *filepath) {
     assert(num_lines > 0);
     
     Obj_Model model = {};
-    Obj_Element *elements = (Obj_Element *) platform_alloc(num_lines * sizeof(Obj_Element));
+    model.filepath = filepath;
+    model.elements = (Obj_Element *) platform_alloc(num_lines * sizeof(Obj_Element));
     
     u32 current_line = 0;
     u8 *at = obj_file.contents;
@@ -147,13 +151,13 @@ load_mesh_from_obj(char *filepath) {
         char *line = consume_next_line(&at);
         if (!line) break;
         
-        Obj_Element *element = &elements[current_line];
+        Obj_Element *element = &model.elements[current_line];
         
         Break_String_Result r = break_by_spaces(line);
         if (!r.lhs || r.lhs[0] == '#') {
             continue;
         } else if (strings_are_equal(r.lhs, "mtllib")) {
-            parse_mtl(filepath);
+            parse_mtl(&model);
         } else if (r.lhs[0] == 'o') {
             element->kind = ObjElementKind_Object;
             element->object_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char*));
@@ -193,7 +197,6 @@ load_mesh_from_obj(char *filepath) {
             element->kind = ObjElementKind_Usemtl;
             element->material_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char));
             copy_string(element->material_name, r.rhs);
-            model.material_count++;
             
         } else if (r.lhs[0] == 'f') {
             // NOTE(diego): We assume faces have Vertex index, uv index and normal index V/T/N
@@ -255,9 +258,9 @@ load_mesh_from_obj(char *filepath) {
     // Setup triangle list
     //
     mesh.triangle_list_count = model.material_count;
-    mesh.list      = (Triangle_List_Info *) platform_alloc(mesh.triangle_list_count * sizeof(Triangle_List_Info));
+    mesh.triangle_list_info      = (Triangle_List_Info *) platform_alloc(mesh.triangle_list_count * sizeof(Triangle_List_Info));
     for (u32 li = 0; li < mesh.triangle_list_count; ++li) {
-        Triangle_List_Info *info = &mesh.list[li];
+        Triangle_List_Info *info = &mesh.triangle_list_info[li];
         info->start_index = -1;
         info->material_index = -1;
         info->num_indices = 0;
@@ -274,7 +277,7 @@ load_mesh_from_obj(char *filepath) {
     u32 f_count = 0;
     
     for (u32 element_index = 0; element_index < num_lines; ++element_index) {
-        Obj_Element *element = &elements[element_index];
+        Obj_Element *element = &model.elements[element_index];
         switch (element->kind) {
             case ObjElementKind_Vertex: {
                 model.vertices[v_count++] = element->vertex;
@@ -288,7 +291,7 @@ load_mesh_from_obj(char *filepath) {
             case ObjElementKind_Usemtl: {
                 model.previous_usemtl_index = model.usemtl_index;
                 model.usemtl_index++;
-                model.material_index = find_material_index(element->material_name);
+                model.material_index = find_material_index(&model, element->material_name);
             } break;
             case ObjElementKind_Face: {
                 model.faces[f_count++] = element->face_spec;
@@ -299,22 +302,20 @@ load_mesh_from_obj(char *filepath) {
         }
     }
     
-    //
-    // Free stuff.
-    //
-    index_table_free(model.table);
-    
-    free_elements(elements, num_lines);
-    
-    if (model.vertices) platform_free(model.vertices);
-    if (model.uvs)      platform_free(model.uvs);
-    if (model.normals)  platform_free(model.normals);
-    if (model.faces)    platform_free(model.faces);
-    
     // Update last triangle list
     int previous_index = model.previous_usemtl_index == -1 ? 0 : model.usemtl_index;
-    Triangle_List_Info *last = &mesh.list[previous_index];
+    Triangle_List_Info *last = &mesh.triangle_list_info[previous_index];
     last->num_indices = model.inserting_count - last->start_index;
+    
+    //
+    // Convert Obj_Material list to Render_Material
+    //
+    mesh.material_info_count = model.material_count;
+    mesh.material_info = (Render_Material *) platform_alloc(mesh.material_info_count * sizeof(Render_Material));
+    for (u32 mi = 0; mi < model.material_count; ++mi) {
+        mesh.material_info[mi] = as_render_material(&model.materials[mi]);
+    }
+    release(&model);
     
     return mesh;
 }
@@ -456,14 +457,14 @@ insert_face(Triangle_Mesh *mesh, Obj_Model *model, Obj_Face_Spec *face) {
     
     // Build triangle list
     if (model->usemtl_index > -1) {
-        Triangle_List_Info *info = &mesh->list[model->usemtl_index];
+        Triangle_List_Info *info = &mesh->triangle_list_info[model->usemtl_index];
         if (info->start_index == -1) {
             info->start_index = model->inserting_count;
             info->material_index = model->material_index;
         }
         if (model->previous_usemtl_index > -1) {
             if (model->usemtl_index != model->previous_usemtl_index) {
-                Triangle_List_Info *prev = &mesh->list[model->previous_usemtl_index];
+                Triangle_List_Info *prev = &mesh->triangle_list_info[model->previous_usemtl_index];
                 prev->num_indices = model->inserting_count - prev->start_index;
             }
         }
@@ -497,4 +498,43 @@ fix_face_indices(Obj_Model *model, Obj_Face_Spec *spec) {
     spec->idx0.normal_index = get_index(spec->idx0.normal_index, model->normal_count);
     spec->idx1.normal_index = get_index(spec->idx1.normal_index, model->normal_count);
     spec->idx2.normal_index = get_index(spec->idx2.normal_index, model->normal_count);
+}
+
+internal void
+release(Obj_Model *model) {
+    if (!model) return;
+    
+    // Clear indices table
+    index_table_free(model->table);
+    
+    // Free elements
+    if (model->elements) {
+        for (u32 index = 0; index < model->element_count; ++index) {
+            Obj_Element *e = &model->elements[index];
+            if (!e) continue;
+            switch (e->kind) {
+                case ObjElementKind_Object: if (e->object_name)   platform_free(e->object_name);    break;
+                case ObjElementKind_Group:  if (e->group_name)    platform_free(e->group_name);     break;
+                case ObjElementKind_Usemtl: if (e->material_name) platform_free(e->material_name);  break;
+                default: {
+                    // Continue
+                } break;
+            }
+        }
+        platform_free(model->elements);
+    }
+    
+    // Clear materials
+    if (model->materials) {
+        for (u32 i = 0; i < model->material_count; i++) {
+            Obj_Material *m = &model->materials[i];
+            if (m->name) platform_free(m->name);
+        }
+        platform_free(model->materials);
+    }
+    
+    if (model->vertices) platform_free(model->vertices);
+    if (model->uvs)      platform_free(model->uvs);
+    if (model->normals)  platform_free(model->normals);
+    if (model->faces)    platform_free(model->faces);
 }

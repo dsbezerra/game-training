@@ -1,37 +1,5 @@
 #include "gt_obj_loader.cpp"
 
-internal Render_Material *
-get_material_at(int index) {
-    if (index < 0 || index >= MAX_MATERIALS) {
-        return 0;
-    }
-    Render_Material *rm = &materials[index];
-    if (!rm->name) return 0;
-    
-    return rm;
-}
-
-internal int
-find_material_index(char *name) {
-    // @Speed make this use hash table if necessary.
-    for (int i = 0; i < MAX_MATERIALS; i++) {
-        Render_Material *rm = &materials[i];
-        if (strings_are_equal(rm->name, name))
-            return i;
-    }
-    return -1;
-}
-
-internal void
-clear_materials() {
-    for (int i = 0; i < array_count(materials); i++) {
-        Render_Material *rm = &materials[i];
-        if (rm->name) platform_free(rm->name);
-        if (rm->diffuse_map) platform_free(rm->diffuse_map);
-        if (rm->specular_map) platform_free(rm->specular_map);
-    }
-}
-
 internal void
 init_mesh(Triangle_Mesh *mesh) {
     assert(mesh);
@@ -113,18 +81,17 @@ draw_mesh(Triangle_Mesh *mesh) {
     
     u32 index_size = sizeof(mesh->indices[0]);
     for (u32 li = 0; li < mesh->triangle_list_count; ++li) {
-        
-        if (mesh->list[li].material_index > -1) {
-            // TODO(diego): Change to Render_Material
-            Render_Material *rm = &materials[mesh->list[li].material_index];
+        Triangle_List_Info *tli = &mesh->triangle_list_info[li];
+        if (tli->material_index > -1) {
+            Render_Material *rm = &mesh->material_info[tli->material_index];
             set_float3("material.ambient", rm->ambient_color);
             set_float3("material.diffuse", rm->diffuse_color);
             set_float3("material.specular", rm->specular_color);
             set_float("material.shininess", rm->shininess);
         }
         
-        s32 index = mesh->list[li].start_index * index_size;
-        open_gl->glDrawElements(GL_TRIANGLES, mesh->list[li].num_indices, GL_UNSIGNED_INT, (void *) index);
+        s32 index = tli->start_index * index_size;
+        open_gl->glDrawElements(GL_TRIANGLES, tli->num_indices, GL_UNSIGNED_INT, (void *) index);
     }
     open_gl->glBindVertexArray(0);
 }
@@ -274,29 +241,25 @@ free_mesh(Triangle_Mesh *mesh) {
     if (mesh->uvs)         platform_free(mesh->uvs);
     if (mesh->indices)     platform_free(mesh->indices);
     
-    // NOTE(diego): Maybe we don't want to delete textures because other objects
-    // may use the same texture id.
-    //
-    // TODO(diego): Make sure that the texture is not being used by other meshes.
-#if 0
-    if (mesh->textures) {
-        // @Speed call glDeleteTextures with an array of textures.
-        for (Texture *texture = mesh->textures; texture != mesh->textures + mesh->texture_count; texture++) {
-            if (!texture) continue;
-            glDeleteTextures(1, &texture->id);
-        }
-        platform_free(mesh->textures);
-    }
-#endif
-    
-    if (mesh->list) {
-        for (Triangle_List_Info *info = mesh->list; info != mesh->list + mesh->triangle_list_count; info++) {
+    if (mesh->triangle_list_info) {
+        for (Triangle_List_Info *info = mesh->triangle_list_info; info != mesh->triangle_list_info + mesh->triangle_list_count; info++) {
             if (!info) continue;
             platform_free(info);
         }
-        platform_free(mesh->list);
+        platform_free(mesh->triangle_list_info);
     }
     
+    if (mesh->material_info) {
+        for (Render_Material *rm = mesh->material_info; rm != mesh->material_info + mesh->material_info_count; rm++) {
+            if (!rm) continue;
+            if (rm->name) platform_free(rm->name);
+            for (int n = 0; n < TEXTURE_MAP_NAME_COUNT; ++n) {
+                if (rm->texture_map_names[n]) platform_free(rm->texture_map_names[n]);
+            }
+            platform_free(rm);
+        }
+        platform_free(mesh->triangle_list_info);
+    }
     // Delete OpenGL stuff.
     open_gl->glDeleteVertexArrays(1, &mesh->vao);
     
