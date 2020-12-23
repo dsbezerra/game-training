@@ -1,5 +1,7 @@
 /* date = December 14th 2020 10:15 pm */
 
+#define MESH_FLIP_UVS 0x01
+
 struct Texture_Map {
     u32 width;
     u32 height;
@@ -48,6 +50,8 @@ struct Triangle_List_Info {
     s32 material_index;
     
     Texture_Map *diffuse_map;
+    Texture_Map *specular_map;
+    Texture_Map *normal_map;
 };
 
 struct Triangle_Mesh {
@@ -95,6 +99,6 @@ internal void init_mesh(Triangle_Mesh *mesh);
 internal void draw_mesh(Triangle_Mesh *mesh);
 
 internal Triangle_Mesh gen_mesh_cube(real32 widht, real32 height, real32 length);
-internal Triangle_Mesh load_mesh(char *filepath);
+internal Triangle_Mesh load_mesh(char *filepath, uint32 flags);
 
 internal void free_mesh(Triangle_Mesh *mesh);

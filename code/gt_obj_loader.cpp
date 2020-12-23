@@ -130,7 +130,7 @@ parse_mtl(Obj_Model *model) {
 }
 
 internal Triangle_Mesh
-load_mesh_from_obj(char *filepath) {
+load_mesh_from_obj(char *filepath, uint32 flags) {
     assert(string_length(filepath) != 0);
     assert(string_ends_with(filepath, ".obj"));
     
@@ -145,6 +145,8 @@ load_mesh_from_obj(char *filepath) {
     model.elements = (Obj_Element *) platform_alloc(num_lines * sizeof(Obj_Element));
     
     u32 current_line = 0;
+    u32 triangle_list_count = 0;
+    
     u8 *at = obj_file.contents;
     while (1) {
         
@@ -175,6 +177,11 @@ load_mesh_from_obj(char *filepath) {
                 Vector2 uv = {};
                 sscanf(r.rhs, "%f %f", &uv.x, &uv.y);
                 element->kind = ObjElementKind_UV;
+                
+                if (flags & MESH_FLIP_UVS) {
+                    uv.y = 1.f - uv.y;
+                }
+                
                 element->uv = uv;
                 model.uv_count++;
                 
@@ -197,7 +204,7 @@ load_mesh_from_obj(char *filepath) {
             element->kind = ObjElementKind_Usemtl;
             element->material_name = (char *) platform_alloc(string_length(r.rhs) * sizeof(char));
             copy_string(element->material_name, r.rhs);
-            
+            triangle_list_count++;
         } else if (r.lhs[0] == 'f') {
             // NOTE(diego): We assume faces have Vertex index, uv index and normal index V/T/N
             // And that the model is already triangulated.
@@ -257,7 +264,7 @@ load_mesh_from_obj(char *filepath) {
     //
     // Setup triangle list
     //
-    mesh.triangle_list_count = model.material_count;
+    mesh.triangle_list_count = triangle_list_count;
     mesh.triangle_list_info      = (Triangle_List_Info *) platform_alloc(mesh.triangle_list_count * sizeof(Triangle_List_Info));
     for (u32 li = 0; li < mesh.triangle_list_count; ++li) {
         Triangle_List_Info *info = &mesh.triangle_list_info[li];
@@ -316,6 +323,12 @@ load_mesh_from_obj(char *filepath) {
         Render_Material rm = as_render_material(&model.materials[mi]);
         if (rm.texture_map_names[TEXTURE_MAP_DIFFUSE]) {
             load_texture_map(rm.texture_map_names[TEXTURE_MAP_DIFFUSE]);
+        }
+        if (rm.texture_map_names[TEXTURE_MAP_SPECULAR]) {
+            load_texture_map(rm.texture_map_names[TEXTURE_MAP_SPECULAR]);
+        }
+        if (rm.texture_map_names[TEXTURE_MAP_NORMAL]) {
+            load_texture_map(rm.texture_map_names[TEXTURE_MAP_NORMAL]);
         }
         mesh.material_info[mi] = rm;
     }

@@ -98,7 +98,7 @@ struct Obj_Model {
 //
 internal int find_material_index(Obj_Model *model, char *name);
 internal void parse_mtl(Obj_Model *model);
-internal Triangle_Mesh load_mesh_from_obj(char *filepath);
+internal Triangle_Mesh load_mesh_from_obj(char *filepath, uint32 flags);
 
 internal u64 hash(Obj_Index_Table *table, Obj_Index idx);
 internal Obj_Index_Table* index_table_create(u64 size);

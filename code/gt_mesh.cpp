@@ -34,7 +34,6 @@ load_texture_map(char *filepath) {
     if (texture) return texture;
     
     int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true);
     u8 *data = stbi_load(filepath, &width, &height, &nrChannels, 4);
     if (!data) {
         return 0;
@@ -95,6 +94,10 @@ load_textures_for_mesh(Triangle_Mesh *mesh) {
             // TODO(diego): Logging
         }
         
+        info->specular_map = find_texture(rm->texture_map_names[TEXTURE_MAP_SPECULAR]);
+        if (!info->specular_map) {
+            // TODO(diego): Logging
+        }
         // TODO(diego): Add other maps here
         
     }
@@ -182,11 +185,13 @@ set_texture(char *name, Texture_Map *map) {
     
     u32 texture_unit = 0;
     
-    if (strings_are_equal(name, "diffuse")) {
+    if (strings_are_equal(name, "diffuse_texture")) {
         texture_unit = 0;
-    } else if (strings_are_equal(name, "specular")) {
+    } else if (strings_are_equal(name, "specular_texture")) {
         texture_unit = 1;
-    }
+    }/* else if (strings_are_equal(name, "normal_texture")) {
+        texture_unit = 2;
+    }*/
     
     if (map) {
         open_gl->glActiveTexture(GL_TEXTURE0 + texture_unit);
@@ -214,11 +219,14 @@ draw_mesh(Triangle_Mesh *mesh) {
         if (tli->material_index > -1) {
             Render_Material *rm = &mesh->material_info[tli->material_index];
             set_float3("material.ambient", rm->ambient_color);
+            set_float3("material.diffuse", rm->diffuse_color);
             set_float3("material.specular", rm->specular_color);
             set_float("material.shininess", rm->shininess);
         }
-        // TODO: Refactor?
-        set_texture("material.diffuse", tli->diffuse_map);
+        
+        set_texture("diffuse_texture", tli->diffuse_map);
+        set_texture("specular_texture", tli->specular_map);
+        //set_texture("normal_texture", tli->normal_map);
         
         s32 index = tli->start_index * index_size;
         open_gl->glDrawElements(GL_TRIANGLES, tli->num_indices, GL_UNSIGNED_INT, (void *) index);
@@ -345,13 +353,13 @@ gen_mesh_cube(real32 width, real32 height, real32 length) {
 }
 
 internal Triangle_Mesh
-load_mesh(char *filepath) {
+load_mesh(char *filepath, uint32 flags) {
     Triangle_Mesh result = {};
     
 #if 0
     result = gen_mesh_cube(1.f, 1.f, 1.f);
 #else
-    result = load_mesh_from_obj(filepath);
+    result = load_mesh_from_obj(filepath, flags);
 #endif
     result.filepath = filepath;
     
