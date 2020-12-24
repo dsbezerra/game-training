@@ -186,18 +186,20 @@ set_texture(char *name, Texture_Map *map) {
     u32 texture_unit = 0;
     
     if (strings_are_equal(name, "diffuse_texture")) {
-        texture_unit = 0;
-    } else if (strings_are_equal(name, "specular_texture")) {
         texture_unit = 1;
-    }/* else if (strings_are_equal(name, "normal_texture")) {
+    } else if (strings_are_equal(name, "specular_texture")) {
         texture_unit = 2;
+    }/* else if (strings_are_equal(name, "normal_texture")) {
+        texture_unit = 3;
     }*/
     
+    open_gl->glActiveTexture(GL_TEXTURE0 + texture_unit);
+    
     if (map) {
-        open_gl->glActiveTexture(GL_TEXTURE0 + texture_unit);
-        set_int1(name, texture_unit);
+        set_int1(name, texture_unit); 
         glBindTexture(GL_TEXTURE_2D, map->id);
     } else {
+        set_int1(name, texture_unit);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     
@@ -230,7 +232,7 @@ draw_mesh(Triangle_Mesh *mesh) {
         
         s32 index = tli->start_index * index_size;
         open_gl->glDrawElements(GL_TRIANGLES, tli->num_indices, GL_UNSIGNED_INT, (void *) index);
-        open_gl->glActiveTexture(GL_TEXTURE0);
+        
     }
     open_gl->glBindVertexArray(0);
 }

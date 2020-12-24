@@ -425,10 +425,13 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
     // Temporary reload shaders after time
     //
     // TODO(diego): Implement proper hotloader
+    // 
+    // This can cause errors with opengl
     local_persist real32 t = 0.f;
     if (t >= 1.f) {
         reload_shaders();
         t -= 1.f;
     }
     t += time_info.dt;
+    
 }
