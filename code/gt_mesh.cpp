@@ -85,6 +85,7 @@ load_textures_for_mesh(Triangle_Mesh *mesh) {
     for (u32 i = 0; i < mesh->triangle_list_count; ++i) {
         Triangle_List_Info *info = &mesh->triangle_list_info[i];
         if (!info) continue;
+        if (info->material_index < 0) continue;
         
         Render_Material *rm = &mesh->material_info[info->material_index];
         if (!rm) continue;
@@ -224,6 +225,12 @@ draw_mesh(Triangle_Mesh *mesh) {
             set_float3("material.diffuse", rm->diffuse_color);
             set_float3("material.specular", rm->specular_color);
             set_float("material.shininess", rm->shininess);
+        } else {
+            // TODO(diego): Default colors
+            set_float3("material.ambient", make_vector3(0.5f, .5f, .5f));
+            set_float3("material.diffuse", make_vector3(1.f, 1.f, 1.f));
+            set_float3("material.specular", make_vector3(1.0f, 0.f, 1.f));
+            set_float("material.shininess", 32.f);
         }
         
         set_texture("diffuse_texture", tli->diffuse_map);
@@ -351,6 +358,15 @@ gen_mesh_cube(real32 width, real32 height, real32 length) {
     mesh.vertex_count = 24;
     mesh.index_count = 12 * 3;
     
+    mesh.triangle_list_count = 1;
+    mesh.triangle_list_info = (Triangle_List_Info *) platform_alloc(sizeof(Triangle_List_Info));
+    
+    Triangle_List_Info info = {};
+    info.start_index = 0;
+    info.num_indices = 36;
+    info.material_index = -1;
+    mesh.triangle_list_info[0] = info;
+    
     return mesh;
 }
 
@@ -359,7 +375,7 @@ load_mesh(char *filepath, uint32 flags) {
     Triangle_Mesh result = {};
     
 #if 0
-    result = gen_mesh_cube(1.f, 1.f, 1.f);
+    result = gen_mesh_cube(12.f, 0.5f, 12.f);
 #else
     result = load_mesh_from_obj(filepath, flags);
 #endif

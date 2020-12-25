@@ -164,9 +164,12 @@ unload_shader(Shader *shader) {
 
 internal void
 reload_shaders() {
-    unload_shader(&global_shader);
-    unload_shader(&global_basic_3d_shader);
-    unload_shader(&global_basic_3d_light_shader);
+    if (global_shader.program) 
+        unload_shader(&global_shader);
+    if (global_basic_3d_light_shader.program)
+        unload_shader(&global_basic_3d_light_shader);
+    if (global_basic_3d_shader.program)
+        unload_shader(&global_basic_3d_shader);
     
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
     global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");

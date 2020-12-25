@@ -46,6 +46,7 @@ immediate_init() {
     //glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    //glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 internal void

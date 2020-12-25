@@ -1,5 +1,7 @@
 #include <gl/gl.h>
 
+#define GL_FRAMEBUFFER_SRGB 36281
+
 // 
 // GL Definitions
 //
