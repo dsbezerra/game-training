@@ -29,10 +29,6 @@ struct Sokoban_Entity {
     Vector4 color;
 };
 
-struct Sokoban_Assets {
-    GLint none;
-};
-
 struct Sokoban_Player {
     Vector3 position;
     Vector3 velocity;
@@ -51,7 +47,6 @@ struct Sokoban_World {
 struct Sokoban_State {
     Game_Mode Game_Mode;
     
-    Sokoban_Assets assets;
     Sokoban_Player player;
     Sokoban_World world;
     

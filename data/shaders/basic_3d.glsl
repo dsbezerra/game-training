@@ -36,9 +36,12 @@ struct Material {
 uniform Material material;
 uniform vec3 view_position;
 
+uniform sampler2D diffuse_texture;
+
 out vec4 frag_color;
 
 in vec4 out_color;
+in vec2 out_uv;
 in vec3 out_normal;
 in vec3 frag_position;
 
@@ -64,8 +67,8 @@ void main() {
   float spec = pow(max(dot(normal, halfway_dir), 0.0), material.shininess);
 
   // combine results
-  vec3 ambient  = light_color * material.diffuse * vec3(0.2);
-  vec3 diffuse  = light_color * diff * material.diffuse;
+  vec3 ambient  = light_color * material.diffuse * vec3(0.2) * texture(diffuse_texture, out_uv).rgb;
+  vec3 diffuse  = light_color * diff * material.diffuse * texture(diffuse_texture, out_uv).rgb;
   vec3 specular = light_color * spec * material.specular;
    
   vec3 final_color = (ambient + diffuse + specular);  

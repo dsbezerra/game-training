@@ -362,6 +362,23 @@ operator-= (Vector3 &a, Vector3 b) {
     return a;
 }
 
+inline b32
+operator==(Vector3 a, Vector3 b) {
+    b32 result = false;
+    
+    result = (a.x == b.x && 
+              a.y == b.y && 
+              a.z == b.z);
+    
+    return result;
+}
+
+inline b32
+operator!=(Vector3 a, Vector3 b) {
+    return !(a == b);
+}
+
+
 inline Vector3
 normalize(Vector3 a) {
     Vector3 result = a * (1.f / length(a));

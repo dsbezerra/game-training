@@ -18,10 +18,11 @@ get_block_value(int value, real32 size) {
 internal void
 init_game(Sokoban_State *state) {
     state->Game_Mode = GameMode_Playing;
-    state->cam.position  = make_vector3(0.f, 5.f, 4.f);
-    set_camera_mode(&state->cam, CameraMode_Free);
     
     init_camera(&state->cam, -90.f, -65.f, 45.f);
+    set_camera_mode(&state->cam, CameraMode_LookAt);
+    
+    state->cam.position  = make_vector3(0.f, 5.f, 4.f);
     
     Sokoban_World world = {};
     world.x_count = SOKOBAN_WORLD_X;
@@ -79,17 +80,16 @@ init_game(Sokoban_State *state) {
     Vector3 plane_color = make_vector3(206.f/255.f, 209.f/255.f, 200.f/255.f);
     Vector3 block_color = make_vector3(180.f/255.f, 118.f/255.f, 61.f/255.f);
     
-    state->block = gen_mesh_cube(block_size, block_size, block_size, block_color, 128.f);
-    real32 plane_size = (real32) world.x_count * .5f;
-    state->plane = gen_mesh_cube(plane_size, 0.01f, plane_size, plane_color, 64.f);
+    state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);
+    state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
     
     //
     // Player
     //
     Sokoban_Player player = {};
-    player.position = make_vector3(0.f, 1.f, 4.5f);
+    player.position = make_vector3(0.f, 0.3f, 0.f);
     player.velocity = make_vector3(0.f, 0.f, 0.f);
-    player.mesh = load_mesh("./data/models/cylinder.obj", MESH_FLIP_UVS);
+    player.mesh = load_mesh("./data/models/sokoban/cylinder.obj", MESH_FLIP_UVS);
     
     state->player = player;
 }
@@ -100,7 +100,42 @@ update_game(Sokoban_State *state, Game_Input *input) {
     Camera *cam = &state->cam;
     update_camera(cam, input);
     
-    if (pressed(Button_Enter)) {
+    
+    real32 move_step = 0.5f;
+    if (cam->mode == CameraMode_LookAt) {
+        b32 player_moved = false;
+        Vector3 new_player_position = state->player.position;
+        if (pressed(Button_W)) {
+            new_player_position.z -= move_step;
+        }
+        if (pressed(Button_S)) {
+            new_player_position.z += move_step;
+        }
+        if (pressed(Button_A)) {
+            new_player_position.x -= move_step;
+        }
+        if (pressed(Button_D)) {
+            new_player_position.x += move_step;
+        }
+        
+        if (new_player_position != state->player.position) {
+            b32 allow_move = true;
+            for (u32 i = 0; i < state->world.num_entities; ++i) {
+                Sokoban_Entity entity = state->world.entities[i];
+                if (entity.kind == SokobanEntityKind_Block) {
+                    if (entity.position.x == new_player_position.x && entity.position.z == new_player_position.z) {
+                        allow_move = false;
+                        break;
+                    }
+                }
+            }
+            if (allow_move) {
+                state->player.position = new_player_position;
+            }
+        }
+    }
+    
+    if (released(Button_Enter)) {
         if (cam->mode == CameraMode_Free) 
             set_camera_mode(cam, CameraMode_LookAt);
         else 
@@ -190,9 +225,6 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         state = (Sokoban_State *) game_alloc(memory, megabytes(12));
-        state->assets.none = load_texture("./data/textures/sokoban/none.jpg");
-        
-        state->cam.position = make_vector3(.0f, 0.f, -3.f);
         
         init_game(state);
         

@@ -95,14 +95,13 @@ update_camera(Camera *cam, Game_Input *input) {
             if (is_down(Button_Right) || is_down(Button_D)) {
                 cam->position = cam->position + cam->right * speed;
             }
-            
-            
             // TODO(diego): Handle scroll.
-            
         } break;
+        
         case CameraMode_LookAt: {
             // Do nothing.
         } break;
+        
         default: invalid_code_path;
     }
 }
@@ -111,6 +110,12 @@ internal void
 set_camera_mode(Camera *cam, Camera_Mode mode) {
     assert(cam);
     
+    OutputDebugString("setting camera mode to\n");
+    if (mode == CameraMode_Free) {
+        OutputDebugString("free\n");
+    } else {
+        OutputDebugString("look_at\n");
+    }
     cam->mode = mode;
 }
 
