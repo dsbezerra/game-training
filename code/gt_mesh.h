@@ -98,7 +98,7 @@ internal void make_vertex_buffers(Triangle_Mesh *mesh);
 internal void init_mesh(Triangle_Mesh *mesh);
 internal void draw_mesh(Triangle_Mesh *mesh);
 
-internal Triangle_Mesh gen_mesh_cube(real32 widht, real32 height, real32 length);
+internal Triangle_Mesh gen_mesh_cube(real32 widht, real32 height, real32 length, Vector3 color, real32 shininess = 32.f);
 internal Triangle_Mesh load_mesh(char *filepath, uint32 flags);
 
 internal void free_mesh(Triangle_Mesh *mesh);

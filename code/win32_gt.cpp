@@ -136,10 +136,16 @@ win32_opengl_get_functions() {
     opengl_get_function(glLinkProgram);
     opengl_get_function(glUseProgram);
     opengl_get_function(glDeleteProgram);
+    
+    opengl_get_function(glGenFramebuffers);
+    opengl_get_function(glGenRenderbuffers);
+    
     opengl_get_function(glGenBuffers);
     opengl_get_function(glDeleteBuffers);
     opengl_get_function(glBindVertexArray);
     opengl_get_function(glBindBuffer);
+    opengl_get_function(glBindFramebuffer);
+    opengl_get_function(glBindRenderbuffer);
     opengl_get_function(glBufferData);
     opengl_get_function(glBufferSubData);
     opengl_get_function(glVertexAttribPointer);
@@ -157,6 +163,12 @@ win32_opengl_get_functions() {
     opengl_get_function(glActiveTexture);
     opengl_get_function(glUniform1i);
     opengl_get_function(glGenerateMipmap);
+    
+    opengl_get_function(glCheckFramebufferStatus);
+    opengl_get_function(glFramebufferTexture2D);
+    opengl_get_function(glFramebufferRenderbuffer);
+    opengl_get_function(glRenderbufferStorage);
+    
     opengl_get_function(wglSwapIntervalEXT);
 }
 

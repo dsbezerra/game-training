@@ -1,6 +1,7 @@
 global_variable Shader global_shader;
 global_variable Shader global_basic_3d_shader;
 global_variable Shader global_basic_3d_light_shader;
+global_variable Shader global_screen_shader;
 
 internal Shader_Source
 parse_shader(char *filepath) {
@@ -170,10 +171,13 @@ reload_shaders() {
         unload_shader(&global_basic_3d_light_shader);
     if (global_basic_3d_shader.program)
         unload_shader(&global_basic_3d_shader);
+    if (global_screen_shader.program)
+        unload_shader(&global_screen_shader);
     
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
     global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");
     global_basic_3d_light_shader = load_shader("./data/shaders/basic_3d_light.glsl");
+    global_screen_shader = load_shader("./data/shaders/screen.glsl");
 }
 
 

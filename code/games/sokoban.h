@@ -11,10 +11,15 @@ Variant: Add all sorts of level gimmicks: teleport tiles, conveyor belts, button
 
 #define SOKOBAN_TITLE "Sokoban"
 
+#define SOKOBAN_WORLD_X 9
+#define SOKOBAN_WORLD_Y 9
+
 enum Sokoban_Entity_Kind {
     SokobanEntityKind_None,
-    SokobanEntityKind_Tile,
-    SokobanEntityKind_Light,
+    SokobanEntityKind_Block,
+    SokobanEntityKind_Rock,
+    SokobanEntityKind_Tree,
+    SokobanEntityKind_Star,
     SokobanEntityKind_Count,
 };
 
@@ -26,8 +31,6 @@ struct Sokoban_Entity {
 
 struct Sokoban_Assets {
     GLint none;
-    GLint container;
-    GLint container_specular;
 };
 
 struct Sokoban_Player {
@@ -37,17 +40,28 @@ struct Sokoban_Player {
     Triangle_Mesh mesh;
 };
 
+struct Sokoban_World {
+    u32 x_count;
+    u32 y_count;
+    
+    Sokoban_Entity *entities;
+    u32 num_entities;
+};
+
 struct Sokoban_State {
     Game_Mode Game_Mode;
     
     Sokoban_Assets assets;
     Sokoban_Player player;
-    Sokoban_Entity entities[16 * 16];
-
+    Sokoban_World world;
+    
+    Triangle_Mesh block;
+    Triangle_Mesh plane;
+    
     Camera cam;
     
     Vector2i dimensions;
-
+    
     s8 menu_selected_item;
     b32 quit_was_selected;
 };

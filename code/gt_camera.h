@@ -3,6 +3,7 @@
 enum Camera_Mode {
     CameraMode_None,
     CameraMode_Free,
+    CameraMode_LookAt,
     CameraMode_Count,
 };
 
@@ -13,6 +14,7 @@ struct Camera{
     Vector3 up;
     Vector3 right;
     Vector3 world_up;
+    Vector3 target;
     real32 fov;
     real32 yaw;
     real32 pitch;

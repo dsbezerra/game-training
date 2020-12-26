@@ -15,7 +15,6 @@
 // 
 // Buffer Objects
 //
-
 #define GL_ARRAY_BUFFER                   0x8892
 #define GL_ELEMENT_ARRAY_BUFFER           0x8893
 
@@ -39,6 +38,16 @@
 //
 // Extensions
 //
+#define GL_COLOR_ATTACHMENT0              0x8CE0
+#define GL_DEPTH_STENCIL_ATTACHMENT       0x821A
+
+#define GL_DEPTH24_STENCIL8               0x88F0
+
+#define GL_FRAMEBUFFER                    0x8D40
+#define GL_RENDERBUFFER                   0x8D41
+
+#define GL_FRAMEBUFFER_COMPLETE           0x8CD5
+
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
 #define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
@@ -85,9 +94,11 @@ typedef GLuint type_glLinkProgram(GLuint program);
 typedef void type_glUseProgram(GLuint program);
 typedef void type_glDeleteProgram(GLuint program);
 typedef void type_glGenBuffers(GLsizei n, GLuint * buffers);
+typedef void type_glGenFramebuffers(GLsizei n, GLuint * ids);
 typedef void type_glDeleteBuffers(GLsizei n, GLuint * buffers);
 typedef void type_glBindVertexArray(GLuint array);
 typedef void type_glBindBuffer(GLenum target, GLuint buffer);
+typedef void type_glBindFramebuffer(GLenum target, GLuint framebuffer);
 typedef void type_glBufferData(GLenum target, GLsizei size, const void * data, GLenum usage);
 typedef void type_glBufferSubData(GLenum target, GLsizei size, const void * data);
 typedef void type_glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
@@ -102,6 +113,13 @@ typedef void type_glActiveTexture(GLenum texture);
 typedef void type_glDrawArrays(GLenum mode, GLint first, GLsizei count);
 typedef void type_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid * indices);
 
+typedef GLenum type_glCheckFramebufferStatus(GLenum target);
+typedef void type_glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef void type_glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+
+typedef void type_glGenRenderbuffers(GLsizei n, GLuint * renderbuffers);
+typedef void type_glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void type_glBindRenderbuffer(GLenum target, GLuint renderbuffer);
 
 typedef GLint type_glGetUniformLocation(GLuint program, const GLchar *name);
 typedef void type_glUniform1i(GLint location, GLint v0);
@@ -172,9 +190,16 @@ struct Opengl {
     opengl_function(glUseProgram);
     opengl_function(glDeleteProgram);
     opengl_function(glGenBuffers);
+    
+    opengl_function(glGenFramebuffers);
+    opengl_function(glGenRenderbuffers);
+    
     opengl_function(glDeleteBuffers);
     opengl_function(glBindVertexArray);
     opengl_function(glBindBuffer);
+    opengl_function(glBindFramebuffer);
+    opengl_function(glBindRenderbuffer);
+    
     opengl_function(glBufferData);
     opengl_function(glBufferSubData);
     opengl_function(glVertexAttribPointer);
@@ -193,5 +218,11 @@ struct Opengl {
     opengl_function(glUniform1i);
     opengl_function(glGenerateMipmap);
     opengl_function(glGetDebugMessageLog);
+    
+    opengl_function(glCheckFramebufferStatus);
+    opengl_function(glFramebufferTexture2D);
+    opengl_function(glFramebufferRenderbuffer);
+    opengl_function(glRenderbufferStorage);
+    
     opengl_function(wglSwapIntervalEXT);
 };

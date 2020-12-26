@@ -19,6 +19,8 @@ end_profiling(Profiler_Item item) {
 
 inline void
 render_profiler(Vector2i dim, real32 dt) {
+    glDisable(GL_DEPTH_TEST); // Prevent overlapping the profiler.
+    
     Vector2 p = make_vector2(20.f, 40.f);
     Vector4 color = make_color(0xffaa55);
     
@@ -37,6 +39,8 @@ render_profiler(Vector2i dim, real32 dt) {
     render_2d_right_handed(dim.width, dim.height);
     
     draw_text(p.x, p.y, (u8 *) buf, &global_profiling_font.font, color);
+    
+    glEnable(GL_DEPTH_TEST);
 }
 
 inline void

@@ -382,6 +382,7 @@ render_2d_right_handed(int width, int height) {
     // NOTE(diego): This shader is reused for all 2D rendering.
     set_shader(global_shader);
     
+    
 #if 0
     Mat4 tm = identity();
     

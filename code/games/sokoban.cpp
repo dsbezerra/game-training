@@ -1,70 +1,95 @@
+
+        global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
+global_variable Vector3 plane_position = origin;
+
+internal Sokoban_Entity
+make_block(Vector3 position) {
+    Sokoban_Entity result = {};
+    result.kind = SokobanEntityKind_Block;
+    result.position = position;
+    return result;
+}
+
+internal real32
+get_block_value(int value, real32 size) {
+    return value * size;
+}
+
 internal void
 init_game(Sokoban_State *state) {
     state->Game_Mode = GameMode_Playing;
-    init_camera(&state->cam);
+    state->cam.position  = make_vector3(0.f, 5.f, 4.f);
     set_camera_mode(&state->cam, CameraMode_Free);
     
+    init_camera(&state->cam, -90.f, -65.f, 45.f);
     
-    state->cam.position = make_vector3(.0f, .0f, 3.0f);
+    Sokoban_World world = {};
+    world.x_count = SOKOBAN_WORLD_X;
+    world.y_count = SOKOBAN_WORLD_Y;
+    world.num_entities = world.x_count * world.y_count;
+    world.entities = (Sokoban_Entity *) platform_alloc(world.num_entities * sizeof(Sokoban_Entity));
+    state->world = world;
     
-    Vector4 white = make_color(0xffffffff);
+    real32 ground_y = 0.01f;
+    //
+    // Blocks
+    //
     
-    s32 stride = array_count(state->entities) / 16;
+    real32 block_size = 0.5f;
+    real32 bb = block_size / 2.f;
     
-    s32 cube_rows = 5;
+    u32 idx = 0;
     
-    s32 tile_x = 0;
-    s32 tile_y = 0;
+    // Last row
+    world.entities[idx++] = make_block(make_vector3(0.0f, bb, 2.0f));
+    world.entities[idx++] = make_block(make_vector3(0.5f, bb, 2.0f));
+    world.entities[idx++] = make_block(make_vector3(1.0f, bb, 2.0f));
+    
+    world.entities[idx++] = make_block(make_vector3(-0.5f, bb, 1.5f));
+    world.entities[idx++] = make_block(make_vector3(-0.5f, bb, 1.0f));
+    
+    world.entities[idx++] = make_block(make_vector3(-1.0f, bb, 0.5f));
+    world.entities[idx++] = make_block(make_vector3(-1.5f, bb, 0.5f));
+    
+    // left wall
+    world.entities[idx++] = make_block(make_vector3(-2.0f, bb, 0.0f));
+    world.entities[idx++] = make_block(make_vector3(-2.0f, bb, -0.5f));
+    world.entities[idx++] = make_block(make_vector3(-2.0f, bb, -1.0f));
+    
+    // right wall
+    world.entities[idx++] = make_block(make_vector3(2.0f, bb,  1.0f));
+    world.entities[idx++] = make_block(make_vector3(2.0f, bb,  0.5f));
+    world.entities[idx++] = make_block(make_vector3(2.0f, bb,  0.0f));
+    world.entities[idx++] = make_block(make_vector3(2.0f, bb, -0.5f));
+    world.entities[idx++] = make_block(make_vector3(2.0f, bb, -1.0f));
+    world.entities[idx++] = make_block(make_vector3(2.0f, bb, -1.5f));
+    
+    // top wall
+    world.entities[idx++] = make_block(make_vector3(-1.0f, bb, -2.0f));
+    world.entities[idx++] = make_block(make_vector3(-0.5f, bb, -2.0f));
+    world.entities[idx++] = make_block(make_vector3(0.0f, bb, -2.0f));
+    world.entities[idx++] = make_block(make_vector3(0.5f, bb, -2.0f));
+    world.entities[idx++] = make_block(make_vector3(1.0f, bb, -2.0f));
+    world.entities[idx++] = make_block(make_vector3(1.5f, bb, -2.0f));
     
     
-    for (int i = 2; i < 3; i++) {
-        
-        Sokoban_Entity *entity = &state->entities[i];
-        
-        entity->kind = SokobanEntityKind_Tile;
-        
-        Vector3 p = make_vector3(tile_x * .5f, .0f, tile_y * 0.5f);
-        entity->position.x = p.x;
-        entity->position.y = p.y;
-        entity->position.z = p.z;
-        
-        entity->color = make_vector4(1.0f, 1.0f, 1.0f, 1.f);
-        if (tile_x >= cube_rows) {
-            tile_x = 0;
-            tile_y++;
-        }
-        
-        tile_x++;
-    }
+    //
+    // Load meshes
+    //
+    Vector3 plane_color = make_vector3(206.f/255.f, 209.f/255.f, 200.f/255.f);
+    Vector3 block_color = make_vector3(180.f/255.f, 118.f/255.f, 61.f/255.f);
     
-    Vector3 point_light_positions[] = {
-        make_vector3( 0.7f,  0.2f,  8.0f),
-        make_vector3( 4.3f, -3.3f, -4.0f),
-    };
-    
-    Sokoban_Entity *first_light  = &state->entities[0];
-    Sokoban_Entity *second_light = &state->entities[1];
-    
-    first_light->kind = SokobanEntityKind_Light;
-    first_light->position = point_light_positions[0];
-    first_light->color = make_color(0xffffffff);
-    
-    second_light->kind = SokobanEntityKind_Light;
-    second_light->position = point_light_positions[1];
-    second_light->color = make_color(0xffff00ff);
-    
+    state->block = gen_mesh_cube(block_size, block_size, block_size, block_color, 128.f);
+    real32 plane_size = (real32) world.x_count * .5f;
+    state->plane = gen_mesh_cube(plane_size, 0.01f, plane_size, plane_color, 64.f);
     
     //
     // Player
     //
     Sokoban_Player player = {};
-    player.position = make_vector3(0.f, 0.f, 0.f);
+    player.position = make_vector3(0.f, 1.f, 4.5f);
     player.velocity = make_vector3(0.f, 0.f, 0.f);
-    
-    //
-    // Load mesh
-    //
-    player.mesh = load_mesh("./data/models/backpack/backpack.obj", MESH_FLIP_UVS);
+    player.mesh = load_mesh("./data/models/cylinder.obj", MESH_FLIP_UVS);
     
     state->player = player;
 }
@@ -72,177 +97,72 @@ init_game(Sokoban_State *state) {
 internal void
 update_game(Sokoban_State *state, Game_Input *input) {
     // TODO
-    update_camera(&state->cam, input);
-}
-
-internal void
-draw_tile(Sokoban_State *state) {
-    set_shader(global_basic_3d_shader);
+    Camera *cam = &state->cam;
+    update_camera(cam, input);
     
-    set_float3("dir_light.ambient", make_vector3(0.05f, 0.05f, 0.05f));
-    set_float3("dir_light.diffuse", make_vector3(0.4f, 0.4f, 0.4f));
-    set_float3("dir_light.specular", make_vector3(0.5f, 0.5f, 0.5f));
-    set_float3("dir_light.direction", make_vector3(-0.2f, -1.0f, -0.3f));
-    
-    
-    Vector4 color = state->entities[0].color;
-    set_float3("point_lights[0].position", state->entities[0].position);
-    set_float3("point_lights[0].ambient", make_vector3(0.05f, 0.05f, 0.05f));
-    set_float3("point_lights[0].diffuse", make_vector3(0.8f, 0.8f, 0.8f));
-    set_float3("point_lights[0].specular", make_vector3(color.r, color.g, color.b));
-    set_float("point_lights[0].constant", 1.f);
-    set_float("point_lights[0].linear", .09f);
-    set_float("point_lights[0].quadratic", .0032f);
-    
-    color = state->entities[1].color;
-    set_float3("point_lights[1].position", state->entities[1].position);
-    set_float3("point_lights[1].ambient", make_vector3(0.05f, 0.05f, 0.05f));
-    set_float3("point_lights[1].diffuse", make_vector3(0.8f, 0.8f, 0.8f));
-    set_float3("point_lights[1].specular", make_vector3(color.r, color.g, color.b));
-    set_float("point_lights[1].constant", 1.f);
-    set_float("point_lights[1].linear", .09f);
-    set_float("point_lights[1].quadratic", .0032f);
-    
-    
-    // Set material values
-    
-    set_float3("view_position", state->cam.position);
+    if (pressed(Button_Enter)) {
+        if (cam->mode == CameraMode_Free) 
+            set_camera_mode(cam, CameraMode_LookAt);
+        else 
+            set_camera_mode(cam, CameraMode_Free);
+    }
 }
 
 internal void
 draw_game_view(Sokoban_State *state) {
     if (state->Game_Mode == GameMode_Playing) {
-        // TODO
-#define TEST_3D 1
-#if TEST_3D
         
         render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
         
-        glClearColor(.2f, .3f, 0.2f, 1.f);
+        glClearColor(0.f/255.f, 170.f/255.f, 255.f/255.f, 255.f/255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        Vector4 white = make_color(0xffffffff);
         view_matrix = get_view_matrix(&state->cam);
-        
-        Sokoban_Entity *light = &state->entities[0];
-        
-        
-#if 0
-        open_gl->glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, state->assets.container);
-        
-        open_gl->glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, state->assets.container_specular);
-        
-        for (Sokoban_Entity *entity = state->entities; entity != state->entities + array_count(state->entities); entity++) {
-            
-            if (entity->kind == SokobanEntityKind_None) {
-                continue;
-            }
-            
-            Mat4 model_matrix = translate(entity->position);
-            
-            switch (entity->kind) {
-                case SokobanEntityKind_Tile: {
-                    // TODO(diego): Specific tile stuff
-                    draw_tile(state);
-                } break;
-                case SokobanEntityKind_Light: {
-                    
-                    set_shader(global_basic_3d_light_shader);
-                    set_float4("light_color", white);
-                    
-                    model_matrix = scale(model_matrix, make_vector3(.2f, .2f, .2f));
-                } break;
-                
-                default: {
-                    continue;
-                } break;
-            }
-            
-            immediate_begin();
-            
-            Vector3 n0 = make_vector3(0.0f,  0.0f, -1.0f);
-            immediate_vertex(make_vector3(-.5f, -.5f, -.5f), entity->color, make_vector2(.0f, .0f), n0);
-            immediate_vertex(make_vector3( .5f, -.5f, -.5f), entity->color, make_vector2(1.f, .0f), n0);
-            immediate_vertex(make_vector3( .5f,  .5f, -.5f), entity->color, make_vector2(1.f, 1.f), n0);
-            immediate_vertex(make_vector3( .5f,  .5f, -.5f), entity->color, make_vector2(1.f, 1.f), n0);
-            immediate_vertex(make_vector3(-.5f,  .5f, -.5f), entity->color, make_vector2(.0f, 1.f), n0);
-            immediate_vertex(make_vector3(-.5f, -.5f, -.5f), entity->color, make_vector2(.0f, .0f), n0);
-            
-            Vector3 n1 = make_vector3(0.0f,  0.0f,  1.0f);
-            immediate_vertex(make_vector3(-.5f, -.5f,  .5f), entity->color, make_vector2(.0f, .0f), n1);
-            immediate_vertex(make_vector3( .5f, -.5f,  .5f), entity->color, make_vector2(1.f, .0f), n1);
-            immediate_vertex(make_vector3( .5f,  .5f,  .5f), entity->color, make_vector2(1.f, 1.f), n1);
-            immediate_vertex(make_vector3( .5f,  .5f,  .5f), entity->color, make_vector2(1.f, 1.f), n1);
-            immediate_vertex(make_vector3(-.5f,  .5f,  .5f), entity->color, make_vector2(.0f, 1.f), n1);
-            immediate_vertex(make_vector3(-.5f, -.5f,  .5f), entity->color, make_vector2(.0f, .0f), n1);
-            
-            Vector3 n2 = make_vector3(-1.0f,  0.0f,  0.0f);
-            immediate_vertex(make_vector3(-.5f,  .5f,  .5f), entity->color, make_vector2(1.0f, .0f), n2);
-            immediate_vertex(make_vector3(-.5f,  .5f, -.5f), entity->color, make_vector2(1.f, 1.0f), n2);
-            immediate_vertex(make_vector3(-.5f, -.5f, -.5f), entity->color, make_vector2(0.f, 1.f), n2);
-            immediate_vertex(make_vector3(-.5f, -.5f, -.5f), entity->color, make_vector2(0.f, 1.f), n2);
-            immediate_vertex(make_vector3(-.5f, -.5f,  .5f), entity->color, make_vector2(.0f, 0.f), n2);
-            immediate_vertex(make_vector3(-.5f,  .5f,  .5f), entity->color, make_vector2(1.0f, .0f), n2);
-            
-            Vector3 n3 = make_vector3(1.0f,  0.0f,  0.0f);
-            immediate_vertex(make_vector3( .5f,  .5f,  .5f), entity->color, make_vector2(1.0f, .0f), n3);
-            immediate_vertex(make_vector3( .5f,  .5f, -.5f), entity->color, make_vector2(1.f, 1.0f), n3);
-            immediate_vertex(make_vector3( .5f, -.5f, -.5f), entity->color, make_vector2(0.f, 1.f), n3);
-            immediate_vertex(make_vector3( .5f, -.5f, -.5f), entity->color, make_vector2(0.f, 1.f), n3);
-            immediate_vertex(make_vector3( .5f, -.5f,  .5f), entity->color, make_vector2(.0f, 0.f), n3);
-            immediate_vertex(make_vector3( .5f,  .5f,  .5f), entity->color, make_vector2(1.0f, .0f), n3);
-            
-            Vector3 n4 = make_vector3(0.0f,  -1.0f,  0.0f);
-            immediate_vertex(make_vector3(-.5f, -.5f, -.5f), entity->color, make_vector2(.0f, 1.0f), n4);
-            immediate_vertex(make_vector3( .5f, -.5f, -.5f), entity->color, make_vector2(1.f, 1.0f), n4);
-            immediate_vertex(make_vector3( .5f, -.5f,  .5f), entity->color, make_vector2(1.f, 0.f), n4);
-            immediate_vertex(make_vector3( .5f, -.5f,  .5f), entity->color, make_vector2(1.f, 0.f), n4);
-            immediate_vertex(make_vector3(-.5f, -.5f,  .5f), entity->color, make_vector2(.0f, 0.f), n4);
-            immediate_vertex(make_vector3(-.5f, -.5f, -.5f), entity->color, make_vector2(.0f, 1.0f), n4);
-            
-            Vector3 n5 = make_vector3(0.0f,  1.0f,  0.0f);
-            immediate_vertex(make_vector3(-.5f,  .5f, -.5f), entity->color, make_vector2(.0f, 1.0f), n5);
-            immediate_vertex(make_vector3( .5f,  .5f, -.5f), entity->color, make_vector2(1.f, 1.0f), n5);
-            immediate_vertex(make_vector3( .5f,  .5f,  .5f), entity->color, make_vector2(1.f, 0.f), n5);
-            immediate_vertex(make_vector3( .5f,  .5f,  .5f), entity->color, make_vector2(1.f, 0.f), n5);
-            immediate_vertex(make_vector3(-.5f,  .5f,  .5f), entity->color, make_vector2(.0f, 0.f), n5);
-            immediate_vertex(make_vector3(-.5f,  .5f, -.5f), entity->color, make_vector2(.0f, 1.0f), n5);
-            
-            set_Mat4("model", model_matrix);
-            refresh_shader_transform();
-            
-            immediate_flush();
-        }
-#else
         
         //
         // Draw player
         //
         
-        draw_tile(state);
-        
-        Mat4 model_matrix = translate(state->player.position);
-        
-        local_persist real32 angle = time_info.dt;
-        
-        model_matrix = y_rotation(angle_to_radians(angle));
-        set_mat4("model", model_matrix);
-        
-        angle += time_info.dt * 30.f;
-        if (angle > 360.f) {
-            angle -= 360.f;
-        }
-        
+        set_shader(global_basic_3d_shader);
         refresh_shader_transform();
         
-        draw_mesh(&state->player.mesh);
+        set_float3("view_position", state->cam.position);
         
-#endif
-#endif
+        // Draw plane
+        {
+            set_mat4("model", translate(plane_position));
+            draw_mesh(&state->plane);
+        }
         
+        //
+        // Draw test blocks
+        //
+        {
+            for (u32 i = 0; i < state->world.num_entities; ++i) {
+                Sokoban_Entity entity = state->world.entities[i];
+                if (entity.kind == SokobanEntityKind_Block) {
+                    set_mat4("model", translate(entity.position));
+                    draw_mesh(&state->block);
+                }
+            }
+        }
+        
+        {
+            local_persist real32 angle = time_info.dt;
+            
+            Mat4 model_matrix = translate(state->player.position);
+            set_mat4("model", model_matrix);
+            
+            angle += time_info.dt * 30.f;
+            if (angle > 360.f) {
+                angle -= 360.f;
+            }
+            draw_mesh(&state->player.mesh);
+        }
         open_gl->glActiveTexture(GL_TEXTURE0);
+        
+        draw_camera_debug(&state->cam, state->dimensions);
+        
     } else {
         draw_menu(SOKOBAN_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
@@ -271,8 +191,6 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         state = (Sokoban_State *) game_alloc(memory, megabytes(12));
         state->assets.none = load_texture("./data/textures/sokoban/none.jpg");
-        state->assets.container = load_texture("./data/textures/sokoban/container.png");
-        state->assets.container_specular = load_texture("./data/textures/sokoban/container_specular.png");
         
         state->cam.position = make_vector3(.0f, 0.f, -3.f);
         

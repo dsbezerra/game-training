@@ -206,6 +206,29 @@ set_texture(char *name, Texture_Map *map) {
     
 }
 
+internal Triangle_List_Info
+make_triangle_list_info(int start_index, int num_indices, int material_index) {
+    Triangle_List_Info result = {};
+    result.start_index = start_index;
+    result.num_indices = num_indices;
+    result.material_index = material_index;
+    return result;
+}
+
+internal Render_Material
+make_solid_material(Vector3 color, real32 shininess = 32.f) {
+    Render_Material result = {};
+    
+    result.specular_color = make_vector3(1.f, 1.f, 1.f);
+    result.diffuse_color = color;
+    result.ambient_color = color * .2f;
+    result.shininess = shininess;
+    
+    //result.name = ;
+    
+    return result;
+}
+
 internal void
 draw_mesh(Triangle_Mesh *mesh) {
     assert(mesh);
@@ -239,13 +262,13 @@ draw_mesh(Triangle_Mesh *mesh) {
         
         s32 index = tli->start_index * index_size;
         open_gl->glDrawElements(GL_TRIANGLES, tli->num_indices, GL_UNSIGNED_INT, (void *) index);
-        
+        draw_call_count++;
     }
     open_gl->glBindVertexArray(0);
 }
 
 internal Triangle_Mesh
-gen_mesh_cube(real32 width, real32 height, real32 length) {
+gen_mesh_cube(real32 width, real32 height, real32 length, Vector3 color, real32 shininess) {
     Triangle_Mesh mesh = { 0 };
     
     Vector3 vertices[] = {
@@ -358,14 +381,21 @@ gen_mesh_cube(real32 width, real32 height, real32 length) {
     mesh.vertex_count = 24;
     mesh.index_count = 12 * 3;
     
-    mesh.triangle_list_count = 1;
-    mesh.triangle_list_info = (Triangle_List_Info *) platform_alloc(sizeof(Triangle_List_Info));
+    // Setup material info
+    {
+        mesh.material_info_count = 1;
+        mesh.material_info = (Render_Material *) platform_alloc(mesh.material_info_count * sizeof(Render_Material));
+        mesh.material_info[0] = make_solid_material(color, shininess);
+    }
     
-    Triangle_List_Info info = {};
-    info.start_index = 0;
-    info.num_indices = 36;
-    info.material_index = -1;
-    mesh.triangle_list_info[0] = info;
+    // Setup triangle list info
+    {
+        mesh.triangle_list_count = 1;
+        mesh.triangle_list_info = (Triangle_List_Info *) platform_alloc(mesh.triangle_list_count * sizeof(Triangle_List_Info));
+        mesh.triangle_list_info[0] = make_triangle_list_info(0, 36, 0);
+    }
+    
+    init_mesh(&mesh);
     
     return mesh;
 }
@@ -374,11 +404,8 @@ internal Triangle_Mesh
 load_mesh(char *filepath, uint32 flags) {
     Triangle_Mesh result = {};
     
-#if 0
-    result = gen_mesh_cube(12.f, 0.5f, 12.f);
-#else
     result = load_mesh_from_obj(filepath, flags);
-#endif
+    
     result.filepath = filepath;
     
     //
