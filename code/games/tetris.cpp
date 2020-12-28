@@ -704,7 +704,7 @@ tetris_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                 state->move_t -= state->move_t_target;
                 move_piece(state);
             } else {
-                state->move_t += time_info.dt * state->move_dt;
+                state->move_t += core.time_info.dt * state->move_dt;
             }
         }
     } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {

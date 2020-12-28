@@ -21,7 +21,20 @@ struct Game_Time_Info {
     real32 current_time;
 };
 
-struct Game_Sound_Output_Buffer;
+struct Game_Core {
+    Game_Time_Info time_info;
+};
+
+struct Game_Sound_Buffer {
+    int size; // buffer size in bytes
+    int num_channels;
+    int samples_per_second;
+    int bytes_per_sample;
+    int running_sample_index;
+    
+    s16 *samples;
+    int samples_to_write;
+};
 
 struct Game_Menu_Art {
     GLuint dodger;
@@ -153,7 +166,7 @@ struct App_State {
 #include "gt_camera.h" // TODO(diego): Refactor so this can be up there with other h files.
 #include "gt_games.h"
 
-internal void game_output_sound(Game_Sound_Output_Buffer *sound_buffer);
+internal void game_output_sound(Game_Sound_Buffer *sound_buffer);
 internal void game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input);
 
 internal void *game_alloc(Game_Memory *memory, u64 size);
@@ -163,6 +176,8 @@ internal void game_quit(App_State *state);
 internal void advance_menu_choice(s8 *current_choice, s8 delta);
 
 internal GLint load_menu_art(char *filename);
+
+internal real32 get_current_time();
 
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)

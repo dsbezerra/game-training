@@ -281,12 +281,12 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                 
             } else if (state->mode == SimonMode_DisplayPattern) {
                 if (state->flashing_t < state->flashing_t_target) {
-                    state->flashing_t += time_info.dt * state->flashing_dt;
+                    state->flashing_t += core.time_info.dt * state->flashing_dt;
                     if (state->flashing_t > state->flashing_t_target) {
                         state->flashing_t_target = .0f;
                     }
                 } else if (state->flashing_t > state->flashing_t_target) {
-                    state->flashing_t -= time_info.dt * state->flashing_dt;
+                    state->flashing_t -= core.time_info.dt * state->flashing_dt;
                     if (state->flashing_t < state->flashing_t_target) {
                         state->flashing_t_target = 1.f;
                         state->displaying_index++;

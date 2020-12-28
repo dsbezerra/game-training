@@ -6,7 +6,7 @@
 #include "gt_profiler.cpp"
 #include "gt_mesh.cpp"
 
-global_variable Game_Time_Info time_info = {};
+global_variable Game_Core core = {};
 
 #include "gt_camera.cpp"
 
@@ -50,7 +50,7 @@ draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item,
         if (menu_selected_item == menu_item) {
             Vector4 non_white = make_color(0xffffde00);
             
-            real32 now = cosf(time_info.current_time);
+            real32 now = cosf(core.time_info.current_time);
             real32 t = cosf(now * 3);
             t *= t;
             
@@ -244,10 +244,23 @@ advance_game(App_State *state, int value) {
     global_press_t = .0f;
 }
 
-// TODO(diego): Add sound
 internal void
-game_output_sound(Game_Sound_Output_Buffer *sound_buffer) {
+game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
+    local_persist real32 t = .0f;
+    int16 tone_volume = is_down(Button_Space) ? 5000 : 3000;
+    int tone_hz = is_down(Button_Space) ? 512 : 256;
+    int wave_period = sound_buffer->samples_per_second / tone_hz;
     
+    int16 *sample_out = sound_buffer->samples;
+    for (int sample_index = 0; sample_index < sound_buffer->samples_to_write; ++sample_index) {
+        real32 value = sinf(t);
+        int16 sample_value = (int16) (value * tone_volume);
+        
+        *sample_out++ = sample_value;
+        *sample_out++ = sample_value;
+        
+        t += 2.f * PI * 1.f / (real32) wave_period;
+    }
 }
 
 internal void
@@ -261,7 +274,7 @@ update_mode_selecting(App_State *state, Game_Input *input) {
         if (global_press_t >= press_t_target) {
             advance_game(state, -1);
         }
-        global_press_t += time_info.dt;
+        global_press_t += core.time_info.dt;
     }
     if (pressed(Button_Right)) {
         advance_game(state, 1);
@@ -269,7 +282,7 @@ update_mode_selecting(App_State *state, Game_Input *input) {
         if (global_press_t >= press_t_target) {
             advance_game(state, 1);
         }
-        global_press_t += time_info.dt;
+        global_press_t += core.time_info.dt;
     }
     if (pressed(Button_Enter)) {
         if (state->current_selecting_game > Game_None && state->current_selecting_game < Game_Count) {
@@ -297,7 +310,7 @@ render_mode_selecting(App_State *state) {
     
     real32 border_width = selection_width * 0.012f;
     
-    real32 now = time_info.current_time;
+    real32 now = core.time_info.current_time;
     real32 t = cosf(now);
     t *= t;
     t = .4f + t;
@@ -432,6 +445,6 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         reload_shaders();
         t -= 1.f;
     }
-    t += time_info.dt;
+    t += core.time_info.dt;
     
 }

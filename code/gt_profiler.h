@@ -3,6 +3,7 @@
 enum Profiler_Item {
     ProfilerItem_Input,
     ProfilerItem_GameUpdateAndRender,
+    ProfilerItem_Audio,
     ProfilerItem_Count,
 };
 

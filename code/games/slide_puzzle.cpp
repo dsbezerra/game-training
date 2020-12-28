@@ -91,7 +91,7 @@ update_generating(Slide_Puzzle_State *state) {
         ++generation->tile_index;
         state->board.solution[tile->id - 1] = generation->number++;
     } else if (generation->tile_index < len) {
-        generation->fill_t += time_info.dt * speed;
+        generation->fill_t += core.time_info.dt * speed;
     } else {
         
         if (generation->shuffle_t >= generation->shuffle_target) {
@@ -113,7 +113,7 @@ update_generating(Slide_Puzzle_State *state) {
             --generation->shuffle_index;
             
         } else if (generation->shuffle_index >= 1) {
-            generation->shuffle_t += time_info.dt * speed;
+            generation->shuffle_t += core.time_info.dt * speed;
         } else {
             state->mode = SlidePuzzleMode_Ready;
         }
@@ -382,14 +382,14 @@ slide_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                             state->swap.from_index = state->board.empty_index;
                             state->swap.to_index = new_empty_index;
                             state->board.empty_index = new_empty_index;
-                            state->sliding_t += time_info.dt;
+                            state->sliding_t += core.time_info.dt;
                         }
                     } else {
                         state->Game_Mode = GameMode_Menu;
                     }
                     
                 } else {
-                    state->sliding_t += time_info.dt * state->sliding_t_rate;
+                    state->sliding_t += core.time_info.dt * state->sliding_t_rate;
                     if (state->sliding_t >= state->sliding_target) {
                         state->sliding_t = .0f;
                         state->swap.to_index = -1;

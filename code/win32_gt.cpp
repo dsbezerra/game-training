@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <dsound.h>
 
 #include "gt.cpp"
 
@@ -8,11 +9,14 @@ global_variable bool global_running = false;
 global_variable HWND global_window;
 global_variable HCURSOR default_cursor;
 
+global_variable LPDIRECTSOUNDBUFFER win32_sound_buffer;
+
 global_variable wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
 global_variable wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
 
 global_variable App_State state = {};
 global_variable Game_Input input = {};
+global_variable Game_Sound_Buffer sound_buffer = {};
 
 #define process_button(vk, b) \
 if (vk_code == vk) {\
@@ -178,6 +182,121 @@ win32_opengl_refresh_vsync() {
     
     int value = global_vsync ? 1 : 0;
     open_gl->wglSwapIntervalEXT(value);
+}
+
+internal void
+win32_init_audio(HWND window) {
+    LPDIRECTSOUND8 direct_sound;
+    if (SUCCEEDED(DirectSoundCreate8(0, &direct_sound, 0))) {
+        if (SUCCEEDED(direct_sound->SetCooperativeLevel(window, DSSCL_PRIORITY))) {
+            // Set buffer values
+            sound_buffer.num_channels = 2;
+            sound_buffer.samples_per_second = 44100;
+            sound_buffer.bytes_per_sample = sound_buffer.num_channels * sizeof(s16);
+            sound_buffer.size = sound_buffer.samples_per_second*sound_buffer.bytes_per_sample;
+            
+            // Create secondary buffer
+            // NOTE(diego): DirectSound8 creates the primary buffer for us.
+            WAVEFORMATEX wave_format = {};
+            wave_format.wFormatTag = WAVE_FORMAT_PCM; 
+            wave_format.nChannels = (WORD) sound_buffer.num_channels; 
+            wave_format.nSamplesPerSec = sound_buffer.samples_per_second; 
+            wave_format.wBitsPerSample = 16;
+            wave_format.nBlockAlign = (wave_format.nChannels * wave_format.wBitsPerSample) / 8;
+            wave_format.nAvgBytesPerSec = wave_format.nSamplesPerSec * wave_format.nBlockAlign; 
+            
+            DSBUFFERDESC buf_desc = {};
+            buf_desc.dwSize = sizeof(buf_desc);
+            buf_desc.dwFlags = DSBCAPS_GLOBALFOCUS;
+            buf_desc.dwBufferBytes = sound_buffer.size;
+            buf_desc.lpwfxFormat = &wave_format;
+            
+            if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buf_desc, &win32_sound_buffer, 0))) {
+                // Success!!
+            } else {
+                invalid_code_path;
+            }
+            
+        } else {
+            invalid_code_path;
+        }
+    } else {
+        invalid_code_path;
+    }
+}
+
+internal void
+win32_clear_sound_buffer() {
+    void *region_1;
+    DWORD region_1_size;
+    void *region_2;
+    DWORD region_2_size;
+    
+    HRESULT result = win32_sound_buffer->Lock(0, sound_buffer.size, &region_1, &region_1_size, &region_2, &region_2_size, 0);
+    if (result == DSERR_BUFFERLOST) {
+        win32_sound_buffer->Restore();
+        result = win32_sound_buffer->Lock(0, sound_buffer.size, &region_1, &region_1_size, &region_2, &region_2_size, 0);
+    }
+    if (SUCCEEDED(result)) {
+        s16 *at = (s16 *) region_1;
+        DWORD region_1_sample_count = region_1_size / sound_buffer.bytes_per_sample;
+        for (DWORD i = 0; i < region_1_sample_count; i++) {
+            *at++ = 0; *at++ = 0;
+        }
+        
+        DWORD region_2_sample_count = region_2_size / sound_buffer.bytes_per_sample;
+        at = (s16 *) region_2;
+        for (DWORD i = 0; i < region_2_sample_count; i++) {
+            *at++ = 0; *at++ = 0;
+        }
+        
+        if (!SUCCEEDED(win32_sound_buffer->Unlock(region_1, region_1_size, region_2, region_2_size))) {
+            invalid_code_path;
+        }
+    } else {
+        invalid_code_path;
+    }
+    
+}
+
+
+internal void
+win32_fill_sound_buffer(DWORD byte_to_lock, DWORD bytes_to_write) {
+    void *region_1;
+    DWORD region_1_size;
+    void *region_2;
+    DWORD region_2_size;
+    
+    HRESULT result = win32_sound_buffer->Lock(byte_to_lock, bytes_to_write, &region_1, &region_1_size, &region_2, &region_2_size, 0);
+    if (result == DSERR_BUFFERLOST) {
+        win32_sound_buffer->Restore();
+        result = win32_sound_buffer->Lock(byte_to_lock, bytes_to_write, &region_1, &region_1_size, &region_2, &region_2_size, 0);
+    }
+    if (SUCCEEDED(result)) {
+        s16 *source = sound_buffer.samples;
+        
+        s16 *dest = (s16 *) region_1;
+        DWORD region_1_sample_count = region_1_size / sound_buffer.bytes_per_sample;
+        for (DWORD i = 0; i < region_1_sample_count; i++) {
+            *dest++ = *source++;
+            *dest++ = *source++;
+            ++sound_buffer.running_sample_index;
+        }
+        
+        DWORD region_2_sample_count = region_2_size / sound_buffer.bytes_per_sample;
+        dest = (s16 *) region_2;
+        for (DWORD i = 0; i < region_2_sample_count; i++) {
+            *dest++ = *source++;
+            *dest++ = *source++;
+            ++sound_buffer.running_sample_index;
+        }
+        
+        if (!SUCCEEDED(win32_sound_buffer->Unlock(region_1, region_1_size, region_2, region_2_size))) {
+            invalid_code_path;
+        }
+    } else {
+        invalid_code_path;
+    }
 }
 
 internal void
@@ -505,12 +624,20 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             HDC window_dc = GetDC(window);
             
             win32_init_opengl(window);
+            {
+                win32_init_audio(window);
+                win32_clear_sound_buffer();
+                if (!SUCCEEDED(win32_sound_buffer->Play(0, 0, DSBPLAY_LOOPING))) {
+                    invalid_code_path;
+                }
+                sound_buffer.samples = (s16 *) VirtualAlloc(0, sound_buffer.size, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+            }
+            
+            input.mouse.position = state.window_center;
             
             LARGE_INTEGER frequency_counter_large;
             QueryPerformanceFrequency(&frequency_counter_large);
             real32 frequency_counter = (real32) frequency_counter_large.QuadPart;
-            
-            input.mouse.position = state.window_center;
             
             LARGE_INTEGER last_counter;
             QueryPerformanceCounter(&last_counter);
@@ -518,13 +645,14 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             global_running = true;
             
             Game_Memory memory = {};
-            
             state.memory = &memory;
             
             init_draw();
             
-            
             while (global_running) {
+                
+                core.time_info.current_time += last_dt;
+                core.time_info.dt = last_dt;
                 
                 draw_call_count = 0;
                 
@@ -539,15 +667,62 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 
                 end_profiling(ProfilerItem_Input);
                 
-                // Game Update and render
-                begin_profiling(ProfilerItem_GameUpdateAndRender);
-                
                 memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
                 
+                // Game Update and render
+                begin_profiling(ProfilerItem_GameUpdateAndRender);
                 game_update_and_render(&state, &memory, &input);
-                
                 end_profiling(ProfilerItem_GameUpdateAndRender);
+                
+                // Audio
+                {
+                    begin_profiling(ProfilerItem_Audio);
+                    DWORD play_cursor, write_cursor;
+                    if (win32_sound_buffer->GetCurrentPosition(&play_cursor, &write_cursor) == DS_OK) {
+                        
+                        DWORD byte_to_lock = (sound_buffer.running_sample_index * sound_buffer.bytes_per_sample) % sound_buffer.size;
+                        
+                        DWORD safety_bytes = (int) ((real32) (sound_buffer.samples_per_second * sound_buffer.bytes_per_sample) * target_dt);
+                        
+                        DWORD expected_bytes_per_tick = (DWORD) ((real32) (sound_buffer.samples_per_second * sound_buffer.bytes_per_sample) * target_dt);
+                        
+                        DWORD expected_boundary_byte = play_cursor + expected_bytes_per_tick;
+                        
+                        DWORD safe_write_buffer = write_cursor;
+                        if (safe_write_buffer < play_cursor) {
+                            safe_write_buffer += sound_buffer.size;
+                        }
+                        safe_write_buffer += safety_bytes;
+                        
+                        DWORD target_cursor;
+                        if (safe_write_buffer < expected_boundary_byte) {
+                            target_cursor = expected_boundary_byte + expected_bytes_per_tick;
+                        } else {
+                            target_cursor = write_cursor + expected_bytes_per_tick + safety_bytes;
+                        }
+                        target_cursor %= sound_buffer.size;
+                        
+                        DWORD bytes_to_write;
+                        if (byte_to_lock > target_cursor) {
+                            bytes_to_write = sound_buffer.size - byte_to_lock + target_cursor;
+                        } else {
+                            bytes_to_write = target_cursor - byte_to_lock;
+                        }
+                        
+                        if (bytes_to_write) {
+                            sound_buffer.samples_to_write = bytes_to_write / sound_buffer.bytes_per_sample;
+                            assert(bytes_to_write % 4 == 0);
+                            game_output_sound(&sound_buffer, &input);
+                            win32_fill_sound_buffer(byte_to_lock, bytes_to_write);
+                        } else {
+                            OutputDebugString("Nothing to write...\n");
+                        }
+                        end_profiling(ProfilerItem_Audio);
+                    } else {
+                        invalid_code_path;
+                    }
+                }
                 
                 render_profiler(state.window_dimensions, last_dt);
                 
@@ -576,12 +751,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 
                 // Get the frame time
                 LARGE_INTEGER end_counter = win32_get_wallclock();
-                
                 last_dt = win32_get_seconds_elapsed(last_counter, end_counter);
                 last_counter = end_counter;
-                
-                time_info.current_time += last_dt;
-                time_info.dt = last_dt;
             }
             
             ReleaseDC(window, window_dc);

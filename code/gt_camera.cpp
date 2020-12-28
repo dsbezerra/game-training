@@ -79,7 +79,7 @@ update_camera(Camera *cam, Game_Input *input) {
             
             update_vectors(cam);
             
-            real32 speed = 2.5f * time_info.dt;
+            real32 speed = 2.5f * core.time_info.dt;
             if (is_down(Button_Space)) {
                 speed *= 10.f;
             }

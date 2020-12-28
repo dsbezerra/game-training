@@ -113,7 +113,7 @@ advance_snake(Nibbles_State *state) {
             state->apple.kind = NibblesEntity_None;
             Nibbles_Entity *last = &state->snake[state->snake_length - 1];
             state->snake[state->snake_length++] = make_entity(NibblesEntity_Snake, last->x, last->y);
-            state->last_eaten_apple_time = time_info.current_time;
+            state->last_eaten_apple_time = core.time_info.current_time;
         }
     }
 }
@@ -239,7 +239,7 @@ nibbles_game_update_and_render(Game_Memory *memory, Game_Input *input) {
             } else if (pressed(Button_Down) && state->direction != NibblesSnakeDirection_Up) {
                 state->direction = NibblesSnakeDirection_Down;
             }
-            if (state->apple.kind == NibblesEntity_None && (time_info.current_time - state->last_eaten_apple_time) > .5f) {
+            if (state->apple.kind == NibblesEntity_None && (core.time_info.current_time - state->last_eaten_apple_time) > .5f) {
                 while (1) {
                     u8 spawn_x = (u8) random_int_in_range(1, NIBBLES_WORLD_X_COUNT - 2);
                     u8 spawn_y = (u8) random_int_in_range(1, NIBBLES_WORLD_Y_COUNT - 2);
@@ -257,7 +257,7 @@ nibbles_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                 advance_snake(state);
             }
             
-            state->step_t += time_info.dt * state->step_dt;
+            state->step_t += core.time_info.dt * state->step_dt;
         }
     } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {

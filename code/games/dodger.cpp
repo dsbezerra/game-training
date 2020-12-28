@@ -55,7 +55,7 @@ update_player(Dodger_State *state, Game_Input *input) {
     Game_Mouse mouse = input->mouse;
     Vector2 velocity = make_vector2(mouse.sensitivity * mouse.velocity.x, mouse.sensitivity * mouse.velocity.y);
     
-    real32 speed = 100.f * time_info.dt;
+    real32 speed = 100.f * core.time_info.dt;
     if (is_down(Button_Space)) {
         speed *= 2;
     }
@@ -81,7 +81,7 @@ update_player(Dodger_State *state, Game_Input *input) {
 internal void
 update_bad_guy(Dodger_State *state, Dodger_Bad_Guy *bad_guy) {
     Vector2 velocity = {};
-    real32 speed = 100.f * time_info.dt;
+    real32 speed = 100.f * core.time_info.dt;
     
     bad_guy->position.y += speed;
     

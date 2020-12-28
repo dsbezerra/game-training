@@ -453,7 +453,7 @@ memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
             // If we are checking for equal cards then
             //
             if (state->checking_cards_t > 0.f) {
-                state->checking_cards_t += time_info.dt;
+                state->checking_cards_t += core.time_info.dt;
                 
                 if (state->checking_cards_t > state->checking_cards_target) {
                     state->checking_cards_t = .0f;
@@ -487,7 +487,7 @@ memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                         }
                         
                         if (state->first_flipped && state->second_flipped) {
-                            state->checking_cards_t = time_info.dt;
+                            state->checking_cards_t = core.time_info.dt;
                         }
                     }
                 }

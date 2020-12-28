@@ -183,12 +183,12 @@ draw_game_view(Sokoban_State *state) {
         }
         
         {
-            local_persist real32 angle = time_info.dt;
+            local_persist real32 angle = core.time_info.dt;
             
             Mat4 model_matrix = translate(state->player.position);
             set_mat4("model", model_matrix);
             
-            angle += time_info.dt * 30.f;
+            angle += core.time_info.dt * 30.f;
             if (angle > 360.f) {
                 angle -= 360.f;
             }

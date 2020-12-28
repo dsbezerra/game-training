@@ -316,10 +316,10 @@ update_game(Katamari_State *state, Game_Input *input) {
     acceleration += -2.f * player->velocity;
     
     // NOTE(diego): Equation of Motions!
-    real32 square_dt = time_info.dt * time_info.dt;
+    real32 square_dt = core.time_info.dt * core.time_info.dt;
     player->position = (0.5f*acceleration*square_dt +
-                        player->velocity*time_info.dt + player->position);
-    player->velocity = acceleration*time_info.dt + player->velocity;
+                        player->velocity*core.time_info.dt + player->position);
+    player->velocity = acceleration*core.time_info.dt + player->velocity;
     
     //
     // Update squirrels
@@ -331,19 +331,19 @@ update_game(Katamari_State *state, Game_Input *input) {
         
         Vector2 vel = {};
         if (squirrel->movement_pattern == KatamariMovementPattern_LeftRight) {
-            vel.x += squirrel->direction.x * squirrel->speed * time_info.dt;
+            vel.x += squirrel->direction.x * squirrel->speed * core.time_info.dt;
         } else if (squirrel->movement_pattern == KatamariMovementPattern_TopBottom) {
-            vel.y += squirrel->direction.y * squirrel->speed * time_info.dt;
+            vel.y += squirrel->direction.y * squirrel->speed * core.time_info.dt;
         } else if (squirrel->movement_pattern == KatamariMovementPattern_FollowPlayer) {
             Vector2 distance = player->position - squirrel->position;
             if (length(distance) < 50.f) {
                 Vector2 normalized = normalize(distance);
-                vel.x += normalized.x * squirrel->speed * time_info.dt;
-                vel.y += normalized.y * squirrel->speed * time_info.dt;
+                vel.x += normalized.x * squirrel->speed * core.time_info.dt;
+                vel.y += normalized.y * squirrel->speed * core.time_info.dt;
             }
         } else if (squirrel->movement_pattern == KatamariMovementPattern_ZigZag) {
             if (squirrel->stopped_t_target > .0f) {
-                squirrel->stopped_t += time_info.dt;
+                squirrel->stopped_t += core.time_info.dt;
                 if (squirrel->stopped_t > squirrel->stopped_t_target) {
                     squirrel->stopped_t = .0f;
                     squirrel->stopped_t_target = .0f;
@@ -360,9 +360,9 @@ update_game(Katamari_State *state, Game_Input *input) {
                     }
                 }
                 
-                vel.x += squirrel->direction.x * squirrel->speed * time_info.dt;
-                vel.y += squirrel->direction.y * squirrel->speed * time_info.dt;
-                squirrel->zigzag_t += time_info.dt;
+                vel.x += squirrel->direction.x * squirrel->speed * core.time_info.dt;
+                vel.y += squirrel->direction.y * squirrel->speed * core.time_info.dt;
+                squirrel->zigzag_t += core.time_info.dt;
             }
         }
         
@@ -380,7 +380,7 @@ update_game(Katamari_State *state, Game_Input *input) {
         spawn_squirrel(state, 1);
     }
     
-    state->spawn_t += time_info.dt;
+    state->spawn_t += core.time_info.dt;
 }
 
 internal void
