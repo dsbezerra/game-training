@@ -715,8 +715,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                             assert(bytes_to_write % 4 == 0);
                             game_output_sound(&sound_buffer, &input);
                             win32_fill_sound_buffer(byte_to_lock, bytes_to_write);
-                        } else {
-                            OutputDebugString("Nothing to write...\n");
                         }
                         end_profiling(ProfilerItem_Audio);
                     } else {
