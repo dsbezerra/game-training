@@ -53,6 +53,9 @@ struct Sokoban_State {
     Triangle_Mesh block;
     Triangle_Mesh plane;
     
+    Playing_Sound *violin;
+    Playing_Sound *test;
+    
     Camera cam;
     
     Vector2i dimensions;

@@ -2,6 +2,8 @@
         global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
 global_variable Vector3 plane_position = origin;
 
+global_variable Loaded_Sound violin, test;
+
 internal Sokoban_Entity
 make_block(Vector3 position) {
     Sokoban_Entity result = {};
@@ -17,7 +19,7 @@ get_block_value(int value, real32 size) {
 
 internal void
 init_game(Sokoban_State *state) {
-    play_sound(&violin, true);
+    state->violin = play_sound(&violin);
     
     state->Game_Mode = GameMode_Playing;
     
@@ -118,6 +120,13 @@ update_game(Sokoban_State *state, Game_Input *input) {
         }
         if (pressed(Button_D)) {
             new_player_position.x += move_step;
+        }
+        
+        if (pressed(Button_Space)) {
+            if (state->test) {
+                state->test->flags &= ~PLAYING_SOUND_ACTIVE;
+            }
+            state->test = play_sound(&test, false);
         }
         
         if (new_player_position != state->player.position) {
@@ -228,6 +237,9 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         state = (Sokoban_State *) game_alloc(memory, megabytes(12));
         
+        violin = load_sound("./data/sounds/violin.wav");
+        test = load_sound("./data/sounds/short.wav");
+        
         init_game(state);
         
         // TODO(diego): Better way to do this
@@ -309,4 +321,15 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     // Draw
     //
     draw_game_view(state);
+}
+
+internal void
+sokoban_game_free(Game_Memory *memory) {
+    if (!memory) return;
+    
+    Sokoban_State *state = (Sokoban_State *) memory->permanent_storage;
+    if (!state) return;
+    
+    if (state->violin) state->violin->flags &= ~PLAYING_SOUND_ACTIVE;
+    if (state->test) state->test->flags &= ~PLAYING_SOUND_ACTIVE;
 }

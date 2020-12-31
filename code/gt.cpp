@@ -121,8 +121,6 @@ free_menu_arts(App_State *state) {
     glDeleteTextures(array_count(arts), arts);
 }
 
-global_variable Loaded_Sound violin;
-
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
 #include "games/slide_puzzle.cpp"
@@ -176,7 +174,7 @@ void (*game_free_table[])(Game_Memory *memory) = {
     0, // Nibbles
     0, // Tetris
     katamari_game_free,
-    0, // Sokoban
+    sokoban_game_free,
 };
 
 // 
@@ -251,31 +249,35 @@ advance_game(App_State *state, int value) {
 internal void
 game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
     
-    for (Playing_Sound *sound = playing_sounds; sound != playing_sounds + array_count(playing_sounds); sound++) {
-        if (!sound->active) continue;
+    s16 *at = sound_buffer->samples;
+    for (int sample_index = 0; sample_index < sound_buffer->samples_to_write; ++sample_index) {
         
-        s16 *at = sound_buffer->samples;
-        for (int sample_index = 0; sample_index < sound_buffer->samples_to_write; ++sample_index) {
+        s16 left_sample = 0;
+        s16 right_sample = 0;
+        
+        for (Playing_Sound *sound = playing_sounds; sound != playing_sounds + array_count(playing_sounds); sound++) {
+            if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
             
-            s16 left_sample = 0;
-            s16 right_sample = 0;
-            
-            s16 l = sound->sound->samples[sound->position++];
-            s16 r = sound->sound->samples[sound->position++];
-            
-            left_sample  += l;
-            right_sample += r;
-            
-            if (sound->position >= sound->sound->num_samples) {
-                if (sound->looping) {
-                    sound->position -= sound->sound->num_samples;
+            if (sound->sound && sound->sound->samples) {
+                
+                s16 l = sound->sound->samples[sound->position++];
+                s16 r = sound->sound->samples[sound->position++];
+                
+                left_sample  += l;
+                right_sample += r;
+                
+                if (sound->position >= sound->sound->num_samples) {
+                    if (sound->flags & PLAYING_SOUND_LOOPING) {
+                        sound->position -= sound->sound->num_samples;
+                    } else {
+                        sound->flags &= ~PLAYING_SOUND_ACTIVE;
+                    }
                 }
-                else sound->active = false;
             }
-            
-            *at++ = left_sample;
-            *at++ = right_sample;
         }
+        
+        *at++ = left_sample;
+        *at++ = right_sample;
     }
 }
 
@@ -417,8 +419,6 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         //
         menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
         menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
-        
-        violin = load_sound("./data/sounds/violin.wav");
         
         load_menu_arts(state);
         
