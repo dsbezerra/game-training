@@ -17,6 +17,8 @@ get_block_value(int value, real32 size) {
 
 internal void
 init_game(Sokoban_State *state) {
+    play_sound(&violin, true);
+    
     state->Game_Mode = GameMode_Playing;
     
     init_camera(&state->cam, -90.f, -65.f, 45.f);

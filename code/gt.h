@@ -2,6 +2,8 @@
 #include "gt_types.h"
 #include "gt_shared.h"
 #include "gt_math.h"
+#include "gt_wav_loader.h"
+#include "gt_audio.h"
 #include "gt_opengl.h"
 #include "gt_shader.h"
 #include "gt_font.h"

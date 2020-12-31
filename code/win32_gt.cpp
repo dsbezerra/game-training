@@ -193,7 +193,7 @@ win32_init_audio(HWND window) {
             sound_buffer.num_channels = 2;
             sound_buffer.samples_per_second = 44100;
             sound_buffer.bytes_per_sample = sound_buffer.num_channels * sizeof(s16);
-            sound_buffer.size = sound_buffer.samples_per_second*sound_buffer.bytes_per_sample;
+            sound_buffer.size = sound_buffer.samples_per_second * sound_buffer.bytes_per_sample;
             
             // Create secondary buffer
             // NOTE(diego): DirectSound8 creates the primary buffer for us.
@@ -241,13 +241,15 @@ win32_clear_sound_buffer() {
         s16 *at = (s16 *) region_1;
         DWORD region_1_sample_count = region_1_size / sound_buffer.bytes_per_sample;
         for (DWORD i = 0; i < region_1_sample_count; i++) {
-            *at++ = 0; *at++ = 0;
+            *at++ = 0; 
+            *at++ = 0;
         }
         
         DWORD region_2_sample_count = region_2_size / sound_buffer.bytes_per_sample;
         at = (s16 *) region_2;
         for (DWORD i = 0; i < region_2_sample_count; i++) {
-            *at++ = 0; *at++ = 0;
+            *at++ = 0; 
+            *at++ = 0;
         }
         
         if (!SUCCEEDED(win32_sound_buffer->Unlock(region_1, region_1_size, region_2, region_2_size))) {
@@ -716,10 +718,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                             game_output_sound(&sound_buffer, &input);
                             win32_fill_sound_buffer(byte_to_lock, bytes_to_write);
                         }
-                        end_profiling(ProfilerItem_Audio);
                     } else {
                         invalid_code_path;
                     }
+                    end_profiling(ProfilerItem_Audio);
                 }
                 
                 render_profiler(state.window_dimensions, last_dt);

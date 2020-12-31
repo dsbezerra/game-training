@@ -1,4 +1,6 @@
 #include "gt.h"
+#include "gt_wav_loader.cpp"
+#include "gt_audio.cpp"
 #include "gt_font.cpp"
 #include "gt_opengl.cpp"
 #include "gt_shader.cpp"
@@ -118,6 +120,8 @@ free_menu_arts(App_State *state) {
     };
     glDeleteTextures(array_count(arts), arts);
 }
+
+global_variable Loaded_Sound violin;
 
 #include "games/dodger.cpp"
 #include "games/memory_puzzle.cpp"
@@ -246,20 +250,32 @@ advance_game(App_State *state, int value) {
 
 internal void
 game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
-    local_persist real32 t = .0f;
-    int16 tone_volume = is_down(Button_Space) ? 5000 : 3000;
-    int tone_hz = is_down(Button_Space) ? 512 : 256;
-    int wave_period = sound_buffer->samples_per_second / tone_hz;
     
-    int16 *sample_out = sound_buffer->samples;
-    for (int sample_index = 0; sample_index < sound_buffer->samples_to_write; ++sample_index) {
-        real32 value = sinf(t);
-        int16 sample_value = (int16) (value * tone_volume);
+    for (Playing_Sound *sound = playing_sounds; sound != playing_sounds + array_count(playing_sounds); sound++) {
+        if (!sound->active) continue;
         
-        *sample_out++ = sample_value;
-        *sample_out++ = sample_value;
-        
-        t += 2.f * PI * 1.f / (real32) wave_period;
+        s16 *at = sound_buffer->samples;
+        for (int sample_index = 0; sample_index < sound_buffer->samples_to_write; ++sample_index) {
+            
+            s16 left_sample = 0;
+            s16 right_sample = 0;
+            
+            s16 l = sound->sound->samples[sound->position++];
+            s16 r = sound->sound->samples[sound->position++];
+            
+            left_sample  += l;
+            right_sample += r;
+            
+            if (sound->position >= sound->sound->num_samples) {
+                if (sound->looping) {
+                    sound->position -= sound->sound->num_samples;
+                }
+                else sound->active = false;
+            }
+            
+            *at++ = left_sample;
+            *at++ = right_sample;
+        }
     }
 }
 
@@ -402,7 +418,10 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         menu_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 48.f);
         menu_item_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 36.f);
         
+        violin = load_sound("./data/sounds/violin.wav");
+        
         load_menu_arts(state);
+        
         
         state->initialized = true;
     }
