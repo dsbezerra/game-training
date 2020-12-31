@@ -32,7 +32,7 @@ load_wav_file(char *filepath) {
             case WAVE_CHUNK_ID_DATA: {
                 assert(fmt && fmt->block_align == 4);
                 result.num_channels = fmt->num_channels;
-                result.num_samples = chunk->size / fmt->num_channels; // num_channels * bits_per_sample / 8
+                result.num_samples = chunk->size / fmt->num_channels;
                 at += sizeof(Wav_Chunk); // Move to data
                 result.samples = (s16 *) platform_alloc(result.num_samples * sizeof(s16));
                 memcpy(result.samples, at, result.num_samples * sizeof(s16));
