@@ -28,6 +28,7 @@ struct Wav_Fmt {
     u32 bytes_per_second;
     u16 block_align;
     u16 bits_per_sample;
+    // NOTE(diego): This is missing some fields.
 };
 #pragma pack(pop)
 
