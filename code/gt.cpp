@@ -1,5 +1,4 @@
 #include "gt.h"
-#include "gt_wav_loader.cpp"
 #include "gt_audio.cpp"
 #include "gt_font.cpp"
 #include "gt_opengl.cpp"

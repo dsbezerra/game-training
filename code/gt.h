@@ -2,7 +2,6 @@
 #include "gt_types.h"
 #include "gt_shared.h"
 #include "gt_math.h"
-#include "gt_wav_loader.h"
 #include "gt_audio.h"
 #include "gt_opengl.h"
 #include "gt_shader.h"
@@ -12,6 +11,7 @@
 #include "gt_collision.h"
 #include "gt_draw.h"
 #include "gt_mesh.h"
+#include "gt_wav_loader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_FAILURE_STRINGS
