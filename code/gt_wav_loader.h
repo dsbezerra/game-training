@@ -31,10 +31,8 @@ struct Wav_Fmt {
 };
 #pragma pack(pop)
 
-//
 // NOTE(diego): This load_wav_file routine gets a Loaded_Sound from
 // memory structured like a 16-bit PCM WAV files with 44.1KHz samples.
-//
 internal Loaded_Sound
 load_wav_from_memory(u8 *data) {
     Loaded_Sound result = {};
