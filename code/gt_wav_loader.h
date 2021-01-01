@@ -32,23 +32,20 @@ struct Wav_Fmt {
 #pragma pack(pop)
 
 //
-// NOTE(diego): This load_wav_file routine loads a WAV file and return
-// a pointer to the sampled data. Only 16-bit PCM files are supported.
+// NOTE(diego): This load_wav_file routine gets a Loaded_Sound from
+// memory structured like a 16-bit PCM WAV files with 44.1KHz samples.
 //
 internal Loaded_Sound
-load_wav_file(char *filepath) {
+load_wav_from_memory(u8 *data) {
     Loaded_Sound result = {};
     
-    File_Contents wav = platform_read_entire_file(filepath);
-    assert(wav.file_size > 0);
-    
-    Wav_Header *header = (Wav_Header *) wav.contents;
+    Wav_Header *header = (Wav_Header *) data;
     assert(header->id == WAVE_CHUNK_ID_RIFF);
     assert(header->format == WAVE_CHUNK_ID_WAVE);
     assert(header->size > 0);
     
     // NOTE(diego): Real production code need to handle error instead of assertions.
-    u8 *at = (u8*) (wav.contents + sizeof(Wav_Header));
+    u8 *at = (u8*) (data + sizeof(Wav_Header));
     Wav_Fmt *fmt = 0;
     while (*at) {
         Wav_Chunk *chunk = (Wav_Chunk *) at;
@@ -83,6 +80,19 @@ load_wav_file(char *filepath) {
         }
     }
     
+    return result;
+}
+
+// NOTE(diego): This load_wav_file routine loads a WAV file and return
+// a Loaded_Sound. Only 16-bit PCM 44.1KHz files are supported.
+internal Loaded_Sound
+load_wav_file(char *filepath) {
+    Loaded_Sound result = {};
+    
+    File_Contents wav = platform_read_entire_file(filepath);
+    assert(wav.file_size > 0);
+    
+    result = load_wav_from_memory(wav.contents);
     platform_free(wav.contents);
     
     return result;
