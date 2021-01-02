@@ -123,10 +123,11 @@ update_game(Sokoban_State *state, Game_Input *input) {
         }
         
         if (pressed(Button_Space)) {
-            if (state->test) {
-                state->test->flags &= ~PLAYING_SOUND_ACTIVE;
+            if (state->violin->flags & PLAYING_SOUND_ACTIVE) {
+                stop_sound(state->violin);
+            } else {
+                resume_sound(state->violin);
             }
-            state->test = play_sound(&test, false);
         }
         
         if (new_player_position != state->player.position) {
