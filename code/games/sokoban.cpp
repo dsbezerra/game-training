@@ -104,28 +104,22 @@ update_game(Sokoban_State *state, Game_Input *input) {
     Camera *cam = &state->cam;
     update_camera(cam, input);
     
-    
     real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
         b32 player_moved = false;
         Vector3 new_player_position = state->player.position;
         if (pressed(Button_W)) {
             new_player_position.z -= move_step;
-            set_volume(state->violin, 1.f);
         }
         if (pressed(Button_S)) {
             new_player_position.z += move_step;
-            set_volume(state->violin, 0.f);
         }
         if (pressed(Button_A)) {
             new_player_position.x -= move_step;
-            set_volume(state->violin, 0.5f);
         }
         if (pressed(Button_D)) {
             new_player_position.x += move_step;
-            set_volume(state->violin, 0.1f);
         }
-        
         if (new_player_position != state->player.position) {
             b32 allow_move = true;
             for (u32 i = 0; i < state->world.num_entities; ++i) {
