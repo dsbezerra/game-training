@@ -1,6 +1,13 @@
 global_variable Mixer mixer = {};
 
 internal void
+set_volume(Playing_Sound *sound, real32 volume) {
+    if (!sound) return;
+    // @Cleanup: make .0f and 1.f global constants
+    sound->volume = clampf(0.f, volume, 1.f);
+};
+
+internal void
 set_active(Playing_Sound *sound, b32 active) {
     if (!sound) return;
     if (active) {
@@ -45,6 +52,7 @@ play_sound(Loaded_Sound *sound, b32 looping) {
     result->flags = flags;
     result->sound = sound;
     result->position = 0;
+    result->volume = 1.f;
     
     return result;
 }

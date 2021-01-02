@@ -262,8 +262,8 @@ game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
                 s16 l = sound->sound->samples[sound->position++];
                 s16 r = sound->sound->samples[sound->position++];
                 
-                left_sample  += l;
-                right_sample += r;
+                left_sample  += (s16) (l * sound->volume);
+                right_sample += (s16) (r * sound->volume);
                 
                 if (sound->position >= sound->sound->num_samples) {
                     if (sound->flags & PLAYING_SOUND_LOOPING) {

@@ -111,23 +111,19 @@ update_game(Sokoban_State *state, Game_Input *input) {
         Vector3 new_player_position = state->player.position;
         if (pressed(Button_W)) {
             new_player_position.z -= move_step;
+            set_volume(state->violin, 1.f);
         }
         if (pressed(Button_S)) {
             new_player_position.z += move_step;
+            set_volume(state->violin, 0.f);
         }
         if (pressed(Button_A)) {
             new_player_position.x -= move_step;
+            set_volume(state->violin, 0.5f);
         }
         if (pressed(Button_D)) {
             new_player_position.x += move_step;
-        }
-        
-        if (pressed(Button_Space)) {
-            if (state->violin->flags & PLAYING_SOUND_ACTIVE) {
-                stop_sound(state->violin);
-            } else {
-                resume_sound(state->violin);
-            }
+            set_volume(state->violin, 0.1f);
         }
         
         if (new_player_position != state->player.position) {

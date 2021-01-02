@@ -13,6 +13,8 @@ struct Loaded_Sound {
 struct Playing_Sound {
     u32 flags;
     
+    real32 volume;
+    
     Loaded_Sound *sound;
     u32 position;
 };
@@ -25,7 +27,7 @@ struct Mixer {
 //
 //
 //
-
+internal void set_volume(Playing_Sound *sound, real32 volume);
 internal void set_active(Playing_Sound *sound, b32 active);
 internal void stop_sound(Playing_Sound *sound);
 internal void pause_sound(Playing_Sound *sound);
