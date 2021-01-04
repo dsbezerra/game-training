@@ -248,11 +248,6 @@ advance_game(App_State *state, int value) {
 internal void
 game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
     
-    local_persist real32 t = .0f;
-    int16 tone_volume = is_down(Button_Space) ? 100 : 300;
-    int tone_hz = is_down(Button_Space) ? 512 : 256;
-    int wave_period = sound_buffer->samples_per_second / tone_hz;
-    
     s16 *at = sound_buffer->samples;
     for (int sample_index = 0; sample_index < sound_buffer->samples_to_write; ++sample_index) {
         
@@ -280,14 +275,8 @@ game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
             }
         }
         
-        real32 value = sinf(t);
-        t += 2.f * PI * 1.f / (real32) wave_period;
-        
-        s16 sample_value_l = (s16) (value * left_sample);
-        s16 sample_value_r = (s16) (value * right_sample);
-        
-        *at++ = sample_value_l;
-        *at++ = sample_value_r;
+        *at++ = left_sample;
+        *at++ = right_sample;
     }
 }
 
