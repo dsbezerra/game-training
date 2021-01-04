@@ -33,5 +33,3 @@ internal void delete_shaders(int n, ...);
 internal void reload_shaders();
 internal void unload_shader(Shader *shader);
 internal void init_shaders();
-
-internal void set_float4(Vector4 values);

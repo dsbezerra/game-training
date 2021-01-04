@@ -180,7 +180,6 @@ reload_shaders() {
     global_screen_shader = load_shader("./data/shaders/screen.glsl");
 }
 
-
 internal void
 init_shaders() {
     reload_shaders();
