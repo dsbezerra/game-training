@@ -143,6 +143,8 @@ win32_opengl_get_functions() {
     
     opengl_get_function(glGenFramebuffers);
     opengl_get_function(glGenRenderbuffers);
+    opengl_get_function(glDeleteFramebuffers);
+    opengl_get_function(glDeleteRenderbuffers);
     
     opengl_get_function(glGenBuffers);
     opengl_get_function(glDeleteBuffers);

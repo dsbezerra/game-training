@@ -216,7 +216,6 @@ immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, Vector4 color) {
     immediate_vertex(make_vector3(x1, y0, z_index), color, default_uv);
 }
 
-
 internal void
 immediate_textured_quad(Vector2 min, Vector2 max, u32 texture) {
     
@@ -445,4 +444,74 @@ dump_gl_errors(char *tag) {
         }
     }
 #endif
+}
+
+internal void
+use_framebuffer(GLuint id) {
+    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, id);
+}
+
+internal void
+init_framebuffer(int width, int height) {
+    // Ensure older texture was freed
+    
+    //
+    // Setup framebuffer
+    //
+    Texture_Map texture = {};
+    texture.width = width;
+    texture.height = height;
+    
+    //
+    // Setup texture
+    //
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.width, texture.height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    open_gl->glGenFramebuffers(1, &texture.fbo);
+    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, texture.fbo);
+    
+    // Attach texture
+    open_gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id, 0);
+    
+    open_gl->glGenRenderbuffers(1, &immediate->rbo);
+    open_gl->glBindRenderbuffer(GL_RENDERBUFFER, immediate->rbo);
+    open_gl->glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, texture.width, texture.height);
+    open_gl->glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, immediate->rbo);
+    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    open_gl->glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    
+    immediate->fbo_map = texture;
+    
+    assert(open_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+}
+
+internal void
+ensure_framebuffer(u32 width, u32 height) {
+    b32 size_changed = immediate->fbo_map.width != width || immediate->fbo_map.height != height;
+    
+    if (size_changed) {
+        refresh_framebuffer(width, height);
+    }
+}
+
+internal void
+refresh_framebuffer(int width, int height) {
+    // First delete old framebuffer data if we have it
+    if (immediate->fbo_map.id) {
+        glDeleteTextures(1, &immediate->fbo_map.id);
+    }
+    if (immediate->fbo_map.fbo) {
+        open_gl->glDeleteFramebuffers(1, &immediate->fbo_map.fbo);
+    }
+    if (immediate->rbo) {
+        open_gl->glDeleteRenderbuffers(1, &immediate->rbo);
+    }
+    
+    // Now reinit with new dimensions
+    init_framebuffer(width, height);
 }

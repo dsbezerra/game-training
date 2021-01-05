@@ -17,6 +17,9 @@ enum Rendering_Mode {
 struct Immediate {
     Shader current_shader;
     
+    GLuint rbo;
+    Texture_Map fbo_map;
+    
     GLuint vao;
     GLuint vbo;
     
@@ -81,3 +84,7 @@ internal void render_2d_right_handed(int width, int height);
 internal void render_3d(int width, int height, real32 fov);
 
 internal void dump_gl_errors(char *tag);
+
+internal void use_framebuffer(GLuint id);
+
+internal void refresh_framebuffer(int width, int height);

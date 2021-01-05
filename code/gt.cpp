@@ -429,12 +429,16 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         update_mode_selecting(state, input);
     }
     
-    // Draw
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
     GLsizei width = (GLsizei) state->window_dimensions.x;
     GLsizei height = (GLsizei) state->window_dimensions.y;
+    
+    // Draw
+    ensure_framebuffer(width, height);
+    
+    use_framebuffer(immediate->fbo_map.fbo);
+    
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
     
     render_2d_right_handed(width, height);
@@ -451,6 +455,21 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         }
         immediate_flush();
     }
+    
+    use_framebuffer(0);
+    
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    set_shader(global_screen_shader);
+    
+    immediate_begin();
+    Vector2 min = make_vector2(-1.f, -1.0f);
+    Vector2 max = make_vector2(1.f, 1.f);
+    immediate_textured_quad(min, max, immediate->fbo_map.id);
+    
+    //immediate_quad(min, max, make_color(0xffffffff));
+    immediate_flush();
     
     //
     // Temporary reload shaders after time

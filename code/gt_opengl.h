@@ -121,6 +121,9 @@ typedef void type_glGenRenderbuffers(GLsizei n, GLuint * renderbuffers);
 typedef void type_glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 typedef void type_glBindRenderbuffer(GLenum target, GLuint renderbuffer);
 
+typedef void type_glDeleteFramebuffers(GLsizei n, GLuint *framebuffers);
+typedef void type_glDeleteRenderbuffers(GLsizei n, GLuint *renderbuffers);
+
 typedef GLint type_glGetUniformLocation(GLuint program, const GLchar *name);
 typedef void type_glUniform1i(GLint location, GLint v0);
 typedef void type_glUniform1f(GLint location, GLfloat v0);
@@ -199,6 +202,9 @@ struct Opengl {
     opengl_function(glBindBuffer);
     opengl_function(glBindFramebuffer);
     opengl_function(glBindRenderbuffer);
+    
+    opengl_function(glDeleteFramebuffers);
+    opengl_function(glDeleteRenderbuffers);
     
     opengl_function(glBufferData);
     opengl_function(glBufferSubData);

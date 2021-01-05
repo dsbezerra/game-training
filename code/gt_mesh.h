@@ -8,6 +8,8 @@ struct Texture_Map {
     // flags field?
     u32 id;
     
+    GLuint fbo;
+    
     char *name;
     char *full_path;
     b32 loaded;
