@@ -23,5 +23,5 @@ in vec2 out_uv;
 uniform sampler2D ftex;
 
 void main() {
-  frag_color = texture(ftex, out_uv);
+  frag_color = vec4(vec3(1.0 - texture(ftex, out_uv)), 1.0);
 }
