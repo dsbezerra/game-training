@@ -49,6 +49,12 @@ resume_sound(Playing_Sound *sound) {
     set_active(sound, true);
 }
 
+internal void
+restart_sound(Playing_Sound *sound) {
+    stop_sound(sound);
+    resume_sound(sound);
+}
+
 internal Playing_Sound *
 play_sound(char *name, Loaded_Sound *sound, b32 looping) {
     Playing_Sound *result = mixer.playing_sounds + mixer.next_playing_sound++;
@@ -100,16 +106,20 @@ draw_debug_draw_mixer(Vector2i dimensions) {
     real32 x = dimensions.width * 0.002f;
     real32 y = (real32) dimensions.height;
     
-    real32 height = dimensions.height * 0.05f;
+    real32 height = dimensions.height * 0.04f;
     
     Vector4 played_color = make_color(0xff00d5ed);
     Vector4 bar_color    = make_color(0xff003f46);
     Vector4 white        = make_color(0xffffffff);
     Vector4 shadow       = make_color(0xff000000);
     
+    u32 count = 0;
+    
     for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
         if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
         if (sound->sound->num_samples == 0) continue;
+        
+        count++;
         
         immediate_begin();
         
@@ -135,15 +145,15 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         immediate_flush();
         
         //
-        // Draw name
+        // Draw info about playing sound
         //
         {
             char buf[512];
             
             b32 looping = sound->flags & PLAYING_SOUND_LOOPING;
-            sprintf(buf, "%s - Looping: %d\n", sound->name ? sound->name : "Unnamed", looping);
+            sprintf(buf, "%s - Looping: %s\n", sound->name ? sound->name : "Unnamed", looping ? "true" : "false");
             
-            real32 cy = y - height * .5f + debug_draw_mixer.playing_sound_font.line_height * .5f;
+            real32 cy = y - height * .5f + debug_draw_mixer.playing_sound_font.line_height * .4f;
             real32 tx = x + 2.f;
             draw_text(tx + 1.f, cy + 1.f, (u8 *) buf, &debug_draw_mixer.playing_sound_font, shadow);
             draw_text(tx, cy, (u8 *) buf, &debug_draw_mixer.playing_sound_font, white);
@@ -152,10 +162,12 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         y -= height;
     }
     
-    if (y != dimensions.height) {
+    if (count > 0) {
         y -= height * .5f;
         
-        u8 *title = (u8*) "Playing sounds";
+        char buf[256];
+        sprintf(buf, "Playing sounds: %d", count);
+        u8 *title = (u8*) buf;
         draw_text(x, y + 1.f, title, &debug_draw_mixer.header_font, shadow);
         draw_text(x, y, title, &debug_draw_mixer.header_font, white);
     }

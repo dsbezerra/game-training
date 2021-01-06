@@ -134,8 +134,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
     
     if (pressed(Button_Space)) {
         if (state->test) {
-            stop_sound(state->test);
-            resume_sound(state->test);
+            restart_sound(state->test);
         } else {
             state->test = play_sound("Short", &test, false);
         }

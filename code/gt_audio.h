@@ -37,6 +37,7 @@ internal void set_looping(Playing_Sound *sound, b32 looping);
 internal void stop_sound(Playing_Sound *sound);
 internal void pause_sound(Playing_Sound *sound);
 internal void resume_sound(Playing_Sound *sound);
+internal void restart_sound(Playing_Sound *sound);
 internal Playing_Sound * play_sound(char *name, Loaded_Sound *sound, b32 looping = true);
 internal Loaded_Sound load_sound(char *soundpath);
 
