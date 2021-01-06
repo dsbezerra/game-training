@@ -1,14 +1,20 @@
 #include "gt_obj_loader.cpp"
 
+//
+// TODO(diego): Refactor this to actually get only the filename of
+// the file.
+// 
+// given a string C://etc/etc/filename.ext returns filename 
+//
+internal char *
+get_filename(char *filepath) {
+    return filepath;
+}
+
 internal void
 init_texture_catalog() {
     texture_catalog.size = TEXTURE_CATALOG_SIZE;
     texture_catalog.data = (Texture_Map *) platform_alloc(texture_catalog.size * sizeof(Texture_Map));
-}
-
-internal char *
-get_filename(char *filepath) {
-    return filepath;
 }
 
 internal void
@@ -23,6 +29,22 @@ add_texture(Texture_Map *texture) {
             break;
         }
     }
+}
+
+internal Texture_Map *
+find_texture(char *map_name) {
+    if (!map_name) return 0;
+    if (!texture_catalog.data) return 0;
+    if (texture_catalog.size == 0) return 0;
+    
+    for (u32 i = 0; i < texture_catalog.size; ++i) {
+        Texture_Map *map = &texture_catalog.data[i];
+        if (!map->name || !map->loaded) continue;
+        if (strings_are_equal(map->name, map_name)) {
+            return map;
+        }
+    }
+    return 0;
 }
 
 internal Texture_Map*
@@ -62,22 +84,6 @@ load_texture_map(char *filepath) {
     add_texture(texture);
     
     return texture;
-}
-
-internal Texture_Map *
-find_texture(char *map_name) {
-    if (!map_name) return 0;
-    if (!texture_catalog.data) return 0;
-    if (texture_catalog.size == 0) return 0;
-    
-    for (u32 i = 0; i < texture_catalog.size; ++i) {
-        Texture_Map *map = &texture_catalog.data[i];
-        if (!map->name || !map->loaded) continue;
-        if (strings_are_equal(map->name, map_name)) {
-            return map;
-        }
-    }
-    return 0;
 }
 
 internal void
@@ -181,9 +187,11 @@ init_mesh(Triangle_Mesh *mesh) {
     load_textures_for_mesh(mesh);
 }
 
+//
+// @Cleanup: move to other folder since this is stuff related to drawing I guess.
+//
 internal void
 set_texture(char *name, Texture_Map *map) {
-    
     u32 texture_unit = 0;
     
     if (strings_are_equal(name, "diffuse_texture")) {
@@ -203,7 +211,6 @@ set_texture(char *name, Texture_Map *map) {
         set_int1(name, texture_unit);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-    
 }
 
 internal Triangle_List_Info
@@ -216,7 +223,7 @@ make_triangle_list_info(int start_index, int num_indices, int material_index) {
 }
 
 internal Render_Material
-make_solid_material(Vector3 color, real32 shininess = 32.f) {
+make_solid_material(Vector3 color, real32 shininess) {
     Render_Material result = {};
     
     result.specular_color = make_vector3(1.f, 1.f, 1.f);

@@ -86,18 +86,19 @@ struct Triangle_Mesh {
     u32 ebo;
 };
 
-//
-// Mesh
-//
-internal void init_texture_catalog();
+internal char * get_filename(char *filepath);
 
+internal void init_texture_catalog();
+internal void add_texture(Texture_Map *texture);
 internal Texture_Map * find_texture(char *map_name);
 internal Texture_Map * load_texture_map(char *filepath);
 internal void load_textures_for_mesh(Triangle_Mesh *mesh);
-
 internal void make_vertex_buffers(Triangle_Mesh *mesh);
-
 internal void init_mesh(Triangle_Mesh *mesh);
+// @Cleanup see comment in .cpp file.
+internal void set_texture(char *name, Texture_Map *map);
+internal Triangle_List_Info make_triangle_list_info(int start_index, int num_indices, int material_index);
+internal Render_Material make_solid_material(Vector3 color, real32 shininess = 32.f);
 internal void draw_mesh(Triangle_Mesh *mesh);
 
 internal Triangle_Mesh gen_mesh_cube(real32 widht, real32 height, real32 length, Vector3 color, real32 shininess = 32.f);
