@@ -7,7 +7,7 @@
 struct Loaded_Sound {
     u32 num_channels;
     u32 num_samples;
-    s16*samples;
+    s16 *samples;
 };
 
 struct Playing_Sound {
