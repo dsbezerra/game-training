@@ -8,13 +8,24 @@ set_volume(Playing_Sound *sound, real32 volume) {
 };
 
 internal void
-set_active(Playing_Sound *sound, b32 active) {
+set_flag(Playing_Sound *sound, u32 flag, b32 value) {
     if (!sound) return;
-    if (active) {
-        sound->flags |= PLAYING_SOUND_ACTIVE;
+    
+    if (value) {
+        sound->flags |= flag;
     } else {
-        sound->flags &= ~PLAYING_SOUND_ACTIVE;
+        sound->flags &= ~flag;
     }
+}
+
+internal void
+set_active(Playing_Sound *sound, b32 active) {
+    set_flag(sound, PLAYING_SOUND_ACTIVE, active);
+}
+
+internal void
+set_looping(Playing_Sound *sound, b32 looping) {
+    set_flag(sound, PLAYING_SOUND_LOOPING, looping);
 }
 
 internal void
@@ -46,9 +57,8 @@ play_sound(Loaded_Sound *sound, b32 looping) {
     assert(sound && sound->samples);
     
     u32 flags = PLAYING_SOUND_DEFAULT;
-    if (!looping) {
-        flags &= ~PLAYING_SOUND_LOOPING;
-    }
+    set_flag(result, PLAYING_SOUND_LOOPING, looping);
+    
     result->flags = flags;
     result->sound = sound;
     result->position = 0;

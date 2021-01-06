@@ -25,7 +25,9 @@ struct Mixer {
 };
 
 internal void set_volume(Playing_Sound *sound, real32 volume);
+internal void set_flag(Playing_Sound *sound, u32 flag, b32 value);
 internal void set_active(Playing_Sound *sound, b32 active);
+internal void set_looping(Playing_Sound *sound, b32 looping);
 internal void stop_sound(Playing_Sound *sound);
 internal void pause_sound(Playing_Sound *sound);
 internal void resume_sound(Playing_Sound *sound);
