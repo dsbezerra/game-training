@@ -269,7 +269,7 @@ game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
                     if (sound->flags & PLAYING_SOUND_LOOPING) {
                         sound->position -= sound->sound->num_samples;
                     } else {
-                        sound->flags &= ~PLAYING_SOUND_ACTIVE;
+                        set_active(sound, false);
                     }
                 }
             }
@@ -455,6 +455,8 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         }
         immediate_flush();
     }
+    
+    draw_debug_draw_mixer(state->window_dimensions);
     
     use_framebuffer(0);
     

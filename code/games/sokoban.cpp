@@ -14,7 +14,7 @@ make_block(Vector3 position) {
 
 internal void
 init_game(Sokoban_State *state) {
-    state->violin = play_sound(&violin);
+    state->violin = play_sound("Violin", &violin);
     
     state->Game_Mode = GameMode_Playing;
     
@@ -129,6 +129,15 @@ update_game(Sokoban_State *state, Game_Input *input) {
             if (allow_move) {
                 state->player.position = new_player_position;
             }
+        }
+    }
+    
+    if (pressed(Button_Space)) {
+        if (state->test) {
+            stop_sound(state->test);
+            resume_sound(state->test);
+        } else {
+            state->test = play_sound("Short", &test, false);
         }
     }
     
