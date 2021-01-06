@@ -29,6 +29,5 @@ internal void set_active(Playing_Sound *sound, b32 active);
 internal void stop_sound(Playing_Sound *sound);
 internal void pause_sound(Playing_Sound *sound);
 internal void resume_sound(Playing_Sound *sound);
-
 internal Playing_Sound * play_sound(Loaded_Sound *sound, b32 looping = true);
 internal Loaded_Sound load_sound(char *soundpath);
