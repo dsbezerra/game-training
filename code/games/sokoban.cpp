@@ -12,11 +12,6 @@ make_block(Vector3 position) {
     return result;
 }
 
-internal real32
-get_block_value(int value, real32 size) {
-    return value * size;
-}
-
 internal void
 init_game(Sokoban_State *state) {
     state->violin = play_sound(&violin);
