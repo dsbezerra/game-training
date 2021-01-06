@@ -31,10 +31,10 @@ init_game(Sokoban_State *state) {
     state->world = world;
     
     real32 ground_y = 0.01f;
+    
     //
     // Blocks
     //
-    
     real32 block_size = 0.5f;
     real32 bb = block_size / 2.f;
     
