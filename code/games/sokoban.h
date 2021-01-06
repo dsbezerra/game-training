@@ -74,3 +74,4 @@ internal void draw_game_view(Sokoban_State *state);
 internal void sokoban_menu_art(Vector2 min, Vector2 max);
 internal void sokoban_game_restart(Sokoban_State *state);
 internal void sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input);
+internal void sokoban_game_free(Game_Memory *memory);
