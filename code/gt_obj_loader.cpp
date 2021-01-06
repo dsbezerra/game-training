@@ -278,6 +278,7 @@ load_mesh_from_obj(char *filepath, uint32 flags) {
     //
     // NOTE(diego): We construct the final mesh at the same time we fill
     // the Obj_Model structure.
+    //
     u32 v_count  = 0;
     u32 vt_count = 0;
     u32 vn_count = 0;
@@ -302,14 +303,18 @@ load_mesh_from_obj(char *filepath, uint32 flags) {
             } break;
             case ObjElementKind_Face: {
                 model.faces[f_count++] = element->face_spec;
+                //
                 // Insert face to mesh
+                //
                 insert_face(&mesh, &model, &element->face_spec);
             } break;
             default: break;
         }
     }
     
+    //
     // Update last triangle list
+    //
     int previous_index = model.previous_usemtl_index == -1 ? 0 : model.usemtl_index;
     Triangle_List_Info *last = &mesh.triangle_list_info[previous_index];
     last->num_indices = model.inserting_count - last->start_index;
@@ -340,7 +345,6 @@ load_mesh_from_obj(char *filepath, uint32 flags) {
 //
 // Obj_Index stuff
 //
-
 internal u64
 hash(Obj_Index_Table *table, Obj_Index idx) {
     u64 value = 0;
