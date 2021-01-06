@@ -93,13 +93,14 @@ struct Obj_Model {
     u32 inserting_count;
 };
 
-//
-// Private
-//
+internal Render_Material as_render_material(Obj_Material *material);
 internal int find_material_index(Obj_Model *model, char *name);
 internal void parse_mtl(Obj_Model *model);
 internal Triangle_Mesh load_mesh_from_obj(char *filepath, uint32 flags);
 
+//
+// Obj_Index hash stuff
+//
 internal u64 hash(Obj_Index_Table *table, Obj_Index idx);
 internal Obj_Index_Table* index_table_create(u64 size);
 internal Obj_Index_Entry* index_table_get(Obj_Index_Table *table, Obj_Index key);
