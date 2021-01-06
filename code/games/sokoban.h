@@ -64,6 +64,8 @@ struct Sokoban_State {
     b32 quit_was_selected;
 };
 
+internal Sokoban_Entity make_block(Vector3 position);
+
 internal void init_game(Sokoban_State *state);
 internal void update_game(Sokoban_State *state, Game_Input *input);
 
