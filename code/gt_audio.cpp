@@ -1,6 +1,11 @@
 
 global_variable Mixer mixer = {};
+
+#define DRAW_DEBUG_MIXER 1
+
+#if DRAW_DEBUG_MIXER
 global_variable Debug_Draw_Mixer debug_draw_mixer = {};
+#endif
 
 internal void
 set_volume(Playing_Sound *sound, real32 volume) {
@@ -98,7 +103,7 @@ init_debug_draw_mixer() {
 
 internal void
 draw_debug_draw_mixer(Vector2i dimensions) {
-    
+#if DRAW_DEBUG_MIXER
     if (!debug_draw_mixer.header_font.texture) {
         debug_draw_mixer = init_debug_draw_mixer();
     }
@@ -171,4 +176,5 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         draw_text(x, y + 1.f, title, &debug_draw_mixer.header_font, shadow);
         draw_text(x, y, title, &debug_draw_mixer.header_font, white);
     }
+#endif
 }
