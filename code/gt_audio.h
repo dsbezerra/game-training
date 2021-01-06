@@ -24,9 +24,6 @@ struct Mixer {
     int next_playing_sound;
 };
 
-//
-//
-//
 internal void set_volume(Playing_Sound *sound, real32 volume);
 internal void set_active(Playing_Sound *sound, b32 active);
 internal void stop_sound(Playing_Sound *sound);
