@@ -81,7 +81,7 @@ init_game(Sokoban_State *state) {
     world.entities[idx++] = make_block(make_vector3(1.5f, bb, -2.0f));
     
     // Star
-    world.entities[idx++] = make_star(make_vector3(0.f, 0.3f, 3.f));
+    world.entities[idx++] = make_star(make_vector3(0.f, 0.15f, 1.f));
     
     
     //
