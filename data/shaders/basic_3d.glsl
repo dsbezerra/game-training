@@ -70,7 +70,7 @@ void main() {
   vec3 ambient  = light_color * material.diffuse * vec3(0.2) * texture(diffuse_texture, out_uv).rgb;
   vec3 diffuse  = light_color * diff * material.diffuse * texture(diffuse_texture, out_uv).rgb;
   vec3 specular = light_color * spec * material.specular;
-   
+  
   vec3 final_color = (ambient + diffuse + specular);  
 
   vec3 color = gamma_correct(final_color);

@@ -12,6 +12,14 @@ make_block(Vector3 position) {
     return result;
 }
 
+internal Sokoban_Entity
+make_star(Vector3 position) {
+    Sokoban_Entity result = {};
+    result.kind = SokobanEntityKind_Star;
+    result.position = position;
+    return result;
+}
+
 internal void
 init_game(Sokoban_State *state) {
     state->violin = play_sound("Violin", &violin);
@@ -72,6 +80,9 @@ init_game(Sokoban_State *state) {
     world.entities[idx++] = make_block(make_vector3(1.0f, bb, -2.0f));
     world.entities[idx++] = make_block(make_vector3(1.5f, bb, -2.0f));
     
+    // Star
+    world.entities[idx++] = make_star(make_vector3(0.f, 0.3f, 3.f));
+    
     
     //
     // Load meshes
@@ -80,6 +91,7 @@ init_game(Sokoban_State *state) {
     Vector3 block_color = make_vector3(180.f/255.f, 118.f/255.f, 61.f/255.f);
     
     state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);
+    state->star  = load_mesh("./data/models/sokoban/star.obj", MESH_FLIP_UVS);
     state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
     
     //
@@ -180,9 +192,18 @@ draw_game_view(Sokoban_State *state) {
         {
             for (u32 i = 0; i < state->world.num_entities; ++i) {
                 Sokoban_Entity entity = state->world.entities[i];
-                if (entity.kind == SokobanEntityKind_Block) {
-                    set_mat4("model", translate(entity.position));
-                    draw_mesh(&state->block);
+                if (entity.kind == SokobanEntityKind_None) continue;
+                
+                set_mat4("model", translate(entity.position));
+                
+                Triangle_Mesh *mesh = 0;
+                switch (entity.kind) {
+                    case SokobanEntityKind_Block: mesh = &state->block; break; 
+                    case SokobanEntityKind_Star:  mesh = &state->star;  break;
+                    default: break;
+                }
+                if (mesh) {
+                    draw_mesh(mesh);
                 }
             }
         }

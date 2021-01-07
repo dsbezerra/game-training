@@ -51,6 +51,7 @@ struct Sokoban_State {
     Sokoban_World world;
     
     Triangle_Mesh block;
+    Triangle_Mesh star;
     Triangle_Mesh plane;
     
     Playing_Sound *violin;
@@ -65,6 +66,7 @@ struct Sokoban_State {
 };
 
 internal Sokoban_Entity make_block(Vector3 position);
+internal Sokoban_Entity make_star(Vector3 position);
 
 internal void init_game(Sokoban_State *state);
 internal void update_game(Sokoban_State *state, Game_Input *input);
