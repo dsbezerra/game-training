@@ -156,7 +156,7 @@ draw_debug_draw_mixer(Vector2i dimensions) {
             char buf[512];
             
             b32 looping = sound->flags & PLAYING_SOUND_LOOPING;
-            sprintf(buf, "%s - Looping: %s\n", sound->name ? sound->name : "Unnamed", looping ? "true" : "false");
+            sprintf(buf, "%s - Looping: %s - Pan: %.2f - Volume: %.2f\n", sound->name ? sound->name : "Unnamed", looping ? "true" : "false", sound->pan, sound->volume);
             
             real32 cy = y - height * .5f + debug_draw_mixer.playing_sound_font.line_height * .4f;
             real32 tx = x + 2.f;

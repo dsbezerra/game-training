@@ -127,6 +127,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
         if (pressed(Button_D)) {
             new_player_position.x += move_step;
         }
+        
         if (new_player_position != state->player.position) {
             b32 allow_move = true;
             for (u32 i = 0; i < state->world.num_entities; ++i) {

@@ -20,6 +20,7 @@ struct Playing_Sound {
     u32 flags;
     
     real32 volume;
+    real32 pan;
     
     Loaded_Sound *sound;
     u32 position;

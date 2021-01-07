@@ -214,7 +214,7 @@ win32_init_audio(HWND window) {
             buf_desc.lpwfxFormat = &wave_format;
             
             if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buf_desc, &win32_sound_buffer, 0))) {
-                // Success!!
+                OutputDebugStringA("Secondary buffer created successfully.\n");
             } else {
                 invalid_code_path;
             }
