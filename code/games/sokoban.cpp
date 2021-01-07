@@ -194,7 +194,6 @@ draw_game_view(Sokoban_State *state) {
                 Sokoban_Entity entity = state->world.entities[i];
                 if (entity.kind == SokobanEntityKind_None) continue;
                 
-                set_mat4("model", translate(entity.position));
                 
                 Triangle_Mesh *mesh = 0;
                 switch (entity.kind) {
@@ -203,6 +202,22 @@ draw_game_view(Sokoban_State *state) {
                     default: break;
                 }
                 if (mesh) {
+                    Mat4 model_matrix = identity();
+                    
+                    local_persist real32 angle = core.time_info.dt;
+                    angle += core.time_info.dt * 6.f;
+                    if (angle > 360.f) {
+                        angle -= 360.f;
+                    }
+                    
+                    if (entity.kind == SokobanEntityKind_Star) {
+                        model_matrix = y_rotation(angle_to_radians(angle));
+                        entity.position.y += sinf(core.time_info.current_time*2.f) * .02f;
+                    }
+                    
+                    model_matrix = model_matrix * translate(entity.position);
+                    
+                    set_mat4("model", model_matrix);
                     draw_mesh(mesh);
                 }
             }
