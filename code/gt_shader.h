@@ -19,8 +19,21 @@ struct Shader {
     GLint light_color_loc;
     
     b32 loaded;
+    
+    char *short_name;
+    char *full_name;
 };
 
+struct Shader_Catalog {
+    Catalog_Base base;
+    Shader *data;
+};
+
+// TODO(diego): Replace with hash map
+#define SHADER_CATALOG_SIZE 32
+global_variable Shader_Catalog shader_catalog = {};
+
+internal void init_shader_catalog();
 internal Shader_Source parse_shader(char *filepath);
 
 internal void check_compile_error(int shader);
@@ -30,6 +43,8 @@ internal int link_shaders(int n, ...);
 internal void delete_shader(int shader);
 internal void delete_shaders(int n, ...);
 
+internal void perform_reloads(Shader_Catalog *catalog);
+internal void reload_shader(Shader *shader);
 internal void reload_shaders();
 internal void unload_shader(Shader *shader);
 internal void init_shaders();

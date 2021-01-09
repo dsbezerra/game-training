@@ -3,6 +3,48 @@ global_variable Shader global_basic_3d_shader;
 global_variable Shader global_basic_3d_light_shader;
 global_variable Shader global_screen_shader;
 
+internal void
+init_shader_catalog() {
+    StringArray *extensions = make_string_array(1);
+    array_add_if_unique(extensions, "glsl");
+    
+    shader_catalog.base.extensions = extensions;
+    shader_catalog.base.kind = CatalogKind_Shader;
+    shader_catalog.base.my_name = "Shader Catalog";
+    shader_catalog.base.size = SHADER_CATALOG_SIZE;
+    shader_catalog.data = (Shader *) platform_alloc(shader_catalog.base.size * sizeof(Shader));
+}
+
+internal void
+add_shader(Shader *shader) {
+    if (!shader_catalog.data) {
+        init_shader_catalog();
+    }
+    for (u32 i = 0; i < shader_catalog.base.size; ++i) {
+        Shader *s = &shader_catalog.data[i];
+        if (!s->loaded) {
+            *s = *shader;
+            break;
+        }
+    }
+}
+
+internal Shader *
+find_shader(char *name) {
+    if (!name) return 0;
+    if (!shader_catalog.data) return 0;
+    if (shader_catalog.base.size == 0) return 0;
+    
+    for (u32 i = 0; i < shader_catalog.base.size; ++i) {
+        Shader *shader = &shader_catalog.data[i];
+        if (!shader->short_name || !shader->loaded) continue;
+        if (strings_are_equal(shader->short_name, name)) {
+            return shader;
+        }
+    }
+    return 0;
+}
+
 internal Shader_Source
 parse_shader(char *filepath) {
     Shader_Source result = {};
@@ -150,7 +192,16 @@ load_shader(char *filepath) {
     result.uv_loc       = 2;
     result.normal_loc   = 3;
     result.loaded       = true;
+    result.full_name    = copy_string(filepath);
     
+    char *short_name = copy_string(filepath);
+    int t = find_character_from_right(short_name, '/');
+    while (t >= 0) {
+        advance(&short_name, t + 1);
+        t = find_character_from_right(short_name, '/');
+    }
+    Break_String_Result r = break_by_tok(short_name, '.');
+    result.short_name     = short_name;
     return result;
 }
 
@@ -161,6 +212,42 @@ unload_shader(Shader *shader) {
     open_gl->glDeleteProgram(shader->program);
     
     shader->loaded = false;
+}
+
+internal void
+perform_reloads(Shader_Catalog *catalog) {
+    int count = sb_count(catalog->base.short_names_to_reload);
+    for (int i = 0; i < count; ++i) {
+        char *name = catalog->base.short_names_to_reload[i];
+        Shader *shader_to_reload = find_shader(name);
+        if (shader_to_reload) {
+            reload_shader(shader_to_reload);
+        }
+    }
+    
+    sb_free(catalog->base.short_names_to_reload);
+    sb_free(catalog->base.full_names_to_reload);
+    
+    catalog->base.short_names_to_reload = 0;
+    catalog->base.full_names_to_reload = 0;
+}
+
+internal void
+reload_shader(Shader *shader) {
+    OutputDebugString("Reloading shader '");
+    OutputDebugString(shader->short_name); 
+    OutputDebugString("'...");
+    if (shader->program) {
+        unload_shader(shader);
+    }
+    assert(shader->full_name);
+    
+    Shader reloaded_shader = load_shader(shader->full_name);
+    platform_free(shader->full_name);
+    platform_free(shader->short_name);
+    
+    *shader = reloaded_shader;
+    OutputDebugString(" Reloaded.\n");
 }
 
 internal void
@@ -182,5 +269,12 @@ reload_shaders() {
 
 internal void
 init_shaders() {
+    init_shader_catalog();
     reload_shaders();
+    
+    // Add to catalog
+    add_shader(&global_shader);
+    add_shader(&global_basic_3d_shader);
+    add_shader(&global_basic_3d_light_shader);
+    add_shader(&global_screen_shader);
 }
