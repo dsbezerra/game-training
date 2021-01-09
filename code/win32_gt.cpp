@@ -646,12 +646,21 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             LARGE_INTEGER last_counter;
             QueryPerformanceCounter(&last_counter);
             
+            core.time_info.start_counter = platform_get_perf_counter();
+            
             global_running = true;
             
             Game_Memory memory = {};
             state.memory = &memory;
             
+            init_texture_catalog();
+            
+            init_shaders();
             init_draw();
+            
+            hotloader_register_catalog(&texture_catalog.base);
+            hotloader_register_catalog(&shader_catalog.base);
+            hotloader_init();
             
             while (global_running) {
                 
@@ -729,6 +738,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 render_profiler(state.window_dimensions, last_dt);
                 
                 SwapBuffers(window_dc);
+                
+                while (hotloader_process_change()) { }
+                
+                perform_reloads(&texture_catalog);
+                perform_reloads(&shader_catalog);
                 
                 // Ensure a forced frame time
                 if (global_lock_fps) {
