@@ -485,5 +485,5 @@ internal void
 my_hotloader_callback(Asset_Change *change, b32 handled) {
     if (handled) return;
     
-    OutputDebugString("Asset Change!\n");
+    // NOTE(diego): This is for assets that don't have a catalog.
 }
