@@ -16,8 +16,8 @@ struct Texture_Map {
 };
 
 struct Texture_Catalog {
+    Catalog_Base base;
     Texture_Map *data;
-    u32 size;
 };
 
 // TODO(diego): Replace with hash map
@@ -89,8 +89,11 @@ struct Triangle_Mesh {
 internal char * get_filename(char *filepath);
 
 internal void init_texture_catalog();
+internal void perform_reloads(Texture_Catalog *catalog);
+
 internal void add_texture(Texture_Map *texture);
-internal Texture_Map * find_texture(char *map_name);
+internal void * find(char *map_name);
+
 internal Texture_Map * load_texture_map(char *filepath);
 internal void load_textures_for_mesh(Triangle_Mesh *mesh);
 internal void make_vertex_buffers(Triangle_Mesh *mesh);

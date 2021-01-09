@@ -13,16 +13,24 @@ get_filename(char *filepath) {
 
 internal void
 init_texture_catalog() {
-    texture_catalog.size = TEXTURE_CATALOG_SIZE;
-    texture_catalog.data = (Texture_Map *) platform_alloc(texture_catalog.size * sizeof(Texture_Map));
+    texture_catalog.base.kind = CatalogKind_Texture;
+    texture_catalog.base.my_name = "Texture Catalog";
+    texture_catalog.base.size = TEXTURE_CATALOG_SIZE;
+    texture_catalog.data = (Texture_Map *) platform_alloc(texture_catalog.base.size * sizeof(Texture_Map));
 }
+
+internal void
+perform_reloads(Texture_Catalog *catalog) {
+    // TODO(diego): Reload texture catalog
+}
+
 
 internal void
 add_texture(Texture_Map *texture) {
     if (!texture_catalog.data) {
         init_texture_catalog();
     }
-    for (u32 i = 0; i < texture_catalog.size; ++i) {
+    for (u32 i = 0; i < texture_catalog.base.size; ++i) {
         Texture_Map *map = &texture_catalog.data[i];
         if (!map->loaded) {
             *map = *texture;
@@ -35,9 +43,9 @@ internal Texture_Map *
 find_texture(char *map_name) {
     if (!map_name) return 0;
     if (!texture_catalog.data) return 0;
-    if (texture_catalog.size == 0) return 0;
+    if (texture_catalog.base.size == 0) return 0;
     
-    for (u32 i = 0; i < texture_catalog.size; ++i) {
+    for (u32 i = 0; i < texture_catalog.base.size; ++i) {
         Texture_Map *map = &texture_catalog.data[i];
         if (!map->name || !map->loaded) continue;
         if (strings_are_equal(map->name, map_name)) {
