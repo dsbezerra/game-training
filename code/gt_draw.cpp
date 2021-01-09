@@ -4,11 +4,10 @@ global_variable Mat4 projection_matrix;
 
 global_variable u32 draw_call_count = 0;
 
-#define DUMP_GL_ERRORS true
+#define DUMP_GL_ERRORS false
 
 internal void
 init_draw() {
-    init_shaders();
     immediate_init();
     set_shader(global_shader);
 }
