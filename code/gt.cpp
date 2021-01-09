@@ -1,4 +1,5 @@
 #include "gt.h"
+#include "gt_hotloader.cpp"
 #include "gt_audio.cpp"
 #include "gt_font.cpp"
 #include "gt_opengl.cpp"
@@ -104,6 +105,11 @@ load_menu_arts(App_State *state) {
     state->menu_art.nibbles         = load_texture("./data/menu_arts/nibbles.png");
     state->menu_art.tetris          = load_texture("./data/menu_arts/tetris.png");
     state->menu_art.katamari        = load_texture("./data/menu_arts/katamari.png");
+}
+
+internal real32
+get_time() {
+    return platform_seconds_elapsed(core.time_info.start_counter);
 }
 
 internal void
@@ -421,6 +427,7 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         
         load_menu_arts(state);
         
+        hotloader_register_callback(my_hotloader_callback);
         
         state->initialized = true;
     }
@@ -472,18 +479,11 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
     
     //immediate_quad(min, max, make_color(0xffffffff));
     immediate_flush();
+}
+
+internal void
+my_hotloader_callback(Asset_Change *change, b32 handled) {
+    if (handled) return;
     
-    //
-    // Temporary reload shaders after time
-    //
-    // TODO(diego): Implement proper hotloader
-    // 
-    // This can cause errors with opengl
-    local_persist real32 t = 0.f;
-    if (t >= 1.f) {
-        reload_shaders();
-        t -= 1.f;
-    }
-    t += core.time_info.dt;
-    
+    OutputDebugString("Asset Change!\n");
 }

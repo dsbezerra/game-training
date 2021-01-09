@@ -1,10 +1,12 @@
 
 #include "gt_types.h"
-#include "gt_shared.h"
 #include "gt_math.h"
+#include "gt_platform.h"
+#include "gt_shared.h"
+#include "gt_catalog.h"
+#include "gt_hotloader.h"
 #include "gt_opengl.h"
 #include "gt_shader.h"
-#include "gt_platform.h"
 #include "gt_font.h"
 #include "gt_audio.h"
 #include "gt_profiler.h"
@@ -18,7 +20,11 @@
 #define STBI_ASSERT assert
 #include "stb/stb_image.h"
 
+#include "stb/stretchy_buffer.h"
+
+
 struct Game_Time_Info {
+    u64 start_counter;
     real32 dt;
     real32 current_time;
 };
@@ -177,9 +183,11 @@ internal void game_quit(App_State *state);
 
 internal void advance_menu_choice(s8 *current_choice, s8 delta);
 
-internal GLint load_menu_art(char *filename);
+internal void my_hotloader_callback(Asset_Change *change, b32 handled);
 
-internal real32 get_current_time();
+internal GLint load_menu_arts(char *filename);
+
+internal real32 get_time();
 
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)
