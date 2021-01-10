@@ -15,7 +15,7 @@ global_variable Catalog_Base **catalogs = 0;
 
 internal void
 issue_one_read(Directory_Info *info) {
-    DWORD result = ReadDirectoryChangesW(info->handle, info->notify_information, NOTIFY_LEN, TRUE, FILE_NOTIFY_CHANGE_FILE_NAME|FILE_NOTIFY_CHANGE_SIZE|FILE_NOTIFY_CHANGE_LAST_WRITE, 0, &info->overlapped, 0);
+    DWORD result = ReadDirectoryChangesW(info->handle, info->notify_information, NOTIFY_LEN, TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, 0, &info->overlapped, 0);
     if (!result) {
         info->read_issue_failed = true;
     } else {
