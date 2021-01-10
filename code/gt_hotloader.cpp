@@ -36,6 +36,14 @@ release(Directory_Info *info) {
 
 internal void
 add_changed_asset(char *short_name, char *full_name, char *extension) {
+    if (asset_changes) {
+        // Do not add again if the same as last changed
+        Asset_Change last = sb_last(asset_changes);
+        if (strings_are_equal(last.full_name, full_name)) {
+            return;
+        }
+    }
+    
     Asset_Change result = {};
     result.short_name = copy_string(short_name);
     result.full_name = copy_string(full_name);
