@@ -8,8 +8,8 @@ init_shader_catalog() {
     StringArray *extensions = make_string_array(1);
     array_add_if_unique(extensions, "glsl");
     
-    shader_catalog.base.extensions = extensions;
     shader_catalog.base.kind = CatalogKind_Shader;
+    shader_catalog.base.extensions = extensions;
     shader_catalog.base.my_name = "Shader Catalog";
     shader_catalog.base.size = SHADER_CATALOG_SIZE;
     shader_catalog.data = (Shader *) platform_alloc(shader_catalog.base.size * sizeof(Shader));

@@ -326,14 +326,26 @@ load_mesh_from_obj(char *filepath, uint32 flags) {
     mesh.material_info = (Render_Material *) platform_alloc(mesh.material_info_count * sizeof(Render_Material));
     for (u32 mi = 0; mi < model.material_count; ++mi) {
         Render_Material rm = as_render_material(&model.materials[mi]);
-        if (rm.texture_map_names[TEXTURE_MAP_DIFFUSE]) {
-            load_texture_map(rm.texture_map_names[TEXTURE_MAP_DIFFUSE]);
+        
+        char *diffuse = rm.texture_map_names[TEXTURE_MAP_DIFFUSE];
+        char *specular = rm.texture_map_names[TEXTURE_MAP_SPECULAR];
+        char *normal = rm.texture_map_names[TEXTURE_MAP_NORMAL];
+        
+        Texture_Map *diffuse_map = load_texture_map(diffuse);
+        Texture_Map *specular_map = load_texture_map(specular);
+        Texture_Map *normal_map = load_texture_map(normal);
+        
+        if (diffuse_map) {
+            platform_free(diffuse);
+            rm.texture_map_names[TEXTURE_MAP_DIFFUSE] = diffuse_map->short_name;
         }
-        if (rm.texture_map_names[TEXTURE_MAP_SPECULAR]) {
-            load_texture_map(rm.texture_map_names[TEXTURE_MAP_SPECULAR]);
+        if (specular_map) {
+            platform_free(specular); 
+            rm.texture_map_names[TEXTURE_MAP_SPECULAR] = specular_map->short_name;
         }
-        if (rm.texture_map_names[TEXTURE_MAP_NORMAL]) {
-            load_texture_map(rm.texture_map_names[TEXTURE_MAP_NORMAL]);
+        if (normal_map) {
+            platform_free(normal);
+            rm.texture_map_names[TEXTURE_MAP_NORMAL] = normal_map->short_name;
         }
         mesh.material_info[mi] = rm;
     }

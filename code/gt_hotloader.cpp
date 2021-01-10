@@ -187,6 +187,7 @@ win32_pump_notifications() {
                 case FILE_ACTION_RENAMED_NEW_NAME: action_name = "RENAMED"; break;
                 default: {
                     // Ignore REMOVE and RENAMED_OLD_NAME file actions.
+                    notify = move_info_forward(notify);
                     continue;
                 } break;
             }
@@ -216,7 +217,6 @@ win32_pump_notifications() {
             char *full_name = (char *) platform_alloc(sizeof(char) * full_name_len);
             sprintf(full_name, "./%s/%s", info->name, name_buffer);
             
-            // TODO(diego): Handle the file name and create a Asset_Change struct.
             Break_String_Result r = break_by_tok(name_buffer, '.');
             // lowercase extension if necessary
             for (int c = 0; c < string_length(r.rhs); ++c) {
@@ -230,10 +230,32 @@ win32_pump_notifications() {
             char *short_name = r.lhs;
             char *extension = r.rhs;
             
-            int t = find_character_from_right(r.lhs, '/');
+#if 0
+            // NOTE(diego): This doesn't work (with our current data and multiple games) with 
+            // the following structure:
+            //
+            // / data
+            //   / textures
+            //     / sokoban
+            //       asset.jpg
+            //
+            // Because it makes short_name be equal to sokoban/asset and that is not the short_name stored
+            // in the catalog.
+            //
+            // We could break by / here if and use the left handed side of the string as some sort of TAG to
+            // indicate the game, but we would need to add this information to our Texture_Catalog too. 
+            // For this reason all texture names *must* be unique..
+            int t = find_character_from_right(short_name, '/');
             if (t) {
                 advance(&short_name, t + 1);
             }
+#else
+            int t = find_character_from_right(short_name, '/');
+            while (t >= 0) {
+                advance(&short_name, t + 1);
+                t = find_character_from_right(short_name, '/');
+            }
+#endif
             
             int short_name_count = string_length(short_name);
             if (short_name_count > 0 && extension) {
@@ -314,7 +336,7 @@ hotloader_process_change() {
         handled_assets++;
     }
     
-    if (handled_assets == changes_count) {
+    if (handled_assets >= changes_count) {
         handled_assets = 0;
         sb_free(asset_changes);
         asset_changes = 0;

@@ -1,19 +1,18 @@
 #include "gt_obj_loader.cpp"
 
-//
-// TODO(diego): Refactor this to actually get only the filename of
-// the file.
-// 
-// given a string C://etc/etc/filename.ext returns filename 
-//
-internal char *
-get_filename(char *filepath) {
-    return filepath;
-}
-
 internal void
 init_texture_catalog() {
+    
+    char *ext[] = {
+        "jpg", "jpeg", "png",
+    };
+    StringArray *extensions = make_string_array(array_count(ext));
+    for (int i = 0; i < array_count(ext); ++i) {
+        array_add_if_unique(extensions, ext[i]);
+    }
+    
     texture_catalog.base.kind = CatalogKind_Texture;
+    texture_catalog.base.extensions = extensions;
     texture_catalog.base.my_name = "Texture Catalog";
     texture_catalog.base.size = TEXTURE_CATALOG_SIZE;
     texture_catalog.data = (Texture_Map *) platform_alloc(texture_catalog.base.size * sizeof(Texture_Map));
@@ -21,7 +20,20 @@ init_texture_catalog() {
 
 internal void
 perform_reloads(Texture_Catalog *catalog) {
-    // TODO(diego): Reload texture catalog
+    int count = sb_count(catalog->base.short_names_to_reload);
+    for (int i = 0; i < count; ++i) {
+        char *name = catalog->base.short_names_to_reload[i];
+        Texture_Map *texture_to_reload = find_texture(name);
+        if (texture_to_reload) {
+            reload_texture(texture_to_reload);
+        }
+    }
+    
+    sb_free(catalog->base.short_names_to_reload);
+    sb_free(catalog->base.full_names_to_reload);
+    
+    catalog->base.short_names_to_reload = 0;
+    catalog->base.full_names_to_reload = 0;
 }
 
 
@@ -47,47 +59,74 @@ find_texture(char *map_name) {
     
     for (u32 i = 0; i < texture_catalog.base.size; ++i) {
         Texture_Map *map = &texture_catalog.data[i];
-        if (!map->name || !map->loaded) continue;
-        if (strings_are_equal(map->name, map_name)) {
+        if (!map->short_name || !map->loaded) continue;
+        if (strings_are_equal(map->short_name, map_name)) {
             return map;
         }
     }
     return 0;
 }
 
-internal Texture_Map*
-load_texture_map(char *filepath) {
-    char *map_name = get_filename(filepath);
-    assert(map_name);
+internal void
+reload_texture(Texture_Map *texture) {
+    if (texture->id) {
+        glDeleteTextures(1, &texture->id);
+    }
+    int width, height;
+    GLuint id = load_texture(texture->full_name, width, height);
+    assert(id != 0);
     
-    Texture_Map *texture = find_texture(map_name);
-    if (texture) return texture;
-    
-    int width, height, nrChannels;
+    texture->id = id;
+    texture->width = width;
+    texture->height = height;
+}
+
+internal GLuint
+load_texture(char *filepath, int &width, int &height) {
+    int nrChannels;
     u8 *data = stbi_load(filepath, &width, &height, &nrChannels, 4);
     if (!data) {
         return 0;
     }
     
-    texture = (Texture_Map *) platform_alloc(sizeof(Texture_Map));
-    glGenTextures(1, &texture->id);
-    glBindTexture(GL_TEXTURE_2D, texture->id);
+    GLuint result;
+    glGenTextures(1, &result);
+    glBindTexture(GL_TEXTURE_2D, result);
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    
     open_gl->glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
     
     stbi_image_free(data);
     
-    texture->name = map_name;
+    return result;
+}
+
+internal Texture_Map*
+load_texture_map(char *filepath) {
+    if (!filepath) return 0;
+    
+    char *map_name = get_filename(filepath, false);
+    assert(map_name);
+    
+    Texture_Map *texture = find_texture(map_name);
+    if (texture) return texture;
+    
+    int width, height;
+    texture = (Texture_Map *) platform_alloc(sizeof(Texture_Map));
+    texture->id = load_texture(filepath, width, height);
+    assert(texture->id != 0);
+    
+    texture->short_name = map_name;
     texture->width = width;
     texture->height = height;
     texture->loaded = true;
-    texture->full_path = (char *) platform_alloc(string_length(filepath) * sizeof(char));
-    copy_string(texture->full_path, filepath);
+    texture->full_name = copy_string(filepath);
     
     add_texture(texture);
     

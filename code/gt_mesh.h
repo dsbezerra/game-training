@@ -10,8 +10,8 @@ struct Texture_Map {
     
     GLuint fbo;
     
-    char *name;
-    char *full_path;
+    char *short_name;
+    char *full_name;
     b32 loaded;
 };
 
@@ -86,14 +86,14 @@ struct Triangle_Mesh {
     u32 ebo;
 };
 
-internal char * get_filename(char *filepath);
-
 internal void init_texture_catalog();
 internal void perform_reloads(Texture_Catalog *catalog);
 
+internal Texture_Map * find_texture(char *map_name);
 internal void add_texture(Texture_Map *texture);
-internal void * find(char *map_name);
 
+internal void reload_texture(Texture_Map *texture);
+internal GLuint load_texture(char *filepath, int &width, int &height);
 internal Texture_Map * load_texture_map(char *filepath);
 internal void load_textures_for_mesh(Triangle_Mesh *mesh);
 internal void make_vertex_buffers(Triangle_Mesh *mesh);

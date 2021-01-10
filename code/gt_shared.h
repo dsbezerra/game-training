@@ -245,7 +245,7 @@ break_by_tok(char *a, char tok) {
         result.rhs = 0;
     } else {
         int pos = find_character_from_right(a, tok);
-        if (pos) {
+        if (pos >= 0) {
             char *lhs = a; lhs[pos++] = '\0';
             result.lhs = lhs;
             result.rhs = a + pos;
@@ -357,4 +357,27 @@ get_item(StringArray *array, int index) {
         return array->data[index];
     }
     return 0;
+}
+
+internal char *
+get_filename(char *filepath, b32 with_extension = false) {
+    char *filename = copy_string(filepath);
+    // Convert any back slashes to forward slashes
+    char *at = filename;
+    while (*at) {
+        if (*at == '\\') {
+            *at = '/';
+        }
+        at++;
+    }
+    int t = find_character_from_right(filename, '/');
+    while (t >= 0) {
+        advance(&filename, t + 1);
+        t = find_character_from_right(filename, '/');
+    }
+    if (with_extension) {
+        return filename;
+    }
+    Break_String_Result r = break_by_tok(filename, '.');
+    return r.lhs;
 }
