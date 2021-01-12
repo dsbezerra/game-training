@@ -39,11 +39,12 @@ load_wav_from_memory(u8 *data) {
     Loaded_Sound result = {};
     
     Wav_Header *header = (Wav_Header *) data;
+    
+    // NOTE(diego): Real production code need to handle error instead of assertions.
     assert(header->id == WAVE_CHUNK_ID_RIFF);
     assert(header->format == WAVE_CHUNK_ID_WAVE);
     assert(header->size > 0);
     
-    // NOTE(diego): Real production code need to handle error instead of assertions.
     u8 *at = (u8*) (data + sizeof(Wav_Header));
     Wav_Fmt *fmt = 0;
     while (*at) {
