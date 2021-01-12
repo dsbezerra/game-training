@@ -356,7 +356,7 @@ default_proc(HWND window,
             state.window_dimensions.y = height;
             
             // @Cleanup fix this for Dodger.
-#if 0
+#if 1
             if (input.mouse.lock) {
                 platform_set_cursor_position(state.window_center);
             }
@@ -368,9 +368,13 @@ default_proc(HWND window,
             if (wparam) {
                 input.mouse.lock = true;
                 SetCursor(0);
+                // NOTE(diego): Without this the cursor flashes when we move it too fast.
+                ShowCursor(FALSE);
             } else {
                 input.mouse.lock = false;
                 SetCursor(default_cursor);
+                // NOTE(diego): Without this the cursor flashes when we move it too fast.
+                ShowCursor(TRUE);
             }
         } break;
         default: {
