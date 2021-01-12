@@ -1,6 +1,6 @@
 
         global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
-global_variable Vector3 plane_position = origin;
+global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .01f, origin.z);
 
 global_variable Loaded_Sound violin, test;
 global_variable int blinn = 0;
@@ -38,8 +38,6 @@ init_game(Sokoban_State *state) {
     world.num_entities = world.x_count * world.y_count;
     world.entities = (Sokoban_Entity *) platform_alloc(world.num_entities * sizeof(Sokoban_Entity));
     state->world = world;
-    
-    real32 ground_y = 0.01f;
     
     //
     // Blocks
