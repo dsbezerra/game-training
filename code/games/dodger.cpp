@@ -233,6 +233,7 @@ dodger_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         // Set default mouse input values for this game
         input->mouse.sensitivity = .5f;
+        platform_show_cursor(false);
     }
     
     // NOTE(diego): Lock mouse to center of screen and use new position
@@ -249,7 +250,6 @@ dodger_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         } else {
             input->mouse.position = new_mouse_position;
         }
-        platform_show_cursor(false);
     }
     
     state->world.dimensions = memory->window_dimensions;

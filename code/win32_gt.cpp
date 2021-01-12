@@ -44,14 +44,23 @@ internal void
 platform_show_cursor(b32 show) {
     if (show) {
         SetCursor(default_cursor);
+        // NOTE(diego): Without this the cursor flashes when we move it too fast.
+        ShowCursor(TRUE);
     } else {
         SetCursor(0);
+        // NOTE(diego): Without this the cursor flashes when we move it too fast.
+        ShowCursor(FALSE);
     }
 }
 
 internal void
 platform_set_cursor_position(Vector2i position) {
-    SetCursorPos(position.x, position.y);
+    POINT point;
+    point.x = position.x;
+    point.y = position.y;
+    
+    ClientToScreen(global_window, &point);
+    SetCursorPos(point.x, point.y);
 }
 
 internal void
@@ -61,8 +70,7 @@ platform_get_cursor_position(Vector2i *position) {
     POINT point;
     GetCursorPos(&point);
     
-    // @Cleanup commenting this makes Dodger works, but breaks Simon mouse position.
-    // ScreenToClient(global_window, &point);
+    ScreenToClient(global_window, &point);
     
     position->x = point.x;
     position->y = point.y;
@@ -355,26 +363,19 @@ default_proc(HWND window,
             state.window_dimensions.x = width;
             state.window_dimensions.y = height;
             
-            // @Cleanup fix this for Dodger.
-#if 1
             if (input.mouse.lock) {
                 platform_set_cursor_position(state.window_center);
-            }
-#endif 
+            } 
             input.mouse.position = state.window_center;
             
         } break;
         case WM_ACTIVATEAPP: {
             if (wparam) {
                 input.mouse.lock = true;
-                SetCursor(0);
-                // NOTE(diego): Without this the cursor flashes when we move it too fast.
-                ShowCursor(FALSE);
+                platform_show_cursor(false);
             } else {
                 input.mouse.lock = false;
-                SetCursor(default_cursor);
-                // NOTE(diego): Without this the cursor flashes when we move it too fast.
-                ShowCursor(TRUE);
+                platform_show_cursor(true);
             }
         } break;
         default: {

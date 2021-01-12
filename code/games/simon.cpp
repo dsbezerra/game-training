@@ -246,6 +246,7 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state = (Simon_State *) game_alloc(memory, megabytes(12));
         
         init_pattern(state);
+        platform_show_cursor(true);
     }
     
     state->dimensions = memory->window_dimensions;
@@ -256,7 +257,6 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     Vector2i new_mouse_position;
     platform_get_cursor_position(&new_mouse_position);
     state->mouse_position = new_mouse_position;
-    platform_show_cursor(true);
     
     if (state->Game_Mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
