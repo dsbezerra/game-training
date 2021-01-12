@@ -153,6 +153,8 @@ link_shaders(int n, ...) {
         *at++;
     }
     
+    delete shaders;
+    
     return program;
 }
 

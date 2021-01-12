@@ -10,6 +10,7 @@ internal void platform_free(void *memory);
 internal void platform_show_cursor(b32 show);
 internal void platform_set_cursor_position(Vector2i position);
 internal void platform_get_cursor_position(Vector2i *position);
+
 internal File_Contents platform_read_entire_file(char *filepath);
 
 internal u64 platform_get_perf_counter();

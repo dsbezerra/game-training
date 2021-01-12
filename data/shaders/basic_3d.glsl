@@ -95,8 +95,7 @@ void main() {
   vec3 normal = normalize(fs_in.normal);
 
   vec3 view_dir = normalize(view_position - fs_in.frag_position);
-  vec3 light_dir = vec3(-0.2, -1.0, -0.3);
-  light_dir = normalize(-light_dir);
+  vec3 light_dir = normalize(vec3(0.0, 1.0, 0.0));
   
   // diffuse shading
   float diff = max(dot(normal, light_dir), 0.0);

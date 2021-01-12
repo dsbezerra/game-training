@@ -381,3 +381,23 @@ get_filename(char *filepath, b32 with_extension = false) {
     Break_String_Result r = break_by_tok(filename, '.');
     return r.lhs;
 }
+
+internal s32
+s32_from_c_string(char *at) {
+    s32 result = 0;
+    
+    s32 sign = 1;
+    if (*at == '-') {
+        sign = -1;
+        advance(&at, 1);
+    } else if (*at == '+') {
+        advance(&at, 1);
+    }
+    while (*at >= '0' && *at <= '9') {
+        result *= 10;
+        result += (*at - '0');
+        ++at;
+    }
+    
+    return result * sign;
+}

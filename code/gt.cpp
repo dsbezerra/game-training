@@ -448,12 +448,17 @@ draw_framebuffer() {
     immediate_textured_quad(min, max, immediate->fbo_map.id);
     immediate_flush();
     
-    set_shader(global_depth_shader);
-    immediate_begin();
-    min = make_vector2(-1.f, -1.0f);
-    max = make_vector2(-.5f,  -.25f);
-    immediate_textured_quad(min, max, immediate->depth_map.id);
-    immediate_flush();
+    
+    if (immediate->depth_map.id) {
+        real32 size_a = 1.f;;
+        real32 size_b = size_a * .2f;
+        set_shader(global_depth_shader);
+        immediate_begin();
+        min = make_vector2(-size_a, -size_a);
+        max = make_vector2(-size_b,  -size_b);
+        immediate_textured_quad(min, max, immediate->depth_map.id);
+        immediate_flush();
+    }
 }
 
 internal void

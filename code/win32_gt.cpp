@@ -75,6 +75,7 @@ platform_get_cursor_position(Vector2i *position) {
     position->x = point.x;
     position->y = point.y;
 }
+
 internal File_Contents
 platform_read_entire_file(char *filepath) {
     File_Contents result = {};

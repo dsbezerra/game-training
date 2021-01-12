@@ -82,7 +82,6 @@ init_game(Sokoban_State *state) {
     // Star
     world.entities[idx++] = make_star(make_vector3(0.f, 0.15f, 1.f));
     
-    
     //
     // Load meshes
     //
