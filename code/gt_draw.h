@@ -1,4 +1,4 @@
-#define SHADOW_WIDTH 1024
+#define SHADOW_WIDTH 1024 // If we crank this up to 5000 is already starts to look good.
 #define SHADOW_HEIGHT 1024
 
 #define MAX_VERTICES (3 * 1024)
