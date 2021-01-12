@@ -39,7 +39,10 @@
 // Extensions
 //
 #define GL_COLOR_ATTACHMENT0              0x8CE0
+#define GL_DEPTH_ATTACHMENT               0x8D00
 #define GL_DEPTH_STENCIL_ATTACHMENT       0x821A
+
+#define GL_CLAMP_TO_BORDER                0x812D
 
 #define GL_DEPTH24_STENCIL8               0x88F0
 

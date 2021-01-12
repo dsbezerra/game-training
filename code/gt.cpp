@@ -18,6 +18,18 @@ global_variable Loaded_Font menu_item_font;
 global_variable real32 global_press_t = .0f;
 
 internal void
+game_frame_begin(int width, int height) {
+    ensure_framebuffer(width, height);
+    use_framebuffer(immediate->fbo_map.fbo);
+    
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, width, height);
+    
+    render_2d_right_handed(width, height);
+}
+
+internal void
 draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item, b32 quit_was_selected) {
     
     render_2d_right_handed(dim.width, dim.height);
@@ -326,6 +338,18 @@ update_mode_selecting(App_State *state, Game_Input *input) {
 
 internal void
 render_mode_selecting(App_State *state) {
+    
+    GLsizei width = (GLsizei) state->window_dimensions.x;
+    GLsizei height = (GLsizei) state->window_dimensions.y;
+    
+    ensure_framebuffer(width, height);
+    use_framebuffer(immediate->fbo_map.fbo);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, width, height);
+    
+    render_2d_right_handed(width, height);
+    
     real32 selection_width = max(250.f, state->window_dimensions.width / 4.f);
     real32 selection_height = selection_width * 16.f / 9.f;
     
@@ -410,6 +434,29 @@ render_mode_selecting(App_State *state) {
 }
 
 internal void
+draw_framebuffer() {
+    use_framebuffer(0);
+    
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    set_shader(global_screen_shader);
+    
+    immediate_begin();
+    Vector2 min = make_vector2(-1.f, -1.0f);
+    Vector2 max = make_vector2(1.f, 1.f);
+    immediate_textured_quad(min, max, immediate->fbo_map.id);
+    immediate_flush();
+    
+    set_shader(global_depth_shader);
+    immediate_begin();
+    min = make_vector2(-1.f, -1.0f);
+    max = make_vector2(-.5f,  -.25f);
+    immediate_textured_quad(min, max, immediate->depth_map.id);
+    immediate_flush();
+}
+
+internal void
 game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input) {
     
     if (!state->initialized) {
@@ -436,20 +483,7 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         update_mode_selecting(state, input);
     }
     
-    GLsizei width = (GLsizei) state->window_dimensions.x;
-    GLsizei height = (GLsizei) state->window_dimensions.y;
-    
     // Draw
-    ensure_framebuffer(width, height);
-    
-    use_framebuffer(immediate->fbo_map.fbo);
-    
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, width, height);
-    
-    render_2d_right_handed(width, height);
-    
     immediate_begin();
     App_Mode m = state->current_mode;
     if (m == Mode_SelectingGame) {
@@ -465,20 +499,7 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
     
     draw_debug_draw_mixer(state->window_dimensions);
     
-    use_framebuffer(0);
-    
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    set_shader(global_screen_shader);
-    
-    immediate_begin();
-    Vector2 min = make_vector2(-1.f, -1.0f);
-    Vector2 max = make_vector2(1.f, 1.f);
-    immediate_textured_quad(min, max, immediate->fbo_map.id);
-    
-    //immediate_quad(min, max, make_color(0xffffffff));
-    immediate_flush();
+    draw_framebuffer();
 }
 
 internal void

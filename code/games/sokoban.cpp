@@ -167,8 +167,113 @@ update_game(Sokoban_State *state, Game_Input *input) {
 }
 
 internal void
+draw_game_playing(Sokoban_State *state) {
+    // Draw plane
+    {
+        set_mat4("model", translate(plane_position));
+        draw_mesh(&state->plane);
+    }
+    
+    //
+    // Draw test blocks
+    //
+    {
+        for (u32 i = 0; i < state->world.num_entities; ++i) {
+            Sokoban_Entity entity = state->world.entities[i];
+            if (entity.kind == SokobanEntityKind_None) continue;
+            
+            
+            Triangle_Mesh *mesh = 0;
+            switch (entity.kind) {
+                case SokobanEntityKind_Block: mesh = &state->block; break; 
+                case SokobanEntityKind_Star:  mesh = &state->star;  break;
+                default: break;
+            }
+            if (mesh) {
+                Mat4 model_matrix = identity();
+                
+                local_persist real32 angle = core.time_info.dt;
+                angle += core.time_info.dt * 6.f;
+                if (angle > 360.f) {
+                    angle -= 360.f;
+                }
+                
+                if (entity.kind == SokobanEntityKind_Star) {
+                    model_matrix = y_rotation(angle_to_radians(angle));
+                    entity.position.y += sinf(core.time_info.current_time*2.f) * .02f;
+                }
+                
+                model_matrix = model_matrix * translate(entity.position);
+                
+                set_mat4("model", model_matrix);
+                draw_mesh(mesh);
+            }
+        }
+    }
+    
+    //
+    // Draw player
+    //
+    {
+        local_persist real32 angle = core.time_info.dt;
+        
+        Mat4 model_matrix = translate(state->player.position);
+        set_mat4("model", model_matrix);
+        
+        angle += core.time_info.dt * 30.f;
+        if (angle > 360.f) {
+            angle -= 360.f;
+        }
+        draw_mesh(&state->player.mesh);
+    }
+}
+
+global_variable Mat4 light_space_matrix;
+
+internal void
+draw_game_shadow(Sokoban_State *state) {
+    if (!immediate->depth_map.fbo) {
+        init_depth_map();
+    }
+    
+    int width = immediate->depth_map.width;
+    int height = immediate->depth_map.height;
+    
+    use_framebuffer(immediate->depth_map.fbo);
+    
+    glViewport(0, 0, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    
+    set_shader(global_basic_shadow_shader);
+    
+    real32 n = 1.f;
+    real32 f = 7.5f;
+    
+    
+    Mat4 projection = ortho(-10.f, 10.f, -10.f, 10.f, n, f);
+    Mat4 view = look_at(make_vector3(0.5f, 0.5f, -1.f),
+                        origin,
+                        make_vector3(0.f, 1.f, 0.f));
+    light_space_matrix = projection * view;
+    
+    set_mat4("light_space_matrix", light_space_matrix);
+    
+    draw_game_playing(state);
+}
+
+internal void
 draw_game_view(Sokoban_State *state) {
     if (state->Game_Mode == GameMode_Playing) {
+        
+        draw_game_shadow(state);
+        
+        int width = state->dimensions.width;
+        int height = state->dimensions.height;
+        
+        ensure_framebuffer(width, height);
+        use_framebuffer(immediate->fbo_map.fbo);
+        
+        glViewport(0, 0, width, height);
         
         render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
         
@@ -177,77 +282,19 @@ draw_game_view(Sokoban_State *state) {
         
         view_matrix = get_view_matrix(&state->cam);
         
-        //
-        // Draw player
-        //
-        
         set_shader(global_basic_3d_shader);
         refresh_shader_transform();
         
+        set_mat4("light_space_matrix", light_space_matrix);
         set_float3("view_position", state->cam.position);
-        
         set_int1("blinn", blinn);
         
-        // Draw plane
-        {
-            set_mat4("model", translate(plane_position));
-            draw_mesh(&state->plane);
-        }
+        set_texture("shadow_map", &immediate->depth_map);
         
-        //
-        // Draw test blocks
-        //
-        {
-            for (u32 i = 0; i < state->world.num_entities; ++i) {
-                Sokoban_Entity entity = state->world.entities[i];
-                if (entity.kind == SokobanEntityKind_None) continue;
-                
-                
-                Triangle_Mesh *mesh = 0;
-                switch (entity.kind) {
-                    case SokobanEntityKind_Block: mesh = &state->block; break; 
-                    case SokobanEntityKind_Star:  mesh = &state->star;  break;
-                    default: break;
-                }
-                if (mesh) {
-                    Mat4 model_matrix = identity();
-                    
-                    local_persist real32 angle = core.time_info.dt;
-                    angle += core.time_info.dt * 6.f;
-                    if (angle > 360.f) {
-                        angle -= 360.f;
-                    }
-                    
-                    if (entity.kind == SokobanEntityKind_Star) {
-                        model_matrix = y_rotation(angle_to_radians(angle));
-                        entity.position.y += sinf(core.time_info.current_time*2.f) * .02f;
-                    }
-                    
-                    model_matrix = model_matrix * translate(entity.position);
-                    
-                    set_mat4("model", model_matrix);
-                    draw_mesh(mesh);
-                }
-            }
-        }
-        
-        {
-            local_persist real32 angle = core.time_info.dt;
-            
-            Mat4 model_matrix = translate(state->player.position);
-            set_mat4("model", model_matrix);
-            
-            angle += core.time_info.dt * 30.f;
-            if (angle > 360.f) {
-                angle -= 360.f;
-            }
-            draw_mesh(&state->player.mesh);
-        }
-        open_gl->glActiveTexture(GL_TEXTURE0);
-        
+        draw_game_playing(state);
         draw_camera_debug(&state->cam, state->dimensions);
-        
     } else {
+        game_frame_begin(state->dimensions.width, state->dimensions.height);
         draw_menu(SOKOBAN_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
     }
 }

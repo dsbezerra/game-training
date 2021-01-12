@@ -247,7 +247,9 @@ set_texture(char *name, Texture_Map *map) {
         texture_unit = 2;
     }/* else if (strings_are_equal(name, "normal_texture")) {
         texture_unit = 3;
-    }*/
+    }*/ else if (strings_are_equal(name, "shadow_map")) {
+        texture_unit = 4;
+    }
     
     open_gl->glActiveTexture(GL_TEXTURE0 + texture_unit);
     

@@ -116,6 +116,8 @@ update_hovering_button(Simon_State *state) {
 internal void
 draw_game_view(Simon_State *state) {
     
+    game_frame_begin(state->dimensions.width, state->dimensions.height);
+    
     if (state->Game_Mode == GameMode_Playing) {
         //
         // Draw buttons

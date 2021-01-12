@@ -634,13 +634,12 @@ draw_hud(Tetris_State *state) {
 
 internal void
 draw_game_view(Tetris_State *state) {
+    game_frame_begin(state->dimensions.width, state->dimensions.height);
     if (state->Game_Mode == GameMode_Playing) {
-        
         immediate_begin();
         draw_current_piece(state);
         draw_grid(state);
         immediate_flush();
-        
         draw_hud(state);
     } else {
         draw_menu(TETRIS_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);

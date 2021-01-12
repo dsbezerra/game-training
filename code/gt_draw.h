@@ -1,3 +1,6 @@
+#define SHADOW_WIDTH 1024
+#define SHADOW_HEIGHT 1024
+
 #define MAX_VERTICES (3 * 1024)
 
 struct Vertex {
@@ -20,6 +23,8 @@ struct Immediate {
     GLuint rbo;
     Texture_Map fbo_map;
     
+    Texture_Map depth_map;
+    
     GLuint vao;
     GLuint vbo;
     
@@ -29,6 +34,8 @@ struct Immediate {
     
     Rendering_Mode mode;
 };
+
+internal void init_depth_map();
 
 internal void init_draw();
 internal void draw();

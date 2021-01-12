@@ -276,6 +276,9 @@ memory_puzzle_menu_art(App_State *state, Vector2 min, Vector2 max) {
 
 internal void
 draw_game_view(Memory_Puzzle_State *state) {
+    
+    game_frame_begin(state->world.dimensions.width, state->world.dimensions.height);
+    
     //
     // Draw field
     //

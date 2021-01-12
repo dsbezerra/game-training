@@ -785,11 +785,11 @@ operator*(Mat4 a, Mat4 b) {
 }
 
 inline Mat4
-ortho(real32 left, real32 right, real32 top, real32 bottom, real32 f, real32 n) {
+ortho(real32 left, real32 right, real32 top, real32 bottom, real32 n, real32 f) {
     Mat4 result = identity();
     
-	result.e[0 + 0 * 4] = 2.f / (right - left);
-	result.e[1 + 1 * 4] = 2.f / (top - bottom);
+	result.e[0 + 0 * 4] =  2.f / (right - left);
+	result.e[1 + 1 * 4] =  2.f / (top - bottom);
 	result.e[2 + 2 * 4] = -2.f / (f - n);
     
 	result.e[0 + 3 * 4] = -((right + left) / (right - left));
@@ -800,14 +800,14 @@ ortho(real32 left, real32 right, real32 top, real32 bottom, real32 f, real32 n) 
 }
 
 inline Mat4
-ortho(real32 size, real32 aspect_ratio, real32 f, real32 n) {
+ortho(real32 size, real32 aspect_ratio, real32 n, real32 f) {
     real32 right = size * aspect_ratio;
     real32 left = -right;
     
     real32 top = size;
     real32 bottom = -top;
     
-	return ortho(left, right, top, bottom, f, n);
+	return ortho(left, right, top, bottom, n, f);
 }
 
 inline Mat4

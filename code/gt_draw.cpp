@@ -7,6 +7,42 @@ global_variable u32 draw_call_count = 0;
 #define DUMP_GL_ERRORS false
 
 internal void
+init_depth_map() {
+    Texture_Map result = {};
+    result.width = SHADOW_WIDTH;
+    result.height = SHADOW_HEIGHT;
+    
+    open_gl->glGenFramebuffers(1, &result.fbo);
+    
+    glGenTextures(1, &result.id);
+    glBindTexture(GL_TEXTURE_2D, result.id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+#if 0
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+#else
+    // Avoid repeat
+    float border_color[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
+#endif
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, result.width, result.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    
+    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, result.fbo);
+    open_gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, result.id, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+    assert(open_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    
+    immediate->depth_map = result;
+}
+
+internal void
 init_draw() {
     immediate_init();
     set_shader(global_shader);
@@ -380,7 +416,6 @@ render_2d_right_handed(int width, int height) {
     // NOTE(diego): This shader is reused for all 2D rendering.
     set_shader(global_shader);
     
-    
 #if 0
     Mat4 tm = identity();
     
@@ -400,7 +435,7 @@ render_2d_right_handed(int width, int height) {
     
     real32 ortho_size = height / 2.f;
     
-    projection_matrix = ortho(ortho_size, aspect_ratio, f, n);
+    projection_matrix = ortho(ortho_size, aspect_ratio, n, f);
     view_matrix       = translate(make_vector2(-width / 2.f, ortho_size));
 #endif
     

@@ -132,6 +132,9 @@ draw_bad_guy(Dodger_Bad_Guy *bad_guy) {
 
 internal void
 draw_game_view(Dodger_State *state) {
+    
+    game_frame_begin(state->world.dimensions.width, state->world.dimensions.height);
+    
     if (state->Game_Mode == GameMode_Playing) {
         immediate_begin();
         draw_player(&state->player);

@@ -3,6 +3,9 @@ global_variable Shader global_basic_3d_shader;
 global_variable Shader global_basic_3d_light_shader;
 global_variable Shader global_screen_shader;
 
+global_variable Shader global_basic_shadow_shader;
+global_variable Shader global_depth_shader;
+
 internal void
 init_shader_catalog() {
     StringArray *extensions = make_string_array(1);
@@ -260,11 +263,18 @@ reload_shaders() {
         unload_shader(&global_basic_3d_shader);
     if (global_screen_shader.program)
         unload_shader(&global_screen_shader);
+    if (global_basic_shadow_shader.program)
+        unload_shader(&global_basic_shadow_shader);
+    if (global_depth_shader.program)
+        unload_shader(&global_depth_shader);
     
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
     global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");
     global_basic_3d_light_shader = load_shader("./data/shaders/basic_3d_light.glsl");
     global_screen_shader = load_shader("./data/shaders/screen.glsl");
+    
+    global_basic_shadow_shader = load_shader("./data/shaders/basic_shadow.glsl");
+    global_depth_shader = load_shader("./data/shaders/depth.glsl");
 }
 
 internal void
@@ -277,4 +287,6 @@ init_shaders() {
     add_shader(&global_basic_3d_shader);
     add_shader(&global_basic_3d_light_shader);
     add_shader(&global_screen_shader);
+    add_shader(&global_basic_shadow_shader);
+    add_shader(&global_depth_shader);
 }

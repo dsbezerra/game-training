@@ -490,6 +490,9 @@ draw_hud(Katamari_State *state) {
 
 internal void
 draw_game_view(Katamari_State *state) {
+    
+    game_frame_begin(state->dimensions.width, state->dimensions.height);
+    
     if (state->Game_Mode == GameMode_Playing) {
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff14ce00));

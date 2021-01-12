@@ -260,6 +260,7 @@ draw_board(Slide_Puzzle_State *state) {
 
 internal void
 draw_game_view(Slide_Puzzle_State *state) {
+    game_frame_begin(state->dimensions.width, state->dimensions.height);
     if (state->Game_Mode == GameMode_Playing) {
         draw_board(state);
     } else {

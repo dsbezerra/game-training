@@ -174,6 +174,7 @@ struct App_State {
 #include "gt_camera.h" // TODO(diego): Refactor so this can be up there with other h files.
 #include "gt_games.h"
 
+internal void game_frame_begin(int width, int height);
 internal void game_output_sound(Game_Sound_Buffer *sound_buffer);
 internal void game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input);
 
