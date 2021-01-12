@@ -37,6 +37,7 @@ uniform Material material;
 uniform vec3 view_position;
 
 uniform sampler2D diffuse_texture;
+uniform bool blinn;
 
 out vec4 frag_color;
 
@@ -63,9 +64,14 @@ void main() {
   float diff = max(dot(normal, light_dir), 0.0);
   
   // specular shading
-  vec3 halfway_dir = normalize(light_dir + view_dir);
-  float spec = pow(max(dot(normal, halfway_dir), 0.0), material.shininess);
-
+  float spec = 0.0;
+  if (blinn) {
+    vec3 halfway_dir = normalize(light_dir + view_dir);
+    spec = pow(max(dot(normal, halfway_dir), 0.0), material.shininess);
+  } else {
+    vec3 reflect_dir = reflect(-light_dir, normal);
+    spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess / 2.0);
+  }
   // combine results
   vec3 ambient  = light_color * material.diffuse * vec3(0.2) * texture(diffuse_texture, out_uv).rgb;
   vec3 diffuse  = light_color * diff * material.diffuse * texture(diffuse_texture, out_uv).rgb;

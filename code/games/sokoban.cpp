@@ -3,6 +3,7 @@
 global_variable Vector3 plane_position = origin;
 
 global_variable Loaded_Sound violin, test;
+global_variable int blinn = 0;
 
 internal Sokoban_Entity
 make_block(Vector3 position) {
@@ -145,6 +146,12 @@ update_game(Sokoban_State *state, Game_Input *input) {
         }
     }
     
+    if (is_down(Button_Space)) {
+        blinn = 0;
+    } else {
+        blinn = 1;
+    }
+    
     if (pressed(Button_Space)) {
         if (state->test) {
             restart_sound(state->test);
@@ -180,6 +187,8 @@ draw_game_view(Sokoban_State *state) {
         refresh_shader_transform();
         
         set_float3("view_position", state->cam.position);
+        
+        set_int1("blinn", blinn);
         
         // Draw plane
         {
