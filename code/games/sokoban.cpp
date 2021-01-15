@@ -192,17 +192,11 @@ draw_game_playing(Sokoban_State *state) {
             }
             
             if (mesh) {
-                Quaternion orientation = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
+                Quaternion orientation = {};
+                orientation.w = 1.f;
                 if (entity.kind == SokobanEntityKind_Star) {
-                    if (angle >= 360.f) {
-                        angle -= 360.f;
-                    }
-                    orientation = make_quaternion(make_vector3(0.f, 1.f, 0.f), angle);
-                    entity.position.y += sinf(core.time_info.current_time*2.f) * .02f;
-                    
-                    angle += core.time_info.dt * 2.f;
+                    entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
                 }
-                
                 draw_mesh(mesh, entity.position, orientation);
             }
         }

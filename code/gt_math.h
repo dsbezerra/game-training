@@ -547,17 +547,31 @@ normalize(Vector4 a) {
 // Quaternion
 //
 inline Quaternion
-make_quaternion(Vector3 axis, real32 angle) {
+make_quaternion(real32 x, real32 y, real32 z, real32 w) {
     Quaternion result = {};
     
+    result.x = x;
+    result.y = y;
+    result.z = z;
+    result.w = w;
+    
+    return result;
+}
+
+internal void
+set_from_axis_and_angle(Quaternion *a, Vector3 axis, real32 angle) {
     real32 half_rad = angle_to_radians(angle) / 2.f;
     real32 s = sinf(half_rad);
-    
-    result.w = cosf(half_rad);
-    result.x = axis.x * s;
-    result.y = axis.y * s;
-    result.z = axis.z * s;
-    
+    a->x = axis.x;
+    a->y = axis.y;
+    a->z = axis.z;
+    a->w = cosf(half_rad);
+}
+
+inline Quaternion
+make_quaternion(Vector3 axis, real32 angle) {
+    Quaternion result = {};
+    set_from_axis_and_angle(&result, axis, angle);
     return result;
 }
 
@@ -565,8 +579,8 @@ inline Quaternion
 operator* (Quaternion a, Quaternion b) {
     Quaternion result = {};
     
-    result.w   = a.w * b.w + inner(a.xyz, b.xyz);
-    result.xyz = a.xyz * b.w + b.xyz * a.w + cross(a.xyz, b.xyz);
+    result.w   = a.w*b.w - inner(a.xyz, b.xyz);
+    result.xyz = a.xyz*b.w + b.xyz*a.w + cross(a.xyz, b.xyz);
     
     return result;
 }
@@ -579,12 +593,12 @@ operator*= (Quaternion &b, Quaternion a) {
 
 inline Vector3
 operator* (Quaternion a, Vector3 b) {
-    Quaternion p = {};
-    p.w = 0.0f;
-    p.xyz = b;
+    Quaternion q;
+    q.w = 0.f;
+    q.xyz = b;
     
     Vector3 c = cross(a.xyz, b);
-    return b + c * (2.f * a.w) + cross(a.xyz, c) * 2.f;
+    return b + c*(2.f*a.w) + cross(a.xyz, c)*2.f;
 }
 
 inline Vector3 &
@@ -606,7 +620,7 @@ to_axis_angle(Quaternion a, Vector3 &axis, real32& angle) {
     
     // This is the opposite procedure as explained in
     // http://youtu.be/SCbpxiCN0U0 w = cos(a/2) and a = acos(w)*2
-    angle = acosf(a.w) * 2.f;
+    angle = acosf(a.w)*2.f;
     
     // Convert to degrees
     angle *= 360.f / (PI * 2.f);
@@ -628,25 +642,6 @@ interpolate(Quaternion a, real32 t) {
     result = make_quaternion(axis, at);
     
     return result;
-}
-
-
-inline Quaternion
-invert(Quaternion a) {
-    Quaternion result = {};
-    
-    result.w = a.w;
-    result.xyz = -a.xyz;
-    
-    return result;
-}
-
-inline void
-invert(Quaternion *a) {
-    assert(a);
-    
-    a->w = a->w;
-    a->xyz = -a->xyz;
 }
 
 inline Quaternion

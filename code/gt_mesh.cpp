@@ -291,8 +291,12 @@ draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float s
     
     Vector3 p = position;
     
+    // @Speed
+    Quaternion mesh_correction;
+    set_from_axis_and_angle(&mesh_correction, make_vector3(0.f, 0.f, 1.f), 0.f);
+    
     Mat4 r = identity();
-    set_rotation(&r, orientation);
+    set_rotation(&r, orientation * mesh_correction);
     
     Mat4 m = identity();
     m.e[0 + 3 * 4] = p.x;
@@ -304,7 +308,7 @@ draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float s
     m.e[2 + 2 * 4] = scale;
     
     
-    set_mat4("model",  r * m);
+    set_mat4("model", r * m);
     
     open_gl->glBindVertexArray(mesh->vao);
     
