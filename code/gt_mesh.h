@@ -102,7 +102,7 @@ internal void init_mesh(Triangle_Mesh *mesh);
 internal void set_texture(char *name, Texture_Map *map);
 internal Triangle_List_Info make_triangle_list_info(int start_index, int num_indices, int material_index);
 internal Render_Material make_solid_material(Vector3 color, real32 shininess = 32.f);
-internal void draw_mesh(Triangle_Mesh *mesh);
+internal void draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float scale = 1.0f);
 
 internal Triangle_Mesh gen_mesh_cube(real32 widht, real32 height, real32 length, Vector3 color, real32 shininess = 32.f);
 internal Triangle_Mesh load_mesh(char *filepath, uint32 flags);

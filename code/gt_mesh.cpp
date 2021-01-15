@@ -286,8 +286,25 @@ make_solid_material(Vector3 color, real32 shininess) {
 }
 
 internal void
-draw_mesh(Triangle_Mesh *mesh) {
+draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float scale) {
     assert(mesh);
+    
+    Vector3 p = position;
+    
+    Mat4 r = identity();
+    set_rotation(&r, orientation);
+    
+    Mat4 m = identity();
+    m.e[0 + 3 * 4] = p.x;
+    m.e[1 + 3 * 4] = p.y;
+    m.e[2 + 3 * 4] = p.z;
+    
+    m.e[0 + 0 * 4] = scale;
+    m.e[1 + 1 * 4] = scale;
+    m.e[2 + 2 * 4] = scale;
+    
+    
+    set_mat4("model",  r * m);
     
     open_gl->glBindVertexArray(mesh->vao);
     

@@ -103,6 +103,8 @@ init_game(Sokoban_State *state) {
     state->player = player;
 }
 
+global_variable real32 angle = 0.f;
+
 internal void
 update_game(Sokoban_State *state, Game_Input *input) {
     // TODO
@@ -168,9 +170,9 @@ update_game(Sokoban_State *state, Game_Input *input) {
 internal void
 draw_game_playing(Sokoban_State *state) {
     // Draw plane
+    Quaternion a = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
     {
-        set_mat4("model", translate(plane_position));
-        draw_mesh(&state->plane);
+        draw_mesh(&state->plane, plane_position, a);
     }
     
     //
@@ -188,24 +190,20 @@ draw_game_playing(Sokoban_State *state) {
                 case SokobanEntityKind_Star:  mesh = &state->star;  break;
                 default: break;
             }
+            
             if (mesh) {
-                Mat4 model_matrix = identity();
-                
-                local_persist real32 angle = core.time_info.dt;
-                angle += core.time_info.dt * 6.f;
-                if (angle > 360.f) {
-                    angle -= 360.f;
-                }
-                
+                Quaternion orientation = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
                 if (entity.kind == SokobanEntityKind_Star) {
-                    model_matrix = y_rotation(angle_to_radians(angle));
+                    if (angle >= 360.f) {
+                        angle -= 360.f;
+                    }
+                    orientation = make_quaternion(make_vector3(0.f, 1.f, 0.f), angle);
                     entity.position.y += sinf(core.time_info.current_time*2.f) * .02f;
+                    
+                    angle += core.time_info.dt * 2.f;
                 }
                 
-                model_matrix = model_matrix * translate(entity.position);
-                
-                set_mat4("model", model_matrix);
-                draw_mesh(mesh);
+                draw_mesh(mesh, entity.position, orientation);
             }
         }
     }
@@ -214,16 +212,7 @@ draw_game_playing(Sokoban_State *state) {
     // Draw player
     //
     {
-        local_persist real32 angle = core.time_info.dt;
-        
-        Mat4 model_matrix = translate(state->player.position);
-        set_mat4("model", model_matrix);
-        
-        angle += core.time_info.dt * 30.f;
-        if (angle > 360.f) {
-            angle -= 360.f;
-        }
-        draw_mesh(&state->player.mesh);
+        draw_mesh(&state->player.mesh, state->player.position, a);
     }
 }
 
