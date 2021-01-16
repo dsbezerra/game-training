@@ -92,29 +92,34 @@ float calc_shadow(vec3 light_dir, vec4 fragPosLightSpace) {
 vec3 light_color = vec3(1.0, 1.0, 1.0);
 
 void main() {
-  vec3 normal = normalize(fs_in.normal);
+  vec3 material_diffuse_color = texture(diffuse_texture, fs_in.uv).rgb;
+  vec3 material_ambient_color = vec3(0.2) * material_diffuse_color;
 
-  vec3 view_dir = normalize(view_position - fs_in.frag_position);
-  vec3 light_dir = normalize(vec3(0.0, 1.0, 0.0));
+  vec3 n = normalize(fs_in.normal);
+  vec3 l = normalize(vec3(0.0, 1.0, 0.0));
+ 
   
-  // diffuse shading
-  float diff = max(dot(normal, light_dir), 0.0);
+  vec3 E = normalize(view_position - fs_in.frag_position);
   
   // specular shading
   float spec = 0.0;
   if (blinn) {
-    vec3 halfway_dir = normalize(light_dir + view_dir);
-    spec = pow(max(dot(normal, halfway_dir), 0.0), material.shininess);
+    vec3 halfway_dir = normalize(l + E);
+    spec = pow(max(dot(n, halfway_dir), 0.0), material.shininess);
   } else {
-    vec3 reflect_dir = reflect(-light_dir, normal);
-    spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess / 2.0);
+    vec3 R = reflect(-l, n);
+    spec = pow(max(dot(E, R), 0.0), material.shininess / 2.0);
   }
+  
+  // diffuse shading
+  float diff = max(dot(n, l), 0.0);
+  
   // combine results
-  vec3 ambient  = light_color * material.diffuse * vec3(0.2) * texture(diffuse_texture, fs_in.uv).rgb;
-  vec3 diffuse  = light_color * diff * material.diffuse * texture(diffuse_texture, fs_in.uv).rgb;
+  vec3 ambient  = material_ambient_color;
+  vec3 diffuse  = light_color * diff * material_diffuse_color;
   vec3 specular = light_color * spec * material.specular;
   
-  float shadow = calc_shadow(light_dir, fs_in.frag_position_in_light_space);
+  float shadow = calc_shadow(l, fs_in.frag_position_in_light_space);
   vec3 final_color = (ambient + (1.0 - shadow) * (diffuse + specular));  
 
   vec3 color = gamma_correct(final_color);
