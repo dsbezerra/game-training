@@ -61,6 +61,19 @@ vec3 gamma_correct(vec3 color) {
   return pow(color, vec3(1.0/gamma));
 }
 
+float HardShadows_DirectionalLight(vec3 ShadowCoords) {
+  if (ShadowCoords.z > 1.0)
+    return 0.0;
+
+  ShadowCoords = ShadowCoords * 0.5 + 0.5;
+
+  vec3 l = normalize(vec3(0.0, 1.0, 0.0));
+  float bias = max(0.05 * (1.0 - dot(fs_in.normal, l)), 0.005);
+
+  float z = texture(shadow_map, ShadowCoords.xy).x;
+  return (z < (ShadowCoords.z - bias)) ? 1.0 : 0.0;
+}
+
 float calc_shadow(vec3 light_dir, vec4 fragPosLightSpace) {
 
     // perform perspective divide
@@ -119,7 +132,9 @@ void main() {
   vec3 diffuse  = light_color * diff * material_diffuse_color;
   vec3 specular = light_color * spec * material.specular;
   
-  float shadow = calc_shadow(l, fs_in.frag_position_in_light_space);
+  vec3 ShadowCoords = fs_in.frag_position_in_light_space.xyz / fs_in.frag_position_in_light_space.w;
+
+  float shadow = HardShadows_DirectionalLight(ShadowCoords);
   vec3 final_color = (ambient + (1.0 - shadow) * (diffuse + specular));  
 
   vec3 color = gamma_correct(final_color);
