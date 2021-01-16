@@ -295,17 +295,17 @@ draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float s
     Quaternion mesh_correction;
     set_from_axis_and_angle(&mesh_correction, make_vector3(0.f, 0.f, 1.f), 0.f);
     
-    Mat4 r = identity();
+    Mat4 r = mat4_identity();
     set_rotation(&r, orientation * mesh_correction);
     
-    Mat4 m = identity();
-    m.e[0 + 3 * 4] = p.x;
-    m.e[1 + 3 * 4] = p.y;
-    m.e[2 + 3 * 4] = p.z;
+    Mat4 m = mat4_identity();
+    m._14 = p.x;
+    m._24 = p.y;
+    m._34 = p.z;
     
-    m.e[0 + 0 * 4] = scale;
-    m.e[1 + 1 * 4] = scale;
-    m.e[2 + 2 * 4] = scale;
+    m._11 = scale;
+    m._22 = scale;
+    m._33 = scale;
     
     
     set_mat4("model", r * m);

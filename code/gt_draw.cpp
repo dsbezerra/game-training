@@ -416,18 +416,6 @@ render_2d_right_handed(int width, int height) {
     // NOTE(diego): This shader is reused for all 2D rendering.
     set_shader(global_shader);
     
-#if 0
-    Mat4 tm = identity();
-    
-    tm.rc[0][0] = 2.f / width;
-    tm.rc[1][1] = 2.f / height;
-    
-    tm.rc[3][0] = -10.f;
-    tm.rc[3][1] = 10.f;
-    
-    projection_matrix = tm;
-    view_matrix       = identity();
-#else 
     real32 aspect_ratio = (real32) width / (real32) height;
     
     real32 f = 10.f;
@@ -437,7 +425,6 @@ render_2d_right_handed(int width, int height) {
     
     projection_matrix = ortho(ortho_size, aspect_ratio, n, f);
     view_matrix       = translate(make_vector2(-width / 2.f, ortho_size));
-#endif
     
     refresh_shader_transform();
 }
@@ -451,7 +438,7 @@ render_3d(int width, int height, real32 fov = 45.f) {
     real32 f = 100.f;
     
     projection_matrix = perspective(fov, aspect_ratio, f, n);
-    view_matrix       = identity();
+    view_matrix       = mat4_identity();
     
     refresh_shader_transform();
 }

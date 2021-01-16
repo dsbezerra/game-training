@@ -85,6 +85,27 @@ union Quaternion {
 
 struct Mat4 {
     union {
+        struct {
+            real32 _11;
+            real32 _21;
+            real32 _31;
+            real32 _41;
+            
+            real32 _12;
+            real32 _22;
+            real32 _32;
+            real32 _42;
+            
+            real32 _13;
+            real32 _23;
+            real32 _33;
+            real32 _43;
+            
+            real32 _14;
+            real32 _24;
+            real32 _34;
+            real32 _44;
+        };
         real32 e[4*4];
         real32 rc[4][4];
         Vector4 rows[4];
@@ -562,9 +583,11 @@ internal void
 set_from_axis_and_angle(Quaternion *a, Vector3 axis, real32 angle) {
     real32 half_rad = angle_to_radians(angle) / 2.f;
     real32 s = sinf(half_rad);
-    a->x = axis.x;
-    a->y = axis.y;
-    a->z = axis.z;
+    
+    a->x = axis.x*s;
+    a->y = axis.y*s;
+    a->z = axis.z*s;
+    
     a->w = cosf(half_rad);
 }
 
@@ -572,6 +595,15 @@ inline Quaternion
 make_quaternion(Vector3 axis, real32 angle) {
     Quaternion result = {};
     set_from_axis_and_angle(&result, axis, angle);
+    return result;
+}
+
+inline Quaternion
+quaternion_identity() {
+    Quaternion result = {};
+    
+    result.w = 1.0f;
+    
     return result;
 }
 
@@ -639,7 +671,7 @@ interpolate(Quaternion a, real32 t) {
     // Scale the angle by t
     real32 at = angle * t;
     
-    result = make_quaternion(axis, at);
+    set_from_axis_and_angle(&result, axis, at);
     
     return result;
 }
@@ -658,8 +690,6 @@ operator^= (Quaternion &a, float t) {
 // NOTE(diego): Don't seem to work correctly.
 internal Quaternion
 slerp(Quaternion a, Quaternion b, real32 t) {
-    
-    Quaternion result = {};
     
     real32 cos_omega = a.w * b.w + inner(b.xyz, a.xyz);
     if (cos_omega < 0.f) {
@@ -688,8 +718,9 @@ slerp(Quaternion a, Quaternion b, real32 t) {
     }
     
     // Interpolate
-    result.w = a.w * k0 + b.w * k1;
-    result.xyz = a.xyz * k0 + b.xyz * k1;
+    Quaternion result;
+	result.w   = a.w   * k0 + b.w   * k1;
+	result.xyz = a.xyz * k0 + b.xyz * k1;
     
     return result;
 }
@@ -912,13 +943,13 @@ random_real32_in_range(real32 min, real32 max) {
 //
 
 internal inline Mat4
-identity() {
+mat4_identity() {
     Mat4 result = {};
     
-    result.e[0 + 0 * 4] = 1.0f;
-    result.e[1 + 1 * 4] = 1.0f;
-    result.e[2 + 2 * 4] = 1.0f;
-    result.e[3 + 3 * 4] = 1.0f;
+    result._11 = 1.0f;
+    result._22 = 1.0f;
+    result._33 = 1.0f;
+    result._44 = 1.0f;
     
     return result;
 }
@@ -956,55 +987,48 @@ Vector2 rotate(Vector2 a, real32 angle) {
 
 inline Mat4
 translate(Vector2 pos) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
-    result.e[0 + 3 * 4] = pos.x;
-    result.e[1 + 3 * 4] = pos.y;
+    result._14 = pos.x;
+    result._24 = pos.y;
     
     return result;
 }
 
 inline Mat4
 translate(Vector3 pos) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
-    result.e[0 + 3 * 4] = pos.x;
-    result.e[1 + 3 * 4] = pos.y;
-    result.e[2 + 3 * 4] = pos.z;
+    result._14 = pos.x;
+    result._24 = pos.y;
+    result._34 = pos.z;
     
     return result;
 }
 
 internal Mat4
 operator*(Mat4 a, Mat4 b) {
-    // NOTE(casey): This is written to be instructive, not optimal!
     Mat4 result = {};
     
-    // NOTE(casey): Rows (of A) 
-    for(int r = 0; r <= 3; ++r) {
-        // NOTE(casey): Column (of B)
-        for(int c = 0; c <= 3; ++c) {
-            // NOTE(casey): Columns of A, rows of B!
-            for(int i = 0; i <= 3; ++i) {
-                result.rc[r][c] += a.rc[r][i] * b.rc[i][c];
-            }
-        }
-    }
+    for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++)
+			result.rc[j][i] = a.rc[j][0] * b.rc[0][i] + a.rc[j][1] * b.rc[1][i] + a.rc[j][2] * b.rc[2][i] + a.rc[j][3] * b.rc[3][i];
+	}
     
     return result;
 }
 
 inline Mat4
 ortho(real32 left, real32 right, real32 top, real32 bottom, real32 n, real32 f) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
-    result.e[0 + 0 * 4] =  2.f / (right - left);
-    result.e[1 + 1 * 4] =  2.f / (top - bottom);
-    result.e[2 + 2 * 4] = -2.f / (f - n);
+    result._11 =  2.f / (right - left);
+    result._22 =  2.f / (top - bottom);
+    result._33 = -2.f / (f - n);
     
-    result.e[0 + 3 * 4] = -((right + left) / (right - left));
-    result.e[1 + 3 * 4] = -((top + bottom) / (top - bottom));
-    result.e[2 + 3 * 4] = -((f + n) / (f - n));
+    result._14 = -((right + left) / (right - left));
+    result._24 = -((top + bottom) / (top - bottom));
+    result._34 = -((f + n) / (f - n));
     
     return result;
 }
@@ -1022,23 +1046,23 @@ ortho(real32 size, real32 aspect_ratio, real32 n, real32 f) {
 
 inline Mat4
 frustum(real32 left, real32 right, real32 bottom, real32 top, real32 n, real32 f) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
     real32 a = right - left;
     real32 b = top   - bottom;
     real32 c = f - n;
     
-    result.rc[0][0] = (2.f * n) / a;
-    result.rc[1][1] = (2.f * n) / b;
+    result._11 = (2.f * n) / a;
+    result._22 = (2.f * n) / b;
     
-    result.rc[2][0] = (right + left)    / a;
-    result.rc[2][1] = (top   + bottom)  / b;
-    result.rc[2][2] = -(f  + n)    / c;
-    result.rc[2][3] = -1.f;
+    result._13 = (right + left) / a;
+    result._23 = (top + bottom) / b;
+    result._33 = -(f + n) / c;
+    result._43 = -1.f;
     
-    result.rc[3][2] = -(2.f * f * n) / c;
+    result._34 = -(2.f * f * n) / c;
     
-    result.rc[3][3] = 0.f;
+    result._44 = 0.f;
     
     return result;
 }
@@ -1056,59 +1080,59 @@ perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
 
 inline Mat4
 look_at(Vector3 position, Vector3 target, Vector3 up = make_vector3(0.f, 1.f, .0f)) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
     Vector3 f = normalize(target - position);
     Vector3 s = normalize(cross(f, up));
     Vector3 u = cross(s, f);
     
-    result.rc[0][0] = s.x;
-    result.rc[1][0] = s.y;
-    result.rc[2][0] = s.z;
+    result._11 = s.x;
+    result._12 = s.y;
+    result._13 = s.z;
     
-    result.rc[0][1] = u.x;
-    result.rc[1][1] = u.y;
-    result.rc[2][1] = u.z;
+    result._21 = u.x;
+    result._22 = u.y;
+    result._23 = u.z;
     
-    result.rc[0][2] = -f.x;
-    result.rc[1][2] = -f.y;
-    result.rc[2][2] = -f.z;
+    result._31 = -f.x;
+    result._32 = -f.y;
+    result._33 = -f.z;
     
-    result.rc[3][0] = -inner(s, position);
-    result.rc[3][1] = -inner(u, position);
-    result.rc[3][2] =  inner(f, position);
+    result._14 = -inner(s, position);
+    result._24 = -inner(u, position);
+    result._34 =  inner(f, position);
     
     return result;
 }
 
 inline Mat4
 scale(Vector2 scale) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
-    result.e[0 + 0 * 4] = scale.x;
-    result.e[1 + 1 * 4] = scale.y;
+    result._11 = scale.x;
+    result._22 = scale.y;
     
     return result;
 }
 
 inline Mat4
 scale(Vector3 scale) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
-    result.e[0 + 0 * 4] = scale.x;
-    result.e[1 + 1 * 4] = scale.y;
-    result.e[2 + 2 * 4] = scale.z;
+    result._11 = scale.x;
+    result._22 = scale.y;
+    result._33 = scale.z;
     
     return result;
 }
 
 inline Mat4
 scale(Mat4 matrix, Vector3 scale) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
-    result.e[0 + 0 * 4] = scale.x;
-    result.e[1 + 1 * 4] = scale.y;
-    result.e[2 + 2 * 4] = scale.z;
+    result._11 = scale.x;
+    result._22 = scale.y;
+    result._33 = scale.z;
     
     return matrix * result;
 }
@@ -1120,7 +1144,7 @@ x_rotation(real32 angle)
     real32 c = cosf(angle);
     real32 s = sinf(angle);
     
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
     result.rc[1][1] = c;
     result.rc[1][2] = -s;
@@ -1136,7 +1160,7 @@ y_rotation(real32 angle) {
     real32 c = cosf(angle);
     real32 s = sinf(angle);
     
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
     result.rc[0][0] = c;
     result.rc[0][2] = s;
@@ -1152,7 +1176,7 @@ z_rotation(real32 angle) {
     real32 c = cosf(angle);
     real32 s = sinf(angle);
     
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     
     result.rc[0][0] = c;
     result.rc[0][1] = -s;
@@ -1164,48 +1188,76 @@ z_rotation(real32 angle) {
 
 inline void
 set_rotation(Mat4 *m, real32 angle, Vector3 axis) {
+    // Normalize beforehand
+	assert(fabs(length_sq(axis) - 1) < 0.000001f);
+    
     // Assume m is identity
     real32 x = axis.x;
     real32 y = axis.y;
     real32 z = axis.z;
     
-    real32 len = length(axis);
-    if ((len != 1.f) && (len != 0.f)) {
-        len = 1.f / len;
-        x *= len;
-        y *= len;
-        z *= len;
-    }
-    
     real32 s = sinf(angle);
     real32 c = cosf(angle);
-    real32 t = 1.f - c; // 1-cos0
+    real32 t = 1.f - c;
     
-    m->e[0]  = x*x*t + c;   // cosθ+Rx2(1−cosθ)
-    m->e[1]  = y*x*t + z*s; // RyRx(1−cosθ)+Rzsinθ
-    m->e[2]  = z*x*t - y*s; // RzRx(1−cosθ)−Rysinθ
+    m->_11 = x*x*t + c;
+    m->_21 = x*y*t - z*s;
+    m->_31 = z*x*t + y*s;
     
-    m->e[4]  = x*y*t - z*s; // RxRy(1−cosθ)−Rzsinθ
-    m->e[5]  = y*y*t + c;   // cosθ+Ry2(1−cosθ)
-    m->e[6]  = z*y*t + x*s; // RzRy(1−cosθ)+Rxsinθ
+    m->_12 = y*x*t + z*s;
+    m->_22 = y*y*t + c;
+    m->_32 = y*z*t - x*s;
     
-    m->e[8]  = x*z*t + y*s; // RxRz(1−cosθ)+Rysinθ
-    m->e[9]  = y*z*t - x*s; // RyRz(1−cosθ)−Rxsinθ
-    m->e[10] = z*z*t + c;   // cosθ+Rz2(1−cosθ)
+    m->_13 = z*y*t - y*s;
+    m->_23 = z*y*t + x*s;
+    m->_33 = z*z*t + c;
 }
 
 // Angle should be in radians.
 inline Mat4
 rotation(real32 angle, Vector3 axis) {
-    Mat4 result = identity();
+    Mat4 result = mat4_identity();
     set_rotation(&result, angle, axis);
     return result;
 }
 
+// NOTE(diego): Borrowed from Unity.
 internal void
 set_rotation(Mat4 *m, Quaternion q) {
-    real32 angle;
-    Vector3 axis;
-    to_axis_angle(q, axis, angle);
-    set_rotation(m, angle, axis);
+    // NOTE(diego): Assumes m is identity and q is unit.
+    
+    // Precalculate coordinate products
+    real32 x = q.x * 2.0f;
+    real32 y = q.y * 2.0f;
+    real32 z = q.z * 2.0f;
+    real32 xx = q.x * x;
+    real32 yy = q.y * y;
+    real32 zz = q.z * z;
+    real32 xy = q.x * y;
+    real32 xz = q.x * z;
+    real32 yz = q.y * z;
+    real32 wx = q.w * x;
+    real32 wy = q.w * y;
+    real32 wz = q.w * z;
+    
+    // Calculate 3x3 matrix from orthonormal basis
+    m->_11 = 1.0f - (yy + zz);
+    m->_21 = xy + wz;
+    m->_31 = xz - wy;
+    m->_41 = 0.0f;
+    
+    m->_12 = xy - wz;
+    m->_22 = 1.0f - (xx + zz);
+    m->_32 = yz + wx;
+    m->_42 = 0.0f;
+    
+    m->_13 = xz + wy;
+    m->_23 = yz - wx;
+    m->_33 = 1.0f - (xx + yy);
+    m->_43 = 0.0f;
+    
+    m->_14 = 0.0f;
+    m->_24 = 0.0f;
+    m->_34 = 0.0f;
+    m->_44 = 1.0f;
 }

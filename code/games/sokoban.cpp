@@ -103,8 +103,6 @@ init_game(Sokoban_State *state) {
     state->player = player;
 }
 
-global_variable real32 angle = 0.f;
-
 internal void
 update_game(Sokoban_State *state, Game_Input *input) {
     // TODO
@@ -169,6 +167,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
 
 internal void
 draw_game_playing(Sokoban_State *state) {
+    
     // Draw plane
     Quaternion a = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
     {
@@ -192,8 +191,7 @@ draw_game_playing(Sokoban_State *state) {
             }
             
             if (mesh) {
-                Quaternion orientation = {};
-                orientation.w = 1.f;
+                Quaternion orientation = quaternion_identity();
                 if (entity.kind == SokobanEntityKind_Star) {
                     entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
                 }

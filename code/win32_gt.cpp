@@ -589,6 +589,11 @@ win32_process_pending_messages(HWND window) {
     }
 }
 
+void print_quaternion(Quaternion q, int n) {
+    char buf[256];
+    sprintf(buf, "q%d (%f, %f, %f, %f)\n", n, q.w, q.x, q.y, q.z);
+    OutputDebugString(buf);
+}
 
 int CALLBACK
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int show_code) {
