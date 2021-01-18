@@ -1,85 +1,5 @@
 #include <gl/gl.h>
 
-#define GL_FRAMEBUFFER_SRGB 36281
-
-// 
-// GL Definitions
-//
-
-#define GL_FRAGMENT_SHADER      0x8B30
-#define GL_VERTEX_SHADER        0x8B31
-#define GL_COMPILE_STATUS       0x8B81
-#define GL_LINK_STATUS          0x8B82
-#define GL_INFO_LOG_LENGTH      0x8B84
-
-// 
-// Buffer Objects
-//
-#define GL_ARRAY_BUFFER                   0x8892
-#define GL_ELEMENT_ARRAY_BUFFER           0x8893
-
-#define GL_STREAM_DRAW                    0x88E0
-#define GL_STATIC_DRAW                    0x88E4
-#define GL_DYNAMIC_DRAW                   0x88E8
-
-//
-// Texture
-//
-
-#define GL_TEXTURE0                       0x84C0
-#define GL_TEXTURE1                       0x84C1
-
-//
-// Other
-//
-#define GL_GPU_MEM_INFO_TOTAL_AVAILABLE_MEM_NVX   0x9048
-#define GL_GPU_MEM_INFO_CURRENT_AVAILABLE_MEM_NVX 0x9049
-
-//
-// Extensions
-//
-#define GL_COLOR_ATTACHMENT0              0x8CE0
-#define GL_DEPTH_ATTACHMENT               0x8D00
-#define GL_DEPTH_STENCIL_ATTACHMENT       0x821A
-
-#define GL_CLAMP_TO_BORDER                0x812D
-
-#define GL_DEPTH24_STENCIL8               0x88F0
-
-#define GL_FRAMEBUFFER                    0x8D40
-#define GL_RENDERBUFFER                   0x8D41
-
-#define GL_FRAMEBUFFER_COMPLETE           0x8CD5
-
-#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
-#define WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
-#define WGL_CONTEXT_FLAGS_ARB                   0x2094
-#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
-
-#define WGL_CONTEXT_DEBUG_BIT_ARB               0x0001
-#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
-
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
-#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
-
-#define WGL_DRAW_TO_WINDOW_ARB                  0x2001
-#define WGL_ACCELERATION_ARB                    0x2003
-#define WGL_SUPPORT_OPENGL_ARB                  0x2010
-#define WGL_DOUBLE_BUFFER_ARB                   0x2011
-#define WGL_PIXEL_TYPE_ARB                      0x2013
-
-#define WGL_TYPE_RGBA_ARB                       0x202B
-#define WGL_FULL_ACCELERATION_ARB               0x2027
-
-#define WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB        0x20A9
-
-#define WGL_RED_BITS_ARB                        0x2015
-#define WGL_GREEN_BITS_ARB                      0x2017
-#define WGL_BLUE_BITS_ARB                       0x2019
-#define WGL_ALPHA_BITS_ARB                      0x201B
-#define WGL_DEPTH_BITS_ARB                      0x2022
-
 typedef char GLchar;
 
 typedef void type_glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
@@ -119,13 +39,12 @@ typedef void type_glDrawElements(GLenum mode, GLsizei count, GLenum type, const 
 typedef GLenum type_glCheckFramebufferStatus(GLenum target);
 typedef void type_glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 typedef void type_glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+typedef void type_glTexImage2DMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
 
-typedef void type_glGenRenderbuffers(GLsizei n, GLuint * renderbuffers);
-typedef void type_glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
-typedef void type_glBindRenderbuffer(GLenum target, GLuint renderbuffer);
+typedef void type_glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+
 
 typedef void type_glDeleteFramebuffers(GLsizei n, GLuint *framebuffers);
-typedef void type_glDeleteRenderbuffers(GLsizei n, GLuint *renderbuffers);
 
 typedef GLint type_glGetUniformLocation(GLuint program, const GLchar *name);
 typedef void type_glUniform1i(GLint location, GLint v0);
@@ -139,31 +58,6 @@ typedef void type_glGenerateMipmap(GLenum target);
 typedef GLuint type_glGetDebugMessageLog(GLuint count, GLsizei bufSize, GLenum *sources, GLenum *types, GLuint *ids, GLenum *severities, GLsizei *lengths, GLchar *messageLog);
 
 typedef BOOL type_wglSwapIntervalEXT(int interval);
-
-
-typedef HGLRC WINAPI wgl_create_context_attribs_arb(HDC hDC, HGLRC hShareContext,
-                                                    const int *attribList);
-
-typedef BOOL WINAPI wgl_get_pixel_format_attrib_iv_arb(HDC hdc,
-                                                       int iPixelFormat,
-                                                       int iLayerPlane,
-                                                       UINT nAttributes,
-                                                       const int *piAttributes,
-                                                       int *piValues);
-
-typedef BOOL WINAPI wgl_get_pixel_format_attrib_fv_arb(HDC hdc,
-                                                       int iPixelFormat,
-                                                       int iLayerPlane,
-                                                       UINT nAttributes,
-                                                       const int *piAttributes,
-                                                       FLOAT *pfValues);
-
-typedef BOOL WINAPI wgl_choose_pixel_format_arb(HDC hdc,
-                                                const int *piAttribIList,
-                                                const FLOAT *pfAttribFList,
-                                                UINT nMaxFormats,
-                                                int *piFormats,
-                                                UINT *nNumFormats);
 
 #define opengl_function(name) type_##name *name
 #define opengl_get_function(name) open_gl->name = (type_##name *) wglGetProcAddress(#name)
@@ -181,6 +75,9 @@ struct Opengl_Memory_Info {
 
 struct Opengl {
     Opengl_Info info;
+    
+    GLint max_multi_sample_count;
+    
     opengl_function(glGetShaderInfoLog);
     opengl_function(glGetShaderiv);
     opengl_function(glGetProgramiv);
@@ -198,16 +95,13 @@ struct Opengl {
     opengl_function(glGenBuffers);
     
     opengl_function(glGenFramebuffers);
-    opengl_function(glGenRenderbuffers);
     
     opengl_function(glDeleteBuffers);
     opengl_function(glBindVertexArray);
     opengl_function(glBindBuffer);
     opengl_function(glBindFramebuffer);
-    opengl_function(glBindRenderbuffer);
     
     opengl_function(glDeleteFramebuffers);
-    opengl_function(glDeleteRenderbuffers);
     
     opengl_function(glBufferData);
     opengl_function(glBufferSubData);
@@ -231,7 +125,32 @@ struct Opengl {
     opengl_function(glCheckFramebufferStatus);
     opengl_function(glFramebufferTexture2D);
     opengl_function(glFramebufferRenderbuffer);
-    opengl_function(glRenderbufferStorage);
     
+    opengl_function(glBlitFramebuffer);
+    
+    opengl_function(glTexImage2DMultisample);
     opengl_function(wglSwapIntervalEXT);
 };
+
+struct Opengl_Framebuffer {
+    GLuint framebuffer_handle;
+    GLuint color_handle;
+    GLuint depth_handle;
+};
+
+enum Opengl_Framebuffer_Flags
+{
+    OpenGLFramebuffer_Multisampled = 0x1,
+    OpenGLFramebuffer_Filtered = 0x2,
+    OpenGLFramebuffer_Depth = 0x4,
+    OpenGLFramebuffer_Float = 0x8,
+};
+
+internal Opengl_Info        opengl_get_info();
+// internal Opengl_Memory_Info opengl_get_memory_info();
+
+internal void opengl_init();
+
+internal GLuint framebuffer_tex_image(Opengl *open_gl, GLuint slot, u32 width, u32 height, GLint filter_type, GLuint format);
+
+internal Opengl_Framebuffer create_framebuffer(u32 width, u32 height, u32 flags, u32 color_buffer_count);

@@ -3,6 +3,8 @@
 
 #include "gt.cpp"
 
+#include "win32_gt_opengl.cpp"
+
 global_variable WINDOWPLACEMENT global_window_position = {sizeof(global_window_position)};
 global_variable LONGLONG global_perf_count_frequency;
 global_variable bool global_running = false;
@@ -151,16 +153,14 @@ win32_opengl_get_functions() {
     opengl_get_function(glDeleteProgram);
     
     opengl_get_function(glGenFramebuffers);
-    opengl_get_function(glGenRenderbuffers);
     opengl_get_function(glDeleteFramebuffers);
-    opengl_get_function(glDeleteRenderbuffers);
     
     opengl_get_function(glGenBuffers);
     opengl_get_function(glDeleteBuffers);
     opengl_get_function(glBindVertexArray);
     opengl_get_function(glBindBuffer);
     opengl_get_function(glBindFramebuffer);
-    opengl_get_function(glBindRenderbuffer);
+    opengl_get_function(glBlitFramebuffer);
     opengl_get_function(glBufferData);
     opengl_get_function(glBufferSubData);
     opengl_get_function(glVertexAttribPointer);
@@ -182,7 +182,8 @@ win32_opengl_get_functions() {
     opengl_get_function(glCheckFramebufferStatus);
     opengl_get_function(glFramebufferTexture2D);
     opengl_get_function(glFramebufferRenderbuffer);
-    opengl_get_function(glRenderbufferStorage);
+    
+    opengl_get_function(glTexImage2DMultisample);
     
     opengl_get_function(wglSwapIntervalEXT);
 }
@@ -394,7 +395,8 @@ win32_set_pixel_format(HDC window_dc) {
     if (wglChoosePixelFormatARB) {
         int int_attr_list[] = {
             WGL_DRAW_TO_WINDOW_ARB, GL_TRUE, // 0
-            WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB, // 1
+            WGL_ACCELERATION_ARB, GL_TRUE, 
+            WGL_FULL_ACCELERATION_ARB, // 1
             WGL_SUPPORT_OPENGL_ARB, GL_TRUE, // 2
             WGL_DOUBLE_BUFFER_ARB, GL_TRUE, // 3
             WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB, // 4
@@ -429,7 +431,6 @@ win32_set_pixel_format(HDC window_dc) {
 // TODO(diego): Watch handmade hero 475
 internal void
 win32_load_wgl_extensions() {
-    
     WNDCLASSA window_class = {};
     
     window_class.lpfnWndProc = default_proc;
@@ -494,6 +495,7 @@ win32_init_opengl(HWND window) {
         win32_opengl_get_functions();
         win32_opengl_refresh_vsync();
         open_gl->info = opengl_get_info();
+        opengl_init();
         
     } else {
         invalid_code_path;
@@ -665,7 +667,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             state.memory = &memory;
             
             init_texture_catalog();
-            
             init_shaders();
             init_draw();
             

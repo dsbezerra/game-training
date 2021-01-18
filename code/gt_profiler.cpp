@@ -24,9 +24,6 @@ render_profiler(Vector2i dim, real32 dt) {
     Vector2 p = make_vector2(20.f, 40.f);
     Vector4 color = make_color(0xffaa55);
     
-    Opengl_Memory_Info memory_info = opengl_get_memory_info();
-    
-    GLint usage = memory_info.total_memory_in_kb - memory_info.current_available_memory_in_kb;
     
     Profiling_Data game_update_and_render_time = global_writing_profiling_data[ProfilerItem_GameUpdateAndRender];
     Profiling_Data game_audio_time = global_writing_profiling_data[ProfilerItem_Audio];
@@ -35,7 +32,7 @@ render_profiler(Vector2i dim, real32 dt) {
     char *fps_lock = global_lock_fps ? "Locked" : "Unlocked";
     
     char buf[256];
-    sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms\nGPU Memory: using %dMB of %dMB\n%s\nUpdate & Render: %.2fms\nUpdate Audio: %.2fms\nVsync: %s\nFPS: %s\nDraw calls: %d\n", dim.width, dim.height, dt * 1000.f, usage / 1024, memory_info.total_memory_in_kb / 1024, open_gl->info.version, game_update_and_render_time.timer, game_audio_time.timer, vsync, fps_lock, draw_call_count);
+    sprintf(buf, "Resolution: %d x %d\nFrame time: %.2fms\n%s\nUpdate & Render: %.2fms\nUpdate Audio: %.2fms\nVsync: %s\nFPS: %s\nDraw calls: %d\n", dim.width, dim.height, dt * 1000.f, open_gl->info.version, game_update_and_render_time.timer, game_audio_time.timer, vsync, fps_lock, draw_call_count);
     
     render_2d_right_handed(dim.width, dim.height);
     

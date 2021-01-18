@@ -54,8 +54,7 @@ struct Sokoban_State {
     Triangle_Mesh star;
     Triangle_Mesh plane;
     
-    Playing_Sound *violin;
-    Playing_Sound *test;
+    Playing_Sound *requiem;
     
     Camera cam;
     

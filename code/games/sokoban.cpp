@@ -2,7 +2,7 @@
         global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
 global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .01f, origin.z);
 
-global_variable Loaded_Sound violin, test;
+global_variable Loaded_Sound requiem, test;
 global_variable int blinn = 0;
 
 internal Sokoban_Entity
@@ -23,7 +23,8 @@ make_star(Vector3 position) {
 
 internal void
 init_game(Sokoban_State *state) {
-    state->violin = play_sound("Violin", &violin);
+    state->requiem = play_sound("Requiem", &requiem);
+    set_volume(state->requiem, .1f);
     
     state->Game_Mode = GameMode_Playing;
     
@@ -149,14 +150,6 @@ update_game(Sokoban_State *state, Game_Input *input) {
         blinn = 1;
     }
     
-    if (pressed(Button_Space)) {
-        if (state->test) {
-            restart_sound(state->test);
-        } else {
-            state->test = play_sound("Short", &test, false);
-        }
-    }
-    
     if (released(Button_Enter)) {
         if (cam->mode == CameraMode_Free) 
             set_camera_mode(cam, CameraMode_LookAt);
@@ -193,6 +186,11 @@ draw_game_playing(Sokoban_State *state) {
             if (mesh) {
                 Quaternion orientation = quaternion_identity();
                 if (entity.kind == SokobanEntityKind_Star) {
+                    local_persist real32 angle = 0.f;
+                    orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), angle);
+                    angle += core.time_info.dt * 90.f;
+                    if (angle >= 360.f) angle -= 360.f;
+                    
                     entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
                 }
                 draw_mesh(mesh, entity.position, orientation);
@@ -209,6 +207,7 @@ draw_game_playing(Sokoban_State *state) {
 }
 
 global_variable Mat4 light_space_matrix;
+global_variable Vector3 light_pos = make_vector3(-2.f, 0.8f, -2.f);
 
 internal void
 draw_game_shadow(Sokoban_State *state) {
@@ -231,11 +230,10 @@ draw_game_shadow(Sokoban_State *state) {
     
     
     Mat4 projection = ortho(-10.f, 10.f, -10.f, 10.f, n, f);
-    Mat4 view = look_at(make_vector3(0.5f, 0.5f, -1.f),
+    Mat4 view = look_at(light_pos,
                         origin,
                         make_vector3(0.f, 1.f, 0.f));
     light_space_matrix = projection * view;
-    
     set_mat4("light_space_matrix", light_space_matrix);
     
     draw_game_playing(state);
@@ -266,9 +264,8 @@ draw_game_view(Sokoban_State *state) {
         refresh_shader_transform();
         
         set_mat4("light_space_matrix", light_space_matrix);
+        set_float3("light_pos", light_pos);
         set_float3("view_position", state->cam.position);
-        set_int1("blinn", blinn);
-        
         set_texture("shadow_map", &immediate->depth_map);
         
         draw_game_playing(state);
@@ -302,8 +299,7 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         state = (Sokoban_State *) game_alloc(memory, megabytes(12));
         
-        violin = load_sound("./data/sounds/violin.wav");
-        test = load_sound("./data/sounds/short.wav");
+        requiem = load_sound("./data/sounds/requiem.wav");
         
         init_game(state);
         
@@ -395,6 +391,5 @@ sokoban_game_free(Game_Memory *memory) {
     Sokoban_State *state = (Sokoban_State *) memory->permanent_storage;
     if (!state) return;
     
-    if (state->violin) state->violin->flags &= ~PLAYING_SOUND_ACTIVE;
-    if (state->test) state->test->flags &= ~PLAYING_SOUND_ACTIVE;
+    if (state->requiem) state->requiem->flags &= ~PLAYING_SOUND_ACTIVE;
 }

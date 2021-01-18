@@ -434,20 +434,27 @@ render_mode_selecting(App_State *state) {
 }
 
 internal void
-draw_framebuffer() {
-    use_framebuffer(0);
+draw_framebuffer(Vector2i dim) {
     
+    Opengl_Framebuffer multisampled = immediate->multisampled_framebuffer;
+    Opengl_Framebuffer screen       = immediate->screen_framebuffer;
+    
+    open_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampled.framebuffer_handle);
+    open_gl->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, screen.framebuffer_handle);
+    open_gl->glBlitFramebuffer(0, 0, dim.width, dim.height, 0, 0, dim.width, dim.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    
+    use_framebuffer(0);
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     set_shader(global_screen_shader);
     
-    immediate_begin();
     Vector2 min = make_vector2(-1.f, -1.0f);
     Vector2 max = make_vector2(1.f, 1.f);
-    immediate_textured_quad(min, max, immediate->fbo_map.id);
-    immediate_flush();
     
+    immediate_begin();
+    immediate_textured_quad(min, max, screen.color_handle);
+    immediate_flush();
     
     if (immediate->depth_map.id) {
         real32 size_a = 1.f;;
@@ -503,8 +510,7 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
     }
     
     draw_debug_draw_mixer(state->window_dimensions);
-    
-    draw_framebuffer();
+    draw_framebuffer(state->window_dimensions);
 }
 
 internal void

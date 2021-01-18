@@ -4,7 +4,7 @@ global_variable Mat4 projection_matrix;
 
 global_variable u32 draw_call_count = 0;
 
-#define DUMP_GL_ERRORS false
+#define DUMP_GL_ERRORS true
 
 internal void
 init_depth_map() {
@@ -12,33 +12,11 @@ init_depth_map() {
     result.width = SHADOW_WIDTH;
     result.height = SHADOW_HEIGHT;
     
-    open_gl->glGenFramebuffers(1, &result.fbo);
+    Opengl_Framebuffer depth_framebuffer = create_framebuffer(result.width, result.height, OpenGLFramebuffer_Depth|OpenGLFramebuffer_Filtered, 0);
+    result.id = depth_framebuffer.depth_handle;
+    result.fbo = depth_framebuffer.framebuffer_handle;
     
-    glGenTextures(1, &result.id);
-    glBindTexture(GL_TEXTURE_2D, result.id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-#if 0
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-#else
-    // Avoid repeat
-    float border_color[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
-#endif
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, result.width, result.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    
-    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, result.fbo);
-    open_gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, result.id, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
-    assert(open_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
-    
+    immediate->depth_framebuffer = depth_framebuffer;
     immediate->depth_map = result;
 }
 
@@ -75,13 +53,20 @@ immediate_init() {
     open_gl->glBindVertexArray(0);
     open_gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
     
+    glDepthMask(GL_TRUE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_DEPTH_TEST);
+    
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    //glFrontFace(GL_CCW);
+    //glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    //glEnable(GL_SAMPLE_ALPHA_TO_ONE);
+    glEnable(GL_MULTISAMPLE);
+    
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    
-    //glEnable(GL_MULTISAMPLE);
-	glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    //glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 internal void
@@ -265,13 +250,13 @@ immediate_textured_quad(Vector2 min, Vector2 max, u32 texture) {
     real32 z_index = 1.f;
     Vector4 color = make_color(0xffffffff);
     
+    immediate_vertex(make_vector3(min.x, min.y, z_index), color, top_left);
+    immediate_vertex(make_vector3(min.x, max.y, z_index), color, bottom_left);
+    immediate_vertex(make_vector3(max.x, min.y, z_index), color, top_right);
+    
     immediate_vertex(make_vector3(min.x, max.y, z_index), color, bottom_left);
     immediate_vertex(make_vector3(max.x, max.y, z_index), color, bottom_right);
-    immediate_vertex(make_vector3(min.x, min.y, z_index), color, top_left);
-    
-    immediate_vertex(make_vector3(min.x, min.y, z_index), color, top_left);
     immediate_vertex(make_vector3(max.x, min.y, z_index), color, top_right);
-    immediate_vertex(make_vector3(max.x, max.y, z_index), color, bottom_right);
 }
 
 internal void
@@ -374,7 +359,6 @@ immediate_flush() {
     open_gl->glEnableVertexAttribArray(normal_loc);
     
     glDrawArrays(GL_TRIANGLES, 0, immediate->num_vertices);
-    dump_gl_errors("immediate_flush");
     
     open_gl->glDisableVertexAttribArray(position_loc);
     open_gl->glDisableVertexAttribArray(color_loc);
@@ -437,7 +421,7 @@ render_3d(int width, int height, real32 fov = 45.f) {
     real32 n = 0.1f;
     real32 f = 100.f;
     
-    projection_matrix = perspective(fov, aspect_ratio, f, n);
+    projection_matrix = perspective(fov, aspect_ratio, n, f);
     view_matrix       = mat4_identity();
     
     refresh_shader_transform();
@@ -473,45 +457,34 @@ use_framebuffer(GLuint id) {
 }
 
 internal void
+use_framebuffer(Opengl_Framebuffer framebuffer) {
+    use_framebuffer(framebuffer.framebuffer_handle);
+}
+
+internal void
 init_framebuffer(int width, int height) {
-    // Ensure older texture was freed
     
-    //
-    // Setup framebuffer
-    //
-    Texture_Map texture = {};
-    texture.width = width;
-    texture.height = height;
+    Opengl_Framebuffer framebuffer = create_framebuffer(width, height, OpenGLFramebuffer_Multisampled | OpenGLFramebuffer_Depth, 1);
+    immediate->multisampled_framebuffer = framebuffer;
     
-    //
-    // Setup texture
-    //
-    glGenTextures(1, &texture.id);
-    glBindTexture(GL_TEXTURE_2D, texture.id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.width, texture.height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // These two lines below fixes the weird colors at the sides of the screen when using a kernel fragment shader.
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    Opengl_Framebuffer screen_framebuffer = create_framebuffer(width, height, 0, 1);
+    immediate->screen_framebuffer = screen_framebuffer;
     
-    open_gl->glGenFramebuffers(1, &texture.fbo);
-    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, texture.fbo);
+    // Save as texture
+    Texture_Map fbo = {};
+    fbo.width = width;
+    fbo.height = height;
+    fbo.id = framebuffer.color_handle;
+    fbo.fbo = framebuffer.framebuffer_handle;
     
-    // Attach texture
-    open_gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id, 0);
+    immediate->fbo_map = fbo;
     
-    open_gl->glGenRenderbuffers(1, &immediate->rbo);
-    open_gl->glBindRenderbuffer(GL_RENDERBUFFER, immediate->rbo);
-    open_gl->glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, texture.width, texture.height);
-    open_gl->glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, immediate->rbo);
-    open_gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    open_gl->glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    
-    immediate->fbo_map = texture;
-    
-    assert(open_gl->glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    Texture_Map screen = {};
+    screen.width = width;
+    screen.height = height;
+    screen.id = screen_framebuffer.color_handle;
+    screen.fbo = screen_framebuffer.framebuffer_handle;
+    immediate->screen_fbo_map = screen;
 }
 
 internal void
@@ -531,9 +504,6 @@ refresh_framebuffer(int width, int height) {
     }
     if (immediate->fbo_map.fbo) {
         open_gl->glDeleteFramebuffers(1, &immediate->fbo_map.fbo);
-    }
-    if (immediate->rbo) {
-        open_gl->glDeleteRenderbuffers(1, &immediate->rbo);
     }
     
     // Now reinit with new dimensions

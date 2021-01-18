@@ -207,6 +207,14 @@ load_shader(char *filepath) {
     }
     Break_String_Result r = break_by_tok(short_name, '.');
     result.short_name     = short_name;
+    
+    // NOTE(diego): We are using the same routine to load all shaders.
+    // For this reason glGetError() can return error information regarding not found uniforms that we don't care about.
+    int skipped = 0;
+    while (glGetError() != NO_ERROR) {
+        skipped++;
+    }
+    
     return result;
 }
 

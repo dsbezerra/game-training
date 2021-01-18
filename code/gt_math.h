@@ -1009,17 +1009,41 @@ translate(Vector3 pos) {
 internal Mat4
 operator*(Mat4 a, Mat4 b) {
     Mat4 result = {};
+    // memory layout:
+    //
+    //                row no (=vertical)
+    //               |  0   1   2   3
+    //            ---+----------------
+    //            0  | m00 m10 m20 m30
+    // column no  1  | m01 m11 m21 m31
+    // (=horiz)   2  | m02 m12 m22 m32
+    //            3  | m03 m13 m23 m33
     
-    for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++)
-			result.rc[j][i] = a.rc[j][0] * b.rc[0][i] + a.rc[j][1] * b.rc[1][i] + a.rc[j][2] * b.rc[2][i] + a.rc[j][3] * b.rc[3][i];
-	}
+    result._11 = a._11 * b._11 + a._12 * b._21 + a._13 * b._31 + a._14 * b._41;
+    result._12 = a._11 * b._12 + a._12 * b._22 + a._13 * b._32 + a._14 * b._42;
+    result._13 = a._11 * b._13 + a._12 * b._23 + a._13 * b._33 + a._14 * b._43;
+    result._14 = a._11 * b._14 + a._12 * b._24 + a._13 * b._34 + a._14 * b._44;
+    
+    result._21 = a._21 * b._11 + a._22 * b._21 + a._23 * b._31 + a._24 * b._41;
+    result._22 = a._21 * b._12 + a._22 * b._22 + a._23 * b._32 + a._24 * b._42;
+    result._23 = a._21 * b._13 + a._22 * b._23 + a._23 * b._33 + a._24 * b._43;
+    result._24 = a._21 * b._14 + a._22 * b._24 + a._23 * b._34 + a._24 * b._44;
+    
+    result._31 = a._31 * b._11 + a._32 * b._21 + a._33 * b._31 + a._34 * b._41;
+    result._32 = a._31 * b._12 + a._32 * b._22 + a._33 * b._32 + a._34 * b._42;
+    result._33 = a._31 * b._13 + a._32 * b._23 + a._33 * b._33 + a._34 * b._43;
+    result._34 = a._31 * b._14 + a._32 * b._24 + a._33 * b._34 + a._34 * b._44;
+    
+    result._41 = a._41 * b._11 + a._42 * b._21 + a._43 * b._31 + a._44 * b._41;
+    result._42 = a._41 * b._12 + a._42 * b._22 + a._43 * b._32 + a._44 * b._42;
+    result._43 = a._41 * b._13 + a._42 * b._23 + a._43 * b._33 + a._44 * b._43;
+    result._44 = a._41 * b._14 + a._42 * b._24 + a._43 * b._34 + a._44 * b._44;
     
     return result;
 }
 
 inline Mat4
-ortho(real32 left, real32 right, real32 top, real32 bottom, real32 n, real32 f) {
+ortho(real32 left, real32 right, real32 bottom, real32 top, real32 n, real32 f) {
     Mat4 result = mat4_identity();
     
     result._11 =  2.f / (right - left);
@@ -1041,41 +1065,30 @@ ortho(real32 size, real32 aspect_ratio, real32 n, real32 f) {
     real32 top = size;
     real32 bottom = -top;
     
-    return ortho(left, right, top, bottom, n, f);
+    return ortho(left, right, bottom, top, n, f);
 }
 
 inline Mat4
-frustum(real32 left, real32 right, real32 bottom, real32 top, real32 n, real32 f) {
-    Mat4 result = mat4_identity();
+perspective(real32 fov, real32 aspect_ratio, real32 n, real32 f) {
+    Mat4 m = mat4_identity();
     
-    real32 a = right - left;
-    real32 b = top   - bottom;
-    real32 c = f - n;
+    real32 flTanThetaOver2 = tanf(fov * (real32)PI / 360.f);
     
-    result._11 = (2.f * n) / a;
-    result._22 = (2.f * n) / b;
+	// X and Y scaling
+	m._11 = 1.f / flTanThetaOver2;
+	m._22 = aspect_ratio / flTanThetaOver2;
     
-    result._13 = (right + left) / a;
-    result._23 = (top + bottom) / b;
-    result._33 = -(f + n) / c;
-    result._43 = -1.f;
+	// Z coordinate makes z -1 when we're on the near plane and +1 on the far plane
+	m._33 = (n + f) / (n - f);
+	m._34 = 2 * n * f / (n - f);
     
-    result._34 = -(2.f * f * n) / c;
+	// W = -1 so that we have [x y z -z], a homogenous vector that becomes [-x/z -y/z -1] after division by w.
+	m._43 = -1;
     
-    result._44 = 0.f;
+	// Must zero this out, the identity has it as 1.
+	m._44 = 0;
     
-    return result;
-}
-
-inline Mat4
-perspective(real32 fov, real32 aspect_ratio, real32 f, real32 n) {
-    real32 r = n * tanf(angle_to_radians(fov));
-    real32 l= -r;
-    
-    real32 b = l / aspect_ratio;
-    real32 t = r / aspect_ratio;
-    
-    return frustum(l, r, b, t, n, f);
+    return m;
 }
 
 inline Mat4

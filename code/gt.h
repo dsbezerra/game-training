@@ -197,3 +197,4 @@ internal real32 get_time();
 global_variable b32 global_vsync = false;
 global_variable b32 global_lock_fps = false;
 
+global_variable Opengl *open_gl;

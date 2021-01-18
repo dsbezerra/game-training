@@ -43,8 +43,10 @@ uniform vec3 view_position;
 
 uniform sampler2D diffuse_texture;
 uniform sampler2D shadow_map;
-
+uniform vec3 light_pos;
 uniform bool blinn;
+
+vec3 light_color = vec3(1.0, 1.0, 1.0);
 
 out vec4 frag_color;
 
@@ -67,51 +69,20 @@ float HardShadows_DirectionalLight(vec3 ShadowCoords) {
 
   ShadowCoords = ShadowCoords * 0.5 + 0.5;
 
-  vec3 l = normalize(vec3(0.0, 1.0, 0.0));
-  float bias = max(0.05 * (1.0 - dot(fs_in.normal, l)), 0.005);
+  vec3 l = normalize(light_pos - fs_in.frag_position);
+  float bias = 0.005;//max(0.05 * (1.0 - dot(fs_in.normal, l)), 0.005);
 
   float z = texture(shadow_map, ShadowCoords.xy).x;
   return (z < (ShadowCoords.z - bias)) ? 1.0 : 0.0;
 }
-
-float calc_shadow(vec3 light_dir, vec4 fragPosLightSpace) {
-
-    // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    if (projCoords.z > 1.0)
-      return 0.0;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    
-    // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-    float bias = max(0.05 * (1.0 - dot(fs_in.normal, light_dir)), 0.005);
-    
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadow_map, 0);
-    for(int x = -1; x <= 1; ++x)
-    {
-      for(int y = -1; y <= 1; ++y)
-      {
-        float pcfDepth = texture(shadow_map, projCoords.xy + vec2(x, y) * texelSize).r; 
-        shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
-      }    
-    }
-    shadow /= 9.0;
-    return shadow;
-}
-
-vec3 light_color = vec3(1.0, 1.0, 1.0);
 
 void main() {
   vec3 material_diffuse_color = texture(diffuse_texture, fs_in.uv).rgb;
   vec3 material_ambient_color = vec3(0.2) * material_diffuse_color;
 
   vec3 n = normalize(fs_in.normal);
-  vec3 l = normalize(vec3(0.0, 1.0, 0.0));
- 
-  
+  vec3 l = normalize(light_pos - fs_in.frag_position);
+
   vec3 E = normalize(view_position - fs_in.frag_position);
   
   // specular shading
@@ -125,7 +96,7 @@ void main() {
   }
   
   // diffuse shading
-  float diff = max(dot(n, l), 0.0);
+  float diff = max(dot(l, n), 0.0);
   
   // combine results
   vec3 ambient  = material_ambient_color;
