@@ -9,6 +9,7 @@
 #include "gt_mesh.cpp"
 
 global_variable Game_Core core = {};
+global_variable Debug_Draw debug_draw = {};
 
 #include "gt_camera.cpp"
 
@@ -456,15 +457,22 @@ draw_framebuffer(Vector2i dim) {
     immediate_textured_quad(min, max, screen.color_handle);
     immediate_flush();
     
-    if (immediate->depth_map.id) {
-        real32 size_a = 1.f;;
-        real32 size_b = size_a * .2f;
+    if (debug_draw.draw_shadow_map && immediate->depth_map.id) {
         set_shader(global_depth_shader);
         immediate_begin();
-        min = make_vector2(-size_a, -size_a);
-        max = make_vector2(-size_b,  -size_b);
-        immediate_textured_quad(min, max, immediate->depth_map.id);
+        Vector2 min_shadow_map = make_vector2(-1.f, -1.f);
+        Vector2 max_shadow_map = make_vector2(1.f,  1.f);
+        immediate_textured_quad(min_shadow_map, max_shadow_map, immediate->depth_map.id);
         immediate_flush();
+    }
+}
+
+internal void
+update_debug(Game_Input *input) {
+    if (input->alt_is_down) {
+        if (pressed(Button_F1)) {
+            debug_draw.draw_shadow_map = !debug_draw.draw_shadow_map;
+        }
     }
 }
 
@@ -495,6 +503,8 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         update_mode_selecting(state, input);
     }
     
+    update_debug(input);
+    
     // Draw
     immediate_begin();
     App_Mode m = state->current_mode;
@@ -509,8 +519,8 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         immediate_flush();
     }
     
-    draw_debug_draw_mixer(state->window_dimensions);
     draw_framebuffer(state->window_dimensions);
+    draw_debug_draw_mixer(state->window_dimensions);
 }
 
 internal void

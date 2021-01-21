@@ -20,6 +20,7 @@ enum Sokoban_Entity_Kind {
     SokobanEntityKind_Rock,
     SokobanEntityKind_Tree,
     SokobanEntityKind_Star,
+    SokobanEntityKind_Sun,
     SokobanEntityKind_Count,
 };
 
@@ -53,6 +54,7 @@ struct Sokoban_State {
     Triangle_Mesh block;
     Triangle_Mesh star;
     Triangle_Mesh plane;
+    Triangle_Mesh sun;
     
     Playing_Sound *requiem;
     

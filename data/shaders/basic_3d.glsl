@@ -12,6 +12,7 @@ uniform mat4 projection;
 uniform mat4 light_space_matrix;
 
 out VS_OUT {
+  vec3 position;
   vec3 frag_position;
   vec3 normal;
   vec4 color;
@@ -20,6 +21,7 @@ out VS_OUT {
 } vs_out;
 
 void main() {
+  vs_out.position = position;
   vs_out.frag_position = vec3(model * vec4(position, 1.0));
   vs_out.normal = mat3(transpose(inverse(model))) * normal;
   vs_out.uv = uv;
@@ -46,11 +48,12 @@ uniform sampler2D shadow_map;
 uniform vec3 light_pos;
 uniform bool blinn;
 
-vec3 light_color = vec3(1.0, 1.0, 1.0);
+vec3 light_color = vec3(0.8, 0.598313, 0.000746); // Matches the blender file material color
 
 out vec4 frag_color;
 
 in VS_OUT {
+  vec3 position;
   vec3 frag_position;
   vec3 normal;
   vec4 color;
@@ -70,7 +73,7 @@ float HardShadows_DirectionalLight(vec3 ShadowCoords) {
   ShadowCoords = ShadowCoords * 0.5 + 0.5;
 
   vec3 l = normalize(light_pos - fs_in.frag_position);
-  float bias = 0.005;//max(0.05 * (1.0 - dot(fs_in.normal, l)), 0.005);
+  float bias = max(0.01 * (1.0 - dot(fs_in.normal, l)), 0.005);
 
   float z = texture(shadow_map, ShadowCoords.xy).x;
   return (z < (ShadowCoords.z - bias)) ? 1.0 : 0.0;
@@ -78,7 +81,7 @@ float HardShadows_DirectionalLight(vec3 ShadowCoords) {
 
 void main() {
   vec3 material_diffuse_color = texture(diffuse_texture, fs_in.uv).rgb;
-  vec3 material_ambient_color = vec3(0.2) * material_diffuse_color;
+  vec3 material_ambient_color = vec3(0.1) * material_diffuse_color;
 
   vec3 n = normalize(fs_in.normal);
   vec3 l = normalize(light_pos - fs_in.frag_position);
@@ -106,7 +109,12 @@ void main() {
   vec3 ShadowCoords = fs_in.frag_position_in_light_space.xyz / fs_in.frag_position_in_light_space.w;
 
   float shadow = HardShadows_DirectionalLight(ShadowCoords);
-  vec3 final_color = (ambient + (1.0 - shadow) * (diffuse + specular));  
+  vec3 final_color;
+  if (material.diffuse == light_color) {
+    final_color = material_diffuse_color * light_color;
+  } else {
+    final_color = (ambient + (1.0 - shadow) * (diffuse + specular));
+  }   
 
   vec3 color = gamma_correct(final_color);
   frag_color = vec4(color, 1.0);

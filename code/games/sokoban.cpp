@@ -1,24 +1,33 @@
 
-        global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
+global_variable Mat4 light_space_matrix;
+global_variable Vector3 light_pos = make_vector3(-2.f, 4.f, -2.f);
+global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
 global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .01f, origin.z);
 
 global_variable Loaded_Sound requiem, test;
 global_variable int blinn = 0;
 
 internal Sokoban_Entity
-make_block(Vector3 position) {
+make_entity(Sokoban_Entity_Kind kind, Vector3 position) {
     Sokoban_Entity result = {};
-    result.kind = SokobanEntityKind_Block;
+    result.kind = kind;
     result.position = position;
     return result;
 }
 
 internal Sokoban_Entity
+make_block(Vector3 position) {
+    return make_entity(SokobanEntityKind_Block, position);
+}
+
+internal Sokoban_Entity
 make_star(Vector3 position) {
-    Sokoban_Entity result = {};
-    result.kind = SokobanEntityKind_Star;
-    result.position = position;
-    return result;
+    return make_entity(SokobanEntityKind_Star, position);
+}
+
+internal Sokoban_Entity
+make_sun(Vector3 position) {
+    return make_entity(SokobanEntityKind_Sun, position);
 }
 
 internal void
@@ -82,6 +91,7 @@ init_game(Sokoban_State *state) {
     
     // Star
     world.entities[idx++] = make_star(make_vector3(0.f, 0.15f, 1.f));
+    world.entities[idx++] = make_sun(light_pos);
     
     //
     // Load meshes
@@ -92,6 +102,7 @@ init_game(Sokoban_State *state) {
     state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);
     state->star  = load_mesh("./data/models/sokoban/star.obj", MESH_FLIP_UVS);
     state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
+    state->sun   = load_mesh("./data/models/sokoban/sun.obj", MESH_FLIP_UVS);
     
     //
     // Player
@@ -106,7 +117,7 @@ init_game(Sokoban_State *state) {
 
 internal void
 update_game(Sokoban_State *state, Game_Input *input) {
-    // TODO
+    
     Camera *cam = &state->cam;
     update_camera(cam, input);
     
@@ -179,7 +190,8 @@ draw_game_playing(Sokoban_State *state) {
             Triangle_Mesh *mesh = 0;
             switch (entity.kind) {
                 case SokobanEntityKind_Block: mesh = &state->block; break; 
-                case SokobanEntityKind_Star:  mesh = &state->star;  break;
+                case SokobanEntityKind_Star:  mesh = &state->star;  break; 
+                case SokobanEntityKind_Sun:   mesh = &state->sun;   break;
                 default: break;
             }
             
@@ -190,8 +202,12 @@ draw_game_playing(Sokoban_State *state) {
                     orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), angle);
                     angle += core.time_info.dt * 90.f;
                     if (angle >= 360.f) angle -= 360.f;
-                    
                     entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
+                } else if (entity.kind == SokobanEntityKind_Sun) {
+                    local_persist real32 sun_angle = 0.f;
+                    orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), sun_angle);
+                    sun_angle += core.time_info.dt * 1.f;
+                    if (sun_angle >= 360.f) sun_angle -= 360.f;
                 }
                 draw_mesh(mesh, entity.position, orientation);
             }
@@ -205,9 +221,6 @@ draw_game_playing(Sokoban_State *state) {
         draw_mesh(&state->player.mesh, state->player.position, a);
     }
 }
-
-global_variable Mat4 light_space_matrix;
-global_variable Vector3 light_pos = make_vector3(-2.f, 0.8f, -2.f);
 
 internal void
 draw_game_shadow(Sokoban_State *state) {
@@ -236,7 +249,9 @@ draw_game_shadow(Sokoban_State *state) {
     light_space_matrix = projection * view;
     set_mat4("light_space_matrix", light_space_matrix);
     
+    glCullFace(GL_FRONT);
     draw_game_playing(state);
+    glCullFace(GL_BACK);
 }
 
 internal void
@@ -254,7 +269,6 @@ draw_game_view(Sokoban_State *state) {
         glViewport(0, 0, width, height);
         
         render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
-        
         glClearColor(0.f/255.f, 170.f/255.f, 255.f/255.f, 255.f/255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         

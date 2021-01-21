@@ -1,5 +1,5 @@
-#define SHADOW_WIDTH 1024 // If we crank this up to 5000 is already starts to look good.
-#define SHADOW_HEIGHT 1024
+#define SHADOW_WIDTH 2048 // If we crank this up to 5000 is already starts to look good.
+#define SHADOW_HEIGHT 2048
 
 #define MAX_VERTICES (3 * 1024)
 
@@ -68,6 +68,8 @@ internal void immediate_circle_filled(Vector3 center, Vector2 radius, Vector4 co
 
 internal void immediate_textured_quad(Vector2 min, Vector2 max, u32 texture);
 
+
+internal void immediate_quad(Vector2 min, Vector2 max, real32 z, Vector4 color);
 internal void immediate_quad(Vector2 min, Vector2 max, Vector4 color);
 internal void immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, Vector4 color);
 

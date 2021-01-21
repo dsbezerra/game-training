@@ -329,7 +329,7 @@ hotloader_process_change() {
             assert(sb_count(catalog->short_names_to_reload) == sb_count(catalog->full_names_to_reload));
             
             //
-            //     log_print("Hotloader: File '%' ssent to catalog '%'.\n", change.short_name, catalog.my_name);
+            //     log_print("Hotloader: File '%' sent to catalog '%'.\n", change.short_name, catalog.my_name);
             
             sb_push(catalog->short_names_to_reload, copy_string(change->short_name));
             sb_push(catalog->full_names_to_reload, copy_string(change->full_name));

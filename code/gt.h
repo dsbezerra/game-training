@@ -22,6 +22,9 @@
 
 #include "stb/stretchy_buffer.h"
 
+struct Debug_Draw {
+    b32 draw_shadow_map;
+};
 
 struct Game_Time_Info {
     u64 start_counter;
@@ -89,6 +92,8 @@ enum Button {
     
     Button_Mouse1,
     
+    Button_F1,
+    
     Button_Count
 };
 
@@ -101,6 +106,7 @@ struct Game_Mouse {
 
 struct Game_Input {
     Game_Mouse mouse;
+    b32 alt_is_down;
     union {
         Game_Button_State buttons[Button_Count];
         struct {
@@ -119,6 +125,8 @@ struct Game_Input {
             Game_Button_State d;
             
             Game_Button_State mouse1;
+            
+            Game_Button_State f1;
         };
     };
 };

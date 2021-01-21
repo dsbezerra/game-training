@@ -108,6 +108,8 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         debug_draw_mixer = init_debug_draw_mixer();
     }
     
+    render_2d_right_handed(dimensions.width, dimensions.height);
+    
     real32 x = dimensions.width * 0.002f;
     real32 y = (real32) dimensions.height;
     
@@ -125,6 +127,27 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         if (sound->sound->num_samples == 0) continue;
         
         count++;
+        
+        immediate_begin();
+        //
+        // Bar color
+        //
+        {
+            Vector2 min = make_vector2(.0f, y);
+            Vector2 max = make_vector2((real32) dimensions.width, y - height);
+            immediate_quad(min, max, -1.f, bar_color);
+        }
+        
+        //
+        // Played color
+        //
+        {
+            real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
+            Vector2 min = make_vector2(.0f, y);
+            Vector2 max = make_vector2((real32) dimensions.width * played_ratio, y - height);
+            immediate_quad(min, max, -5.f, played_color);
+        }
+        immediate_flush();
         
         //
         // Draw info about playing sound

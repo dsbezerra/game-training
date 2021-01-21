@@ -58,9 +58,6 @@ immediate_init() {
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
     
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    //glFrontFace(GL_CCW);
     //glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
     //glEnable(GL_SAMPLE_ALPHA_TO_ONE);
     glEnable(GL_MULTISAMPLE);
@@ -219,21 +216,31 @@ immediate_circle_filled(Vector2 center, real32 radius, Vector4 color) {
 }
 
 internal void
+immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, real32 z, Vector4 color) {
+    Vector2 default_uv = make_vector2(-1.f, -1.f);
+    immediate_vertex(make_vector3(x0, y0, z), color, default_uv);
+    immediate_vertex(make_vector3(x0, y1, z), color, default_uv);
+    immediate_vertex(make_vector3(x1, y0, z), color, default_uv);
+    
+    immediate_vertex(make_vector3(x0, y1, z), color, default_uv);
+    immediate_vertex(make_vector3(x1, y1, z), color, default_uv);
+    immediate_vertex(make_vector3(x1, y0, z), color, default_uv);
+}
+
+internal void
 immediate_quad(Vector2 min, Vector2 max, Vector4 color) {
     immediate_quad(min.x, min.y, max.x, max.y, color);
 }
 
 internal void
+immediate_quad(Vector2 min, Vector2 max, real32 z, Vector4 color) {
+    immediate_quad(min.x, min.y, max.x, max.y, z, color);
+}
+
+internal void
 immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, Vector4 color) {
-    Vector2 default_uv = make_vector2(-1.f, -1.f);
     real32 z_index = 1.f;
-    immediate_vertex(make_vector3(x0, y0, z_index), color, default_uv);
-    immediate_vertex(make_vector3(x0, y1, z_index), color, default_uv);
-    immediate_vertex(make_vector3(x1, y0, z_index), color, default_uv);
-    
-    immediate_vertex(make_vector3(x0, y1, z_index), color, default_uv);
-    immediate_vertex(make_vector3(x1, y1, z_index), color, default_uv);
-    immediate_vertex(make_vector3(x1, y0, z_index), color, default_uv);
+    immediate_quad(x0, y0, x1, y1, z_index, color);
 }
 
 internal void

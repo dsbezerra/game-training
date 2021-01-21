@@ -151,10 +151,8 @@ win32_opengl_get_functions() {
     opengl_get_function(glLinkProgram);
     opengl_get_function(glUseProgram);
     opengl_get_function(glDeleteProgram);
-    
     opengl_get_function(glGenFramebuffers);
     opengl_get_function(glDeleteFramebuffers);
-    
     opengl_get_function(glGenBuffers);
     opengl_get_function(glDeleteBuffers);
     opengl_get_function(glBindVertexArray);
@@ -178,13 +176,10 @@ win32_opengl_get_functions() {
     opengl_get_function(glActiveTexture);
     opengl_get_function(glUniform1i);
     opengl_get_function(glGenerateMipmap);
-    
     opengl_get_function(glCheckFramebufferStatus);
     opengl_get_function(glFramebufferTexture2D);
     opengl_get_function(glFramebufferRenderbuffer);
-    
     opengl_get_function(glTexImage2DMultisample);
-    
     opengl_get_function(wglSwapIntervalEXT);
 }
 
@@ -556,6 +551,11 @@ win32_process_pending_messages(HWND window) {
                 process_button(0x57, Button_W);
                 process_button(0x53, Button_S);
                 
+                // Function keys
+                process_button(VK_F1, Button_F1);
+                
+                input.alt_is_down = alt_key_was_down;
+                
                 if (vk_code == 0x55) {
                     if (was_down && !is_down) {
                         global_lock_fps = !global_lock_fps;
@@ -623,15 +623,14 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
         real32 last_dt = 1.f / app_update_hz;
         real32 target_dt = last_dt;
         
-        
         global_window = CreateWindowExA(0,
                                         window_class.lpszClassName,
                                         "Game Training",
                                         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                         CW_USEDEFAULT,
                                         CW_USEDEFAULT,
-                                        960,
-                                        540,
+                                        (int) (1920 * 0.9f),
+                                        (int) (1080 * 0.9f),
                                         0,
                                         0,
                                         instance,
@@ -687,9 +686,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 for (int button_index = 0; button_index < Button_Count; ++button_index) {
                     input.buttons[button_index].changed = false;
                 }
-                
                 win32_process_pending_messages(window);
-                
                 end_profiling(ProfilerItem_Input);
                 
                 memory.window_center = state.window_center;
@@ -751,11 +748,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 
                 SwapBuffers(window_dc);
                 
-                while (hotloader_process_change()) { }
-                
-                perform_reloads(&texture_catalog);
-                perform_reloads(&shader_catalog);
-                
                 // Ensure a forced frame time
                 if (global_lock_fps) {
                     LARGE_INTEGER work_counter = win32_get_wallclock();
@@ -777,6 +769,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                     }
                 }
                 
+                while (hotloader_process_change()) { }
+                
+                perform_reloads(&texture_catalog);
+                perform_reloads(&shader_catalog);
+                
                 // Get the frame time
                 LARGE_INTEGER end_counter = win32_get_wallclock();
                 last_dt = win32_get_seconds_elapsed(last_counter, end_counter);
@@ -786,6 +783,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             ReleaseDC(window, window_dc);
             
             deinit_draw();
+            hotloader_shutdown();
             
             win32_free_opengl();
         }
