@@ -17,16 +17,18 @@ string_length(char *str) {
 
 internal void
 put_string_at(char *a, char *b, int pos) {
-    int len_a = string_length(a);
-    int len_b = string_length(b);
+    char *at = a + pos;
+    while (*b) {
+        *at = *b++; at++;
+    }
+}
+internal void
+put_string_at(char *a, char *b, int pos, int len_a, int len_b) {
     if (len_a == 0 || len_b == 0) return;
     
     if (pos + len_b > len_a) return;
     
-    char *at = a + pos;
-    while (*at && *b) {
-        *at = *b++; at++;
-    }
+    put_string_at(a, b, pos);
 }
 
 internal void
@@ -55,6 +57,17 @@ copy_string_n(char *dest, char *src, int count) {
 	if (count) {
 		*dest++ = 0;
     }
+}
+
+internal char *
+concat(char *a, char *b, int len_a, int len_b) {
+    if (len_a == 0) return b;
+    if (len_b == 0) return a;
+    
+    char *result = (char *) platform_alloc((len_a + len_b + 1) * sizeof(char));
+    put_string_at(result, a, 0);
+    put_string_at(result, b, len_a);
+    return result;
 }
 
 internal b32

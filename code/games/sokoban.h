@@ -16,11 +16,11 @@ Variant: Add all sorts of level gimmicks: teleport tiles, conveyor belts, button
 
 enum Sokoban_Entity_Kind {
     SokobanEntityKind_None,
+    SokobanEntityKind_Player,
     SokobanEntityKind_Block,
-    SokobanEntityKind_Rock,
-    SokobanEntityKind_Tree,
     SokobanEntityKind_Star,
     SokobanEntityKind_Sun,
+    SokobanEntityKind_Goal,
     SokobanEntityKind_Count,
 };
 
@@ -28,6 +28,9 @@ struct Sokoban_Entity {
     Sokoban_Entity_Kind kind;
     Vector3 position;
     Vector4 color;
+    
+    u32 tile_x;
+    u32 tile_y;
 };
 
 struct Sokoban_Player {
@@ -48,7 +51,6 @@ struct Sokoban_World {
 struct Sokoban_State {
     Game_Mode Game_Mode;
     
-    Sokoban_Player player;
     Sokoban_World world;
     
     Triangle_Mesh block;
@@ -71,6 +73,8 @@ internal Sokoban_Entity make_star(Vector3 position);
 
 internal void init_game(Sokoban_State *state);
 internal void update_game(Sokoban_State *state, Game_Input *input);
+
+internal Sokoban_World load_level(char *levelname);
 
 internal void draw_game_view(Sokoban_State *state);
 

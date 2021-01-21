@@ -2,32 +2,26 @@
 global_variable Mat4 light_space_matrix;
 global_variable Vector3 light_pos = make_vector3(-2.f, 4.f, -2.f);
 global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
-global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .01f, origin.z);
+global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .25f, origin.z);
 
 global_variable Loaded_Sound requiem, test;
 global_variable int blinn = 0;
 
 internal Sokoban_Entity
-make_entity(Sokoban_Entity_Kind kind, Vector3 position) {
+make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
     Sokoban_Entity result = {};
     result.kind = kind;
+    result.tile_x = tile_x;
+    result.tile_y = tile_y;
+    
+    Vector3 position = {};
+    position.x = (real32) tile_x * .5f;
+    position.y = (real32) origin.y;
+    position.z = (real32) tile_y * .5f;
+    
     result.position = position;
+    
     return result;
-}
-
-internal Sokoban_Entity
-make_block(Vector3 position) {
-    return make_entity(SokobanEntityKind_Block, position);
-}
-
-internal Sokoban_Entity
-make_star(Vector3 position) {
-    return make_entity(SokobanEntityKind_Star, position);
-}
-
-internal Sokoban_Entity
-make_sun(Vector3 position) {
-    return make_entity(SokobanEntityKind_Sun, position);
 }
 
 internal void
@@ -42,16 +36,21 @@ init_game(Sokoban_State *state) {
     
     state->cam.position  = make_vector3(0.f, 5.f, 4.f);
     
-    Sokoban_World world = {};
-    world.x_count = SOKOBAN_WORLD_X;
-    world.y_count = SOKOBAN_WORLD_Y;
-    world.num_entities = world.x_count * world.y_count;
-    world.entities = (Sokoban_Entity *) platform_alloc(world.num_entities * sizeof(Sokoban_Entity));
+    Sokoban_World world = load_level("sasquatch_v_1");
     state->world = world;
     
     //
     // Blocks
     //
+    
+#if 0
+    
+    Sokoban_World world = {};
+    world.x_count = SOKOBAN_WORLD_X;
+    world.y_count = SOKOBAN_WORLD_Y;
+    world.num_entities = world.x_count * world.y_count;
+    world.entities = (Sokoban_Entity *) platform_alloc(world.num_entities * sizeof(Sokoban_Entity));
+    
     real32 block_size = 0.5f;
     real32 bb = block_size / 2.f;
     
@@ -92,6 +91,7 @@ init_game(Sokoban_State *state) {
     // Star
     world.entities[idx++] = make_star(make_vector3(0.f, 0.15f, 1.f));
     world.entities[idx++] = make_sun(light_pos);
+#endif 
     
     //
     // Load meshes
@@ -107,12 +107,13 @@ init_game(Sokoban_State *state) {
     //
     // Player
     //
+#if 0
     Sokoban_Player player = {};
     player.position = make_vector3(0.f, 0.3f, 0.f);
     player.velocity = make_vector3(0.f, 0.f, 0.f);
     player.mesh = load_mesh("./data/models/sokoban/cylinder.obj", MESH_FLIP_UVS);
-    
     state->player = player;
+#endif
 }
 
 internal void
@@ -123,6 +124,8 @@ update_game(Sokoban_State *state, Game_Input *input) {
     
     real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
+        
+#if 0
         b32 player_moved = false;
         Vector3 new_player_position = state->player.position;
         if (pressed(Button_W)) {
@@ -153,6 +156,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
                 state->player.position = new_player_position;
             }
         }
+#endif
     }
     
     if (is_down(Button_Space)) {
@@ -169,13 +173,103 @@ update_game(Sokoban_State *state, Game_Input *input) {
     }
 }
 
+internal Sokoban_World
+load_level(char *levelname) {
+    
+    Sokoban_World result = {};
+    
+    char *folder = "./data/levels/sokoban/";
+    char *lvl = ".lvl";
+    
+    char *filename = concat(levelname, lvl, string_length(levelname), string_length(lvl));
+    char *filepath = concat(folder, filename, string_length(folder), string_length(filename));
+    
+    platform_free(filename);
+    
+    File_Contents level = platform_read_entire_file(filepath);
+    assert(level.file_size > 0);
+    platform_free(filepath);
+    
+    u8 *at = level.contents;
+    
+    u32 x_count = 0;
+    while (*at) {
+        if (*at == '\r') {
+            // No-op
+        }
+        else if (*at == '\n') {
+            result.y_count++;
+            if (x_count > result.x_count) {
+                result.x_count = x_count;
+            }
+            x_count = 0;
+        }
+        // We say empty spaces are entities for now.
+        else {
+            x_count++;
+        }
+        at++;
+    }
+    
+    result.num_entities += result.x_count*result.y_count;
+    assert(result.num_entities > 0);
+    
+    result.entities = (Sokoban_Entity *) platform_alloc(result.num_entities);
+    
+    at = level.contents;
+    
+    u32 entity_id = 0;
+    
+    int xx = 0;
+    int yy = 0;
+    while (*at) {
+        if (*at == '\r') {
+            // No-op
+        }
+        else if (*at == '\n') {
+            yy++;
+            xx = 0;
+        }
+        // We say empty spaces are entities for now.
+        else {
+            Sokoban_Entity_Kind kind = SokobanEntityKind_None;
+            if (*at == '#') {
+                kind = SokobanEntityKind_Block;
+            }
+            else if (*at == '$') {
+                kind = SokobanEntityKind_Star;
+            }
+            else if (*at == '.') {
+                kind = SokobanEntityKind_Goal;
+            }
+            else if (*at == '@') {
+                kind = SokobanEntityKind_Player;
+            }
+            if (kind != SokobanEntityKind_None) {
+                Sokoban_Entity entity = make_entity(kind, xx, yy);
+                real32 size_x = result.x_count * .5f;
+                real32 size_y = result.y_count * .5f;
+                entity.position.x -= size_x * .5f;
+                entity.position.z -= size_y * .5f;
+                result.entities[entity_id++] = entity;
+            }
+            xx++;
+        }
+        at++;
+    }
+    
+    platform_free(level.contents);
+    
+    return result;
+}
+
 internal void
 draw_game_playing(Sokoban_State *state) {
     
     // Draw plane
     Quaternion a = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
     {
-        draw_mesh(&state->plane, plane_position, a);
+        draw_mesh(&state->plane, plane_position - make_vector3(0.2f, 0.f, 0.f), a, 1.4f);
     }
     
     //
@@ -218,7 +312,7 @@ draw_game_playing(Sokoban_State *state) {
     // Draw player
     //
     {
-        draw_mesh(&state->player.mesh, state->player.position, a);
+        //draw_mesh(&state->player.mesh, state->player.position, a);
     }
 }
 
@@ -240,7 +334,6 @@ draw_game_shadow(Sokoban_State *state) {
     
     real32 n = 1.f;
     real32 f = 7.5f;
-    
     
     Mat4 projection = ortho(-10.f, 10.f, -10.f, 10.f, n, f);
     Mat4 view = look_at(light_pos,
