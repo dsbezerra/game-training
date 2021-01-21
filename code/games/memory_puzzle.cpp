@@ -357,7 +357,6 @@ draw_game_view(Memory_Puzzle_State *state) {
             min = min + start;
             max = max + start;
             
-            
             real32 stroke = pad * .5f;
             real32 half_stroke = stroke * .5f;
             
@@ -372,14 +371,14 @@ draw_game_view(Memory_Puzzle_State *state) {
             Vector2 left_min = make_vector2(min.x, min.y);
             Vector2 left_max = make_vector2(min.x + half_stroke, max.y);
             
-            Vector2 right_min = make_vector2(max.x, min.y);
-            Vector2 right_max = make_vector2(max.x - half_stroke, max.y);
+            Vector2 right_min = make_vector2(max.x - half_stroke, min.y);
+            Vector2 right_max = make_vector2(max.x, max.y);
             
             Vector2 top_min = make_vector2(min.x, min.y);
             Vector2 top_max = make_vector2(max.x, min.y + half_stroke);
             
-            Vector2 bottom_min = make_vector2(min.x, max.y);
-            Vector2 bottom_max = make_vector2(max.x, max.y - half_stroke);
+            Vector2 bottom_min = make_vector2(min.x, max.y - half_stroke);
+            Vector2 bottom_max = make_vector2(max.x, max.y);
             
             immediate_quad(left_min, left_max, color);
             immediate_quad(right_min, right_max, color);

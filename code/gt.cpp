@@ -21,7 +21,7 @@ global_variable real32 global_press_t = .0f;
 internal void
 game_frame_begin(int width, int height) {
     ensure_framebuffer(width, height);
-    use_framebuffer(immediate->fbo_map.fbo);
+    use_framebuffer(&immediate->multisampled_framebuffer);
     
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -32,6 +32,10 @@ game_frame_begin(int width, int height) {
 
 internal void
 draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item, b32 quit_was_selected) {
+    
+    use_framebuffer(&immediate->menu_framebuffer);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     render_2d_right_handed(dim.width, dim.height);
     
@@ -50,7 +54,6 @@ draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item,
     //  Retry
     //  Quit
     //
-    
     
     draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &menu_title_font, white);
     
@@ -343,8 +346,8 @@ render_mode_selecting(App_State *state) {
     GLsizei width = (GLsizei) state->window_dimensions.x;
     GLsizei height = (GLsizei) state->window_dimensions.y;
     
-    ensure_framebuffer(width, height);
-    use_framebuffer(immediate->fbo_map.fbo);
+    use_framebuffer((GLuint) 0);
+    
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
@@ -437,33 +440,35 @@ render_mode_selecting(App_State *state) {
 internal void
 draw_framebuffer(Vector2i dim) {
     
-    Opengl_Framebuffer multisampled = immediate->multisampled_framebuffer;
-    Opengl_Framebuffer screen       = immediate->screen_framebuffer;
-    
-    open_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, multisampled.framebuffer_handle);
-    open_gl->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, screen.framebuffer_handle);
-    open_gl->glBlitFramebuffer(0, 0, dim.width, dim.height, 0, 0, dim.width, dim.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-    
-    use_framebuffer(0);
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    set_shader(global_screen_shader);
-    
-    Vector2 min = make_vector2(-1.f, -1.0f);
-    Vector2 max = make_vector2(1.f, 1.f);
-    
-    immediate_begin();
-    immediate_textured_quad(min, max, screen.color_handle);
-    immediate_flush();
-    
-    if (debug_draw.draw_shadow_map && immediate->depth_map.id) {
-        set_shader(global_depth_shader);
+    if (immediate->framebuffer_to_blit) {
+        Opengl_Framebuffer screen       = immediate->screen_framebuffer;
+        open_gl->glBindFramebuffer(GL_READ_FRAMEBUFFER, immediate->framebuffer_to_blit->framebuffer_handle);
+        open_gl->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, screen.framebuffer_handle);
+        open_gl->glBlitFramebuffer(0, 0, dim.width, dim.height, 0, 0, dim.width, dim.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        
+        use_framebuffer((GLuint) 0);
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        set_shader(global_screen_shader);
+        
+        Vector2 min = make_vector2(-1.f, -1.0f);
+        Vector2 max = make_vector2(1.f, 1.f);
+        
         immediate_begin();
-        Vector2 min_shadow_map = make_vector2(-1.f, -1.f);
-        Vector2 max_shadow_map = make_vector2(1.f,  1.f);
-        immediate_textured_quad(min_shadow_map, max_shadow_map, immediate->depth_map.id);
+        immediate_textured_quad(min, max, screen.color_handle);
         immediate_flush();
+        
+        if (debug_draw.draw_shadow_map && immediate->depth_map.id) {
+            set_shader(global_depth_shader);
+            immediate_begin();
+            Vector2 min_shadow_map = make_vector2(-1.f, -1.f);
+            Vector2 max_shadow_map = make_vector2(1.f,  1.f);
+            immediate_textured_quad(min_shadow_map, max_shadow_map, immediate->depth_map.id);
+            immediate_flush();
+        }
+    } else {
+        OutputDebugString("No framebuffer to blit\n");
     }
 }
 
@@ -517,10 +522,10 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
             game_table[state->current_game](memory, input);
         }
         immediate_flush();
+        
+        draw_framebuffer(state->window_dimensions);
+        draw_debug_draw_mixer(state->window_dimensions);
     }
-    
-    draw_framebuffer(state->window_dimensions);
-    draw_debug_draw_mixer(state->window_dimensions);
 }
 
 internal void

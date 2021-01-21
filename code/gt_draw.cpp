@@ -64,6 +64,8 @@ immediate_init() {
     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    
+    glEnable(GL_CULL_FACE);
 }
 
 internal void
@@ -161,14 +163,16 @@ immediate_circle(Vector2 center, real32 inner_radius_x, real32 inner_radius_y, r
         real32 outer_bx = center.x + (outer_radius_x * cosf(next * TAU / amount));
         real32 outer_by = center.y + (outer_radius_y * sinf(next * TAU / amount));
         
-        // Triangle made with 2 vertices in inner radius to one vertex in outer radius 
-        immediate_vertex(make_vector3(inner_ax, inner_ay, 1.f), color, default_uv);
-        immediate_vertex(make_vector3(inner_bx, inner_by, 1.f), color, default_uv);
+        Vector4 p = make_vector4(1.0, 0.0, 1.0, 1.0);
+        
+        // Triangle made with 2 vertices in inner radius to one vertex in outer radius
+        immediate_vertex(make_vector3(inner_bx, inner_by, 1.f), color, default_uv); 
         immediate_vertex(make_vector3(outer_bx, outer_by, 1.f), color, default_uv);
+        immediate_vertex(make_vector3(inner_ax, inner_ay, 1.f), color, default_uv);
         
         // Triangle made with 2 vertices in outer radius to one vertex in inner radius
-        immediate_vertex(make_vector3(outer_ax, outer_ay, 1.f), color, default_uv);
         immediate_vertex(make_vector3(outer_bx, outer_by, 1.f), color, default_uv);
+        immediate_vertex(make_vector3(outer_ax, outer_ay, 1.f), color, default_uv);
         immediate_vertex(make_vector3(inner_ax, inner_ay, 1.f), color, default_uv);
     }
 }
@@ -200,8 +204,8 @@ immediate_circle_filled(Vector2 center, real32 radius_x, real32 radius_y, Vector
         
         // Vertices to form a slice
         immediate_vertex(make_vector3(center.x, center.y, 1.f), color, default_uv);
-        immediate_vertex(make_vector3(ax, ay, 1.f), color, default_uv);
         immediate_vertex(make_vector3(bx, by, 1.f), color, default_uv);
+        immediate_vertex(make_vector3(ax, ay, 1.f), color, default_uv);
     }
 }
 
@@ -461,11 +465,13 @@ dump_gl_errors(char *tag) {
 internal void
 use_framebuffer(GLuint id) {
     open_gl->glBindFramebuffer(GL_FRAMEBUFFER, id);
+    immediate->framebuffer_to_blit = 0;
 }
 
 internal void
-use_framebuffer(Opengl_Framebuffer framebuffer) {
-    use_framebuffer(framebuffer.framebuffer_handle);
+use_framebuffer(Opengl_Framebuffer *framebuffer) {
+    use_framebuffer(framebuffer->framebuffer_handle);
+    immediate->framebuffer_to_blit = framebuffer;
 }
 
 internal void
@@ -476,6 +482,9 @@ init_framebuffer(int width, int height) {
     
     Opengl_Framebuffer screen_framebuffer = create_framebuffer(width, height, 0, 1);
     immediate->screen_framebuffer = screen_framebuffer;
+    
+    Opengl_Framebuffer menu_framebuffer = create_framebuffer(width, height, OpenGLFramebuffer_Depth, 1);
+    immediate->menu_framebuffer = menu_framebuffer;
     
     // Save as texture
     Texture_Map fbo = {};
@@ -492,6 +501,13 @@ init_framebuffer(int width, int height) {
     screen.id = screen_framebuffer.color_handle;
     screen.fbo = screen_framebuffer.framebuffer_handle;
     immediate->screen_fbo_map = screen;
+    
+    Texture_Map menu = {};
+    menu.width = width;
+    menu.height = height;
+    menu.id = menu_framebuffer.color_handle;
+    menu.fbo = menu_framebuffer.framebuffer_handle;
+    immediate->menu_fbo_map = menu;
 }
 
 internal void
@@ -511,6 +527,12 @@ refresh_framebuffer(int width, int height) {
     }
     if (immediate->fbo_map.fbo) {
         open_gl->glDeleteFramebuffers(1, &immediate->fbo_map.fbo);
+    }
+    if (immediate->menu_fbo_map.id) {
+        glDeleteTextures(1, &immediate->menu_fbo_map.id);
+    }
+    if (immediate->menu_fbo_map.fbo) {
+        open_gl->glDeleteFramebuffers(1, &immediate->menu_fbo_map.fbo);
     }
     
     // Now reinit with new dimensions

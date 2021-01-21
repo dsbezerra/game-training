@@ -231,7 +231,7 @@ draw_game_shadow(Sokoban_State *state) {
     int width = immediate->depth_map.width;
     int height = immediate->depth_map.height;
     
-    use_framebuffer(immediate->depth_map.fbo);
+    use_framebuffer(&immediate->depth_framebuffer);
     
     glViewport(0, 0, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -249,9 +249,7 @@ draw_game_shadow(Sokoban_State *state) {
     light_space_matrix = projection * view;
     set_mat4("light_space_matrix", light_space_matrix);
     
-    glCullFace(GL_FRONT);
     draw_game_playing(state);
-    glCullFace(GL_BACK);
 }
 
 internal void
@@ -264,7 +262,7 @@ draw_game_view(Sokoban_State *state) {
         int height = state->dimensions.height;
         
         ensure_framebuffer(width, height);
-        use_framebuffer(immediate->fbo_map.fbo);
+        use_framebuffer(&immediate->multisampled_framebuffer);
         
         glViewport(0, 0, width, height);
         

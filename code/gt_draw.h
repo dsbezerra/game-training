@@ -21,6 +21,7 @@ struct Immediate {
     Shader current_shader;
     
     Texture_Map fbo_map;
+    Texture_Map menu_fbo_map;
     Texture_Map screen_fbo_map;
     
     Texture_Map depth_map;
@@ -34,9 +35,12 @@ struct Immediate {
     
     Rendering_Mode mode;
     
+    Opengl_Framebuffer menu_framebuffer;
     Opengl_Framebuffer multisampled_framebuffer;
     Opengl_Framebuffer screen_framebuffer;
     Opengl_Framebuffer depth_framebuffer;
+    
+    Opengl_Framebuffer *framebuffer_to_blit;
 };
 
 internal void init_depth_map();
@@ -99,6 +103,6 @@ internal void render_3d(int width, int height, real32 fov);
 internal void dump_gl_errors(char *tag);
 
 internal void use_framebuffer(GLuint id);
-internal void use_framebuffer(Opengl_Framebuffer framebuffer);
+internal void use_framebuffer(Opengl_Framebuffer *framebuffer);
 
 internal void refresh_framebuffer(int width, int height);
