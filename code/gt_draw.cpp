@@ -348,6 +348,8 @@ immediate_flush() {
     
     draw_call_count++;
     
+    b32 lines = immediate->num_vertices % 6 != 0;
+    
     open_gl->glBindVertexArray(immediate->vao);
     open_gl->glBindBuffer(GL_ARRAY_BUFFER, immediate->vbo);
     open_gl->glBufferData(GL_ARRAY_BUFFER, sizeof(immediate->vertices[0]) * count, immediate->vertices, GL_STREAM_DRAW);
@@ -363,13 +365,18 @@ immediate_flush() {
     open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) sizeof(Vector3));
     open_gl->glEnableVertexAttribArray(color_loc);
     
+    
     open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(Vector3) + sizeof(Vector4)));
     open_gl->glEnableVertexAttribArray(uv_loc);
     
     open_gl->glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(Vector3) + sizeof(Vector4) + sizeof(Vector2)));
     open_gl->glEnableVertexAttribArray(normal_loc);
     
-    glDrawArrays(GL_TRIANGLES, 0, immediate->num_vertices);
+    GLuint primitive = GL_TRIANGLES;
+    if (lines) {
+        primitive = GL_LINES;
+    }
+    glDrawArrays(primitive, 0, immediate->num_vertices);
     
     open_gl->glDisableVertexAttribArray(position_loc);
     open_gl->glDisableVertexAttribArray(color_loc);
@@ -384,6 +391,58 @@ draw_text(real32 x, real32 y, u8 *text, Loaded_Font *font, Vector4 color) {
     immediate_begin();
     immediate_text(x, y, text, font, color, -5.f);
     immediate_flush();
+}
+
+internal void
+immediate_line(Vector3 min, Vector3 max, Vector4 color) {
+    Vector2 default_uv  = make_vector2(.0f, .0f);
+    immediate_vertex(min, color, default_uv);
+    immediate_vertex(max, color, default_uv);
+}
+
+internal void
+draw_lines() {
+    assert(immediate);
+    
+    int count = immediate->num_vertices == 0;
+    if (count == 0) {
+        return;
+    }
+    
+    if (!immediate->current_shader.program) {
+        // TODO(diego): Log messages!
+        immediate->num_vertices = 0;
+        return;
+    }
+    
+    draw_call_count++;
+    open_gl->glBindVertexArray(immediate->vao);
+    open_gl->glBindBuffer(GL_ARRAY_BUFFER, immediate->vbo);
+    open_gl->glBufferData(GL_ARRAY_BUFFER, sizeof(immediate->vertices[0]) * count, immediate->vertices, GL_STREAM_DRAW);
+    
+    GLint position_loc = immediate->current_shader.position_loc;
+    GLint color_loc = immediate->current_shader.color_loc;
+    
+    open_gl->glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+    open_gl->glEnableVertexAttribArray(position_loc);
+    
+    open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) sizeof(Vector3));
+    open_gl->glEnableVertexAttribArray(color_loc);
+    
+    glDrawArrays(GL_LINES, 0, immediate->num_vertices);
+    
+    open_gl->glDisableVertexAttribArray(position_loc);
+    open_gl->glDisableVertexAttribArray(color_loc);
+    
+    open_gl->glBindVertexArray(0);
+    open_gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+internal void
+draw_line(Vector3 min, Vector3 max, Vector4 color) {
+    immediate_begin();
+    immediate_line(min, max, color);
+    draw_lines();
 }
 
 internal void

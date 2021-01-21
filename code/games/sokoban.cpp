@@ -249,8 +249,8 @@ load_level(char *levelname) {
                 Sokoban_Entity entity = make_entity(kind, xx, yy);
                 real32 size_x = result.x_count * .5f;
                 real32 size_y = result.y_count * .5f;
-                entity.position.x -= size_x * .5f;
-                entity.position.z -= size_y * .5f;
+                entity.position.x -= size_x * .5f - .25f;
+                entity.position.z -= size_y * .5f - .5f;
                 result.entities[entity_id++] = entity;
             }
             xx++;
@@ -269,7 +269,7 @@ draw_game_playing(Sokoban_State *state) {
     // Draw plane
     Quaternion a = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
     {
-        draw_mesh(&state->plane, plane_position - make_vector3(0.2f, 0.f, 0.f), a, 1.4f);
+        draw_mesh(&state->plane, plane_position, a);
     }
     
     //
@@ -346,6 +346,51 @@ draw_game_shadow(Sokoban_State *state) {
 }
 
 internal void
+draw_grid(Sokoban_State *state) {
+    
+    set_shader(global_line_shader);
+    refresh_shader_transform();
+    
+    Vector4 pink = make_color(0xffff00ff);
+    Vector4 white = lerp_color(make_color(0x00ffffff), 1.f, make_color(0xffffffff));
+    
+    u32 xc = state->world.x_count;
+    u32 yc = state->world.y_count;
+    
+    int max_count = (int) (xc > yc ? xc : yc);
+    
+    real32 min_x = (real32) -max_count * .5f;
+    real32 max_x = (real32) max_count  * .5f;
+    
+    real32 min_y = (real32) -max_count * .5f;
+    real32 max_y = (real32) max_count  * .5f;
+    
+    immediate_begin();
+    real32 ground = -0.24f;
+    for (int x = -max_count; x < max_count; x++) {
+        Vector3 p0 = make_vector3(x * .5f + .25f, ground, min_y);
+        Vector3 p1 = make_vector3(x * .5f + .25f, ground, max_y);
+        immediate_line(p0, p1, white);
+    }
+    
+    for (int y = -max_count; y < max_count; y++) {
+        Vector3 p0 = make_vector3(min_x, ground, y * .5f + .25f);
+        Vector3 p1 = make_vector3(max_x, ground, y * .5f + .25f);
+        immediate_line(p0, p1, white);
+    }
+    
+    // Origin axises
+    real32 len = (real32) max_count * .5f;
+    Vector4 axis_color = make_vector4(1.0, 1.0, 0.2, 0.6);
+    
+    immediate_line(make_vector3(-len, 0.f, 0.0f), make_vector3(len, 0.f, 0.0f), axis_color);
+    immediate_line(make_vector3(0.f, -len, 0.f),  make_vector3(0.f, len, 0.f),  axis_color);
+    immediate_line(make_vector3(0.f, 0.f, -len),  make_vector3(0.f, 0.0f, len), axis_color);
+    
+    immediate_flush();
+}
+
+internal void
 draw_game_view(Sokoban_State *state) {
     if (state->Game_Mode == GameMode_Playing) {
         
@@ -363,7 +408,13 @@ draw_game_view(Sokoban_State *state) {
         glClearColor(0.f/255.f, 170.f/255.f, 255.f/255.f, 255.f/255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        //
+        // Draw grid
+        //
+        
         view_matrix = get_view_matrix(&state->cam);
+        
+        draw_grid(state);
         
         set_shader(global_basic_3d_shader);
         refresh_shader_transform();
