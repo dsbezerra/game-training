@@ -125,6 +125,13 @@ update_game(Sokoban_State *state, Game_Input *input) {
     
     real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
+        if (pressed(Button_S)) {
+            fade_out(state->requiem);
+        }
+        if (pressed(Button_W)) {
+            fade_in(state->requiem);
+        }
+        
 #if 0
         b32 player_moved = false;
         Vector3 new_player_position = state->player.position;
@@ -133,9 +140,11 @@ update_game(Sokoban_State *state, Game_Input *input) {
         }
         if (pressed(Button_S)) {
             new_player_position.z += move_step;
+            set_volume(state->requiem, .5f);
         }
         if (pressed(Button_A)) {
             new_player_position.x -= move_step;
+            set_volume(state->requiem, .0f);
         }
         if (pressed(Button_D)) {
             new_player_position.x += move_step;

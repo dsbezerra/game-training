@@ -1,7 +1,7 @@
 /* date = December 30th 2020 11:38 pm */
 
-#define PLAYING_SOUND_LOOPING 0x01
-#define PLAYING_SOUND_ACTIVE  0x02
+#define PLAYING_SOUND_LOOPING  0x01
+#define PLAYING_SOUND_ACTIVE   0x02
 #define PLAYING_SOUND_DEFAULT PLAYING_SOUND_LOOPING | PLAYING_SOUND_ACTIVE
 
 struct Debug_Draw_Mixer {
@@ -20,6 +20,9 @@ struct Playing_Sound {
     u32 flags;
     
     real32 volume;
+    real32 target_volume;
+    
+    real32 fading_speed;
     real32 pan;
     
     Loaded_Sound *sound;
@@ -32,6 +35,8 @@ struct Mixer {
 };
 
 internal void set_volume(Playing_Sound *sound, real32 volume);
+internal void fade_in(Playing_Sound *sound);
+internal void fade_out(Playing_Sound *sound);
 internal void set_flag(Playing_Sound *sound, u32 flag, b32 value);
 internal void set_active(Playing_Sound *sound, b32 active);
 internal void set_looping(Playing_Sound *sound, b32 looping);

@@ -3,6 +3,9 @@ global_variable Mixer mixer = {};
 
 #define DRAW_DEBUG_MIXER 1
 
+#define MIN_VOLUME 0.f
+#define MAX_VOLUME 1.f
+
 #if DRAW_DEBUG_MIXER
 global_variable Debug_Draw_Mixer debug_draw_mixer = {};
 #endif
@@ -10,8 +13,24 @@ global_variable Debug_Draw_Mixer debug_draw_mixer = {};
 internal void
 set_volume(Playing_Sound *sound, real32 volume) {
     if (!sound) return;
-    // @Cleanup: make .0f and 1.f global constants
-    sound->volume = clampf(0.f, volume, 1.f);
+    
+    volume = clampf(MIN_VOLUME, volume, MAX_VOLUME);
+    sound->volume = volume;
+    sound->target_volume = volume;
+};
+
+internal void
+fade_out(Playing_Sound *sound) {
+    if (!sound) return;
+    
+    sound->target_volume = .0f;
+};
+
+internal void
+fade_in(Playing_Sound *sound) {
+    if (!sound) return;
+    
+    sound->target_volume = 1.0f;
 };
 
 internal void
@@ -75,7 +94,9 @@ play_sound(char *name, Loaded_Sound *sound, b32 looping) {
     result->flags = flags;
     result->sound = sound;
     result->position = 0;
-    result->volume = 1.f;
+    result->fading_speed = 3.f;
+    result->volume = MAX_VOLUME;
+    result->target_volume = MAX_VOLUME;
     
     set_flag(result, PLAYING_SOUND_LOOPING, looping);
     

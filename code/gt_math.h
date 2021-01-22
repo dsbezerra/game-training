@@ -799,6 +799,14 @@ clamp_Vector2(Vector2 min, Vector2 val, Vector2 max) {
     return result;
 }
 
+inline real32
+move_towards(real32 val, real32 target, real32 speed) {
+    if (val > target) return clampf(target, val - speed, val);
+    if (val < target) return clampf(val, val + speed, target);
+    
+    return val;
+}
+
 internal inline real32
 safe_divide_1(real32 a, real32 b) {
     if (b == 0.f) b = 1.f;

@@ -278,7 +278,9 @@ game_output_sound(Game_Sound_Buffer *sound_buffer, Game_Input *input) {
         for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
             if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
             
-            if (sound->sound && sound->sound->samples) {
+            sound->volume = move_towards(sound->volume, sound->target_volume, sound->fading_speed/sound_buffer->samples_per_second);
+            
+            if (sound->sound && sound->sound->samples && sound->volume) {
                 
                 s16 l = sound->sound->samples[sound->position++];
                 s16 r = sound->sound->samples[sound->position++];
