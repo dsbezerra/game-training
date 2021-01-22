@@ -136,10 +136,12 @@ struct Opengl_Framebuffer {
     GLuint framebuffer_handle;
     GLuint color_handle;
     GLuint depth_handle;
+    
+    u32 width;
+    u32 height;
 };
 
-enum Opengl_Framebuffer_Flags
-{
+enum Opengl_Framebuffer_Flags {
     OpenGLFramebuffer_Multisampled = 0x1,
     OpenGLFramebuffer_Filtered = 0x2,
     OpenGLFramebuffer_Depth = 0x4,

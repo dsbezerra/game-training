@@ -553,6 +553,7 @@ win32_process_pending_messages(HWND window) {
                 
                 // Function keys
                 process_button(VK_F1, Button_F1);
+                process_button(VK_F2, Button_F2);
                 
                 input.alt_is_down = alt_key_was_down;
                 

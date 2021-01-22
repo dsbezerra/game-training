@@ -212,6 +212,8 @@ create_framebuffer(u32 width, u32 height, u32 flags, u32 color_buffer_count) {
     assert((width > 0) && (height > 0));
     
     Opengl_Framebuffer result = {};
+    result.width = width;
+    result.height = height;
     
     b32 multisampled = flags & OpenGLFramebuffer_Multisampled;
     b32 filtered     = flags & OpenGLFramebuffer_Filtered;
@@ -224,12 +226,12 @@ create_framebuffer(u32 width, u32 height, u32 flags, u32 color_buffer_count) {
     GLint filter_type = filtered ? GL_LINEAR : GL_NEAREST;
     
     if (color_buffer_count == 1) {
-        result.color_handle = framebuffer_tex_image(slot, width, height, filter_type, GL_RGBA8);
+        result.color_handle = framebuffer_tex_image(slot, result.width, result.height, filter_type, GL_RGBA8);
         open_gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, slot, result.color_handle, 0);
     }
     
     if (has_depth) {
-        result.depth_handle = framebuffer_tex_image(slot, width, height, filter_type,
+        result.depth_handle = framebuffer_tex_image(slot, result.width, result.height, filter_type,
                                                     OPENGL_DEPTH_COMPONENT_TYPE);
         open_gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, slot, result.depth_handle, 0);
     }

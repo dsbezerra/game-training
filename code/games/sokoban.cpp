@@ -1,11 +1,10 @@
 
 global_variable Mat4 light_space_matrix;
-global_variable Vector3 light_pos = make_vector3(-2.f, 4.f, -2.f);
+global_variable Vector3 light_pos = make_vector3(-2.f, 4.f, -1.f);
 global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
 global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .25f, origin.z);
 
-global_variable Loaded_Sound requiem, test;
-global_variable int blinn = 0;
+global_variable Loaded_Sound requiem;
 
 internal Sokoban_Entity
 make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
@@ -31,10 +30,12 @@ init_game(Sokoban_State *state) {
     
     state->Game_Mode = GameMode_Playing;
     
-    init_camera(&state->cam, -90.f, -65.f, 45.f);
+    init_camera(&state->cam, -90.f, -90.f, 45.f);
+    
     set_camera_mode(&state->cam, CameraMode_LookAt);
     
-    state->cam.position  = make_vector3(0.f, 5.f, 4.f);
+    state->cam.position  = make_vector3(0.f, 20.f, 0.f);
+    state->cam.target = origin;
     
     Sokoban_World world = load_level("sasquatch_v_1");
     state->world = world;
@@ -124,7 +125,6 @@ update_game(Sokoban_State *state, Game_Input *input) {
     
     real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
-        
 #if 0
         b32 player_moved = false;
         Vector3 new_player_position = state->player.position;
@@ -159,13 +159,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
 #endif
     }
     
-    if (is_down(Button_Space)) {
-        blinn = 0;
-    } else {
-        blinn = 1;
-    }
-    
-    if (released(Button_Enter)) {
+    if (input->alt_is_down && pressed(Button_F2)) {
         if (cam->mode == CameraMode_Free) 
             set_camera_mode(cam, CameraMode_LookAt);
         else 
@@ -250,7 +244,7 @@ load_level(char *levelname) {
                 real32 size_x = result.x_count * .5f;
                 real32 size_y = result.y_count * .5f;
                 entity.position.x -= size_x * .5f - .25f;
-                entity.position.z -= size_y * .5f - .5f;
+                entity.position.z -= size_y * .5f - .25f;
                 result.entities[entity_id++] = entity;
             }
             xx++;
@@ -269,13 +263,21 @@ draw_game_playing(Sokoban_State *state) {
     // Draw plane
     Quaternion a = make_quaternion(make_vector3(0.f, 0.f, 0.f), .0f);
     {
-        draw_mesh(&state->plane, plane_position, a);
+        draw_mesh(&state->plane, plane_position, a, 2.f);
     }
     
     //
     // Draw test blocks
     //
     {
+        local_persist real32 angle = 0.f;
+        angle += core.time_info.dt * 90.f;
+        if (angle >= 360.f) angle -= 360.f;
+        
+        local_persist real32 sun_angle = 0.f;
+        sun_angle += core.time_info.dt * 1.f;
+        if (sun_angle >= 360.f) sun_angle -= 360.f;
+        
         for (u32 i = 0; i < state->world.num_entities; ++i) {
             Sokoban_Entity entity = state->world.entities[i];
             if (entity.kind == SokobanEntityKind_None) continue;
@@ -292,16 +294,10 @@ draw_game_playing(Sokoban_State *state) {
             if (mesh) {
                 Quaternion orientation = quaternion_identity();
                 if (entity.kind == SokobanEntityKind_Star) {
-                    local_persist real32 angle = 0.f;
                     orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), angle);
-                    angle += core.time_info.dt * 90.f;
-                    if (angle >= 360.f) angle -= 360.f;
                     entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
                 } else if (entity.kind == SokobanEntityKind_Sun) {
-                    local_persist real32 sun_angle = 0.f;
                     orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), sun_angle);
-                    sun_angle += core.time_info.dt * 1.f;
-                    if (sun_angle >= 360.f) sun_angle -= 360.f;
                 }
                 draw_mesh(mesh, entity.position, orientation);
             }
@@ -322,12 +318,7 @@ draw_game_shadow(Sokoban_State *state) {
         init_depth_map();
     }
     
-    int width = immediate->depth_map.width;
-    int height = immediate->depth_map.height;
-    
     use_framebuffer(&immediate->depth_framebuffer);
-    
-    glViewport(0, 0, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
     
     set_shader(global_basic_shadow_shader);
@@ -398,13 +389,10 @@ draw_game_view(Sokoban_State *state) {
         
         int width = state->dimensions.width;
         int height = state->dimensions.height;
-        
         ensure_framebuffer(width, height);
         use_framebuffer(&immediate->multisampled_framebuffer);
         
-        glViewport(0, 0, width, height);
-        
-        render_3d(state->dimensions.width, state->dimensions.height, state->cam.fov);
+        render_3d(width, height, state->cam.fov);
         glClearColor(0.f/255.f, 170.f/255.f, 255.f/255.f, 255.f/255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         

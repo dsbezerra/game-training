@@ -531,6 +531,7 @@ internal void
 use_framebuffer(Opengl_Framebuffer *framebuffer) {
     use_framebuffer(framebuffer->framebuffer_handle);
     immediate->framebuffer_to_blit = framebuffer;
+    glViewport(0, 0, framebuffer->width, framebuffer->height);
 }
 
 internal void

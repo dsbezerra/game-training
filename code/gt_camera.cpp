@@ -110,12 +110,6 @@ internal void
 set_camera_mode(Camera *cam, Camera_Mode mode) {
     assert(cam);
     
-    OutputDebugString("setting camera mode to\n");
-    if (mode == CameraMode_Free) {
-        OutputDebugString("free\n");
-    } else {
-        OutputDebugString("look_at\n");
-    }
     cam->mode = mode;
 }
 

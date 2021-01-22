@@ -93,6 +93,7 @@ enum Button {
     Button_Mouse1,
     
     Button_F1,
+    Button_F2,
     
     Button_Count
 };
@@ -127,6 +128,7 @@ struct Game_Input {
             Game_Button_State mouse1;
             
             Game_Button_State f1;
+            Game_Button_State f2;
         };
     };
 };

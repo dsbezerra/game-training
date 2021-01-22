@@ -50,6 +50,26 @@ uniform bool blinn;
 
 vec3 light_color = vec3(0.8, 0.598313, 0.000746); // Matches the blender file material color
 
+int samples = 1;
+vec2 poisson_disk[16] = vec2[](
+   vec2( -0.94201624, -0.39906216 ), 
+   vec2( 0.94558609, -0.76890725 ), 
+   vec2( -0.094184101, -0.92938870 ), 
+   vec2( 0.34495938, 0.29387760 ), 
+   vec2( -0.91588581, 0.45771432 ), 
+   vec2( -0.81544232, -0.87912464 ), 
+   vec2( -0.38277543, 0.27676845 ), 
+   vec2( 0.97484398, 0.75648379 ), 
+   vec2( 0.44323325, -0.97511554 ), 
+   vec2( 0.53742981, -0.47373420 ), 
+   vec2( -0.26496911, -0.41893023 ), 
+   vec2( 0.79197514, 0.19090188 ), 
+   vec2( -0.24188840, 0.99706507 ), 
+   vec2( -0.81409955, 0.91437590 ), 
+   vec2( 0.19984126, 0.78641367 ), 
+   vec2( 0.14383161, -0.14100790 )
+);
+
 out vec4 frag_color;
 
 in VS_OUT {
@@ -73,10 +93,41 @@ float HardShadows_DirectionalLight(vec3 ShadowCoords) {
   ShadowCoords = ShadowCoords * 0.5 + 0.5;
 
   vec3 l = normalize(light_pos - fs_in.frag_position);
-  float bias = max(0.01 * (1.0 - dot(fs_in.normal, l)), 0.005);
+  float bias = max(0.001 * (1.0 - dot(fs_in.normal, l)), 0.001);
+  
 
-  float z = texture(shadow_map, ShadowCoords.xy).x;
-  return (z < (ShadowCoords.z - bias)) ? 1.0 : 0.0;
+  float visibility = 0.0;
+  for (int index = 0; index < samples; index++) {    
+    float z = texture(shadow_map, ShadowCoords.xy + poisson_disk[index] / 700.0).x;
+    if (z < ShadowCoords.z - bias) {
+      visibility += 1.0 / samples;
+    }
+  }
+
+  return visibility;
+}
+
+// Uses PCF
+float SoftShadows_DirectionalLight(vec3 ShadowCoords) {
+  if (ShadowCoords.z > 1.0)
+    return 0.0;
+
+  ShadowCoords = ShadowCoords * 0.5 + 0.5;
+
+  vec3 l = normalize(light_pos - fs_in.frag_position);
+  //float bias = max(0.01 * (1.0 - dot(fs_in.normal, l)), 0.005);
+  float bias = max(0.001 * (1.0 - dot(fs_in.normal, l)), 0.001);
+
+  float shadow = 0.0;
+  vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+  for(int x = -1; x <= 1; ++x) {
+    for(int y = -1; y <= 1; ++y) {
+      float pcf = texture(shadow_map, ShadowCoords.xy + vec2(x, y) * texel_size).r; 
+      shadow += ShadowCoords.z - bias > pcf ? 1.0 : 0.0;        
+    }    
+  }
+  shadow /= 9.0;
+  return shadow;
 }
 
 void main() {
@@ -108,7 +159,7 @@ void main() {
   
   vec3 ShadowCoords = fs_in.frag_position_in_light_space.xyz / fs_in.frag_position_in_light_space.w;
 
-  float shadow = HardShadows_DirectionalLight(ShadowCoords);
+  float shadow = SoftShadows_DirectionalLight(ShadowCoords);
   vec3 final_color;
   if (material.diffuse == light_color) {
     final_color = material_diffuse_color * light_color;
