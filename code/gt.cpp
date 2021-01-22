@@ -448,6 +448,7 @@ draw_framebuffer(Vector2i dim) {
         open_gl->glBlitFramebuffer(0, 0, dim.width, dim.height, 0, 0, dim.width, dim.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
         
         use_framebuffer((GLuint) 0);
+        
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         

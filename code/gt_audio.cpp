@@ -154,8 +154,8 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         // Bar color
         //
         {
-            Vector2 min = make_vector2(.0f, y);
-            Vector2 max = make_vector2((real32) dimensions.width, y - height);
+            Vector2 min = make_vector2(.0f, y - height);
+            Vector2 max = make_vector2((real32) dimensions.width, y);
             immediate_quad(min, max, -1.f, bar_color);
         }
         
@@ -164,9 +164,9 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         //
         {
             real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
-            Vector2 min = make_vector2(.0f, y);
-            Vector2 max = make_vector2((real32) dimensions.width * played_ratio, y - height);
-            immediate_quad(min, max, -5.f, played_color);
+            Vector2 min = make_vector2(.0f, y - height);
+            Vector2 max = make_vector2((real32) dimensions.width * played_ratio, y);
+            immediate_quad(min, max, -1.f, played_color);
         }
         immediate_flush();
         

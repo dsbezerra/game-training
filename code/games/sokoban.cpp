@@ -33,6 +33,7 @@ init_game(Sokoban_State *state) {
     init_camera(&state->cam, -90.f, -90.f, 45.f);
     
     set_camera_mode(&state->cam, CameraMode_LookAt);
+    platform_show_cursor(true);
     
     state->cam.position  = make_vector3(0.f, 20.f, 0.f);
     state->cam.target = origin;
@@ -104,17 +105,7 @@ init_game(Sokoban_State *state) {
     state->star  = load_mesh("./data/models/sokoban/star.obj", MESH_FLIP_UVS);
     state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
     state->sun   = load_mesh("./data/models/sokoban/sun.obj", MESH_FLIP_UVS);
-    
-    //
-    // Player
-    //
-#if 0
-    Sokoban_Player player = {};
-    player.position = make_vector3(0.f, 0.3f, 0.f);
-    player.velocity = make_vector3(0.f, 0.f, 0.f);
-    player.mesh = load_mesh("./data/models/sokoban/cylinder.obj", MESH_FLIP_UVS);
-    state->player = player;
-#endif
+    state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
 }
 
 internal void
@@ -168,11 +159,14 @@ update_game(Sokoban_State *state, Game_Input *input) {
 #endif
     }
     
-    if (input->alt_is_down && pressed(Button_F2)) {
-        if (cam->mode == CameraMode_Free) 
+    if (pressed(Button_F2)) {
+        if (cam->mode == CameraMode_Free) {
             set_camera_mode(cam, CameraMode_LookAt);
-        else 
+            platform_show_cursor(true);
+        } else { 
             set_camera_mode(cam, CameraMode_Free);
+            platform_show_cursor(false);
+        }
     }
 }
 
@@ -379,15 +373,70 @@ draw_grid(Sokoban_State *state) {
         immediate_line(p0, p1, white);
     }
     
+#define DRAW_ORIGIN_AXIS 1
+#if DRAW_ORIGIN_AXIS
     // Origin axises
+    Vector4 xcolor = make_color(0xffc80000);
+    Vector4 ycolor = make_color(0xff00c800);
+    Vector4 zcolor = make_color(0xff0000c8);
+    
     real32 len = (real32) max_count * .5f;
-    Vector4 axis_color = make_vector4(1.0, 1.0, 0.2, 0.6);
     
-    immediate_line(make_vector3(-len, 0.f, 0.0f), make_vector3(len, 0.f, 0.0f), axis_color);
-    immediate_line(make_vector3(0.f, -len, 0.f),  make_vector3(0.f, len, 0.f),  axis_color);
-    immediate_line(make_vector3(0.f, 0.f, -len),  make_vector3(0.f, 0.0f, len), axis_color);
+    Vector3 xs = make_vector3(-len, 0.f, 0.0f);
+    Vector3 xe = make_vector3(len, 0.f, 0.0f);
     
+    Vector3 ys = make_vector3(0.f, -len, 0.f);
+    Vector3 ye = make_vector3(0.f, len, 0.f);
+    
+    Vector3 zs = make_vector3(0.f, 0.0f, -len);
+    Vector3 ze = make_vector3(0.f, 0.0f, len);
+    
+    immediate_line(xs, xe, xcolor);
+    immediate_line(ys, ye, ycolor);
+    immediate_line(zs, ze, zcolor);
     immediate_flush();
+    
+    set_shader(global_arrow_shader);
+    refresh_shader_transform();
+    
+    real32 arrow_scale = 0.1f;
+    
+    Vector3 x_axis = make_vector3(1.0f, 0.0f, 0.f);
+    Vector3 y_axis = make_vector3(0.0f, 1.0f, 0.f);
+    Vector3 z_axis = make_vector3(0.0f, 0.0f, 1.f);
+    
+    // X arrows
+    {
+        Quaternion x0 = make_quaternion(z_axis, 90.f);
+        Quaternion x1 = make_quaternion(z_axis, -90.f);
+        
+        set_float4("diffuse_color", xcolor);
+        
+        draw_mesh(&state->arrow, xs, x0, arrow_scale);
+        draw_mesh(&state->arrow, xe, x1, arrow_scale);
+    }
+    
+    // Y arrows
+    {
+        Quaternion y0 = make_quaternion(x_axis, -180.f);
+        Quaternion y1 = quaternion_identity();
+        
+        set_float4("diffuse_color", ycolor);
+        
+        draw_mesh(&state->arrow, ys, y0, arrow_scale);
+        draw_mesh(&state->arrow, ye, y1, arrow_scale);
+    }
+    // Z arrows
+    {
+        Quaternion z0 = make_quaternion(x_axis, -90.f);
+        Quaternion z1 = make_quaternion(x_axis,  90.f);
+        
+        set_float4("diffuse_color", zcolor);
+        
+        draw_mesh(&state->arrow, zs, z0, arrow_scale);
+        draw_mesh(&state->arrow, ze, z1, arrow_scale);
+    }
+#endif
 }
 
 internal void
@@ -461,8 +510,7 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     }
     state->dimensions = memory->window_dimensions;
     
-    // NOTE(diego): Lock mouse to center of screen and use new position
-    // to calculate velocity and move our player with it.
+    if (state->cam.mode == CameraMode_Free)
     {
         Vector2i new_mouse_position;
         platform_get_cursor_position(&new_mouse_position);
@@ -476,7 +524,6 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         } else {
             input->mouse.position = new_mouse_position;
         }
-        platform_show_cursor(false);
     }
     
     //

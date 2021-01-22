@@ -7,6 +7,7 @@ global_variable Shader global_basic_shadow_shader;
 global_variable Shader global_depth_shader;
 
 global_variable Shader global_line_shader;
+global_variable Shader global_arrow_shader;
 
 internal void
 init_shader_catalog() {
@@ -281,6 +282,8 @@ reload_shaders() {
         unload_shader(&global_depth_shader);
     if (global_line_shader.program)
         unload_shader(&global_line_shader);
+    if (global_arrow_shader.program)
+        unload_shader(&global_arrow_shader);
     
     global_shader = load_shader("./data/shaders/argb_texture.glsl");
     global_basic_3d_shader = load_shader("./data/shaders/basic_3d.glsl");
@@ -291,6 +294,7 @@ reload_shaders() {
     global_depth_shader = load_shader("./data/shaders/depth.glsl");
     
     global_line_shader = load_shader("./data/shaders/line.glsl");
+    global_arrow_shader = load_shader("./data/shaders/arrow.glsl");
 }
 
 internal void

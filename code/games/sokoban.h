@@ -33,13 +33,6 @@ struct Sokoban_Entity {
     u32 tile_y;
 };
 
-struct Sokoban_Player {
-    Vector3 position;
-    Vector3 velocity;
-    
-    Triangle_Mesh mesh;
-};
-
 struct Sokoban_World {
     u32 x_count;
     u32 y_count;
@@ -57,6 +50,7 @@ struct Sokoban_State {
     Triangle_Mesh star;
     Triangle_Mesh plane;
     Triangle_Mesh sun;
+    Triangle_Mesh arrow;
     
     Playing_Sound *requiem;
     
