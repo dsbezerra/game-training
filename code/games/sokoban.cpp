@@ -41,8 +41,8 @@ init_game(Sokoban_State *state) {
     state->world = world;
     
     real32 cam_height = (real32) max(world.x_count, world.y_count);
-    state->cam.position  = make_vector3(0.f, cam_height, 0.f);
-    state->lock_position = state->cam.position + make_vector3(0.f, cam_height * 1.5f, 0.f);
+    state->cam.position  = make_vector3(0.f, 0.f, 0.f);
+    state->lock_position = state->cam.position + make_vector3(0.f, cam_height*1.2f, 0.f);
     state->cam_animation_rate = 5.f;
     
     state->cam.target = origin;
