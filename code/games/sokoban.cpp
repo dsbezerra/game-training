@@ -29,17 +29,23 @@ init_game(Sokoban_State *state) {
     set_volume(state->requiem, .1f);
     
     state->Game_Mode = GameMode_Playing;
+    state->lock_pitch = -89.f;
+    state->lock_yaw = -90.f;
     
-    init_camera(&state->cam, -90.f, -90.f, 45.f);
+    init_camera(&state->cam, state->lock_yaw, state->lock_pitch, 45.f);
     
     set_camera_mode(&state->cam, CameraMode_LookAt);
     platform_show_cursor(true);
     
-    state->cam.position  = make_vector3(0.f, 20.f, 0.f);
-    state->cam.target = origin;
-    
     Sokoban_World world = load_level("sasquatch_v_1");
     state->world = world;
+    
+    real32 cam_height = (real32) max(world.x_count, world.y_count);
+    state->cam.position  = make_vector3(0.f, cam_height, 0.f);
+    state->lock_position = state->cam.position + make_vector3(0.f, cam_height * 1.5f, 0.f);
+    state->cam_animation_rate = 5.f;
+    
+    state->cam.target = origin;
     
     //
     // Blocks
@@ -114,8 +120,21 @@ update_game(Sokoban_State *state, Game_Input *input) {
     Camera *cam = &state->cam;
     update_camera(cam, input);
     
+    
     real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
+        
+        Vector3 pos = cam->position;
+        Vector3 t_pos = state->lock_position;
+        
+        real32 anim_amount = core.time_info.dt * state->cam_animation_rate*state->cam_animation_rate;
+        cam->position.x = move_towards(cam->position.x, t_pos.x, anim_amount);
+        cam->position.y = move_towards(cam->position.y, t_pos.y, anim_amount);
+        cam->position.z = move_towards(cam->position.z, t_pos.z, anim_amount);
+        cam->pitch = move_towards(cam->pitch, state->lock_pitch, anim_amount * 10.f);
+        cam->yaw   = move_towards(cam->yaw,   state->lock_yaw,   anim_amount * 10.f);
+        update_vectors(cam);
+        
         if (pressed(Button_S)) {
             fade_out(state->requiem);
         }

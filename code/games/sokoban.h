@@ -55,6 +55,11 @@ struct Sokoban_State {
     Playing_Sound *requiem;
     
     Camera cam;
+    Vector3 lock_position;
+    
+    real32 lock_pitch;
+    real32 lock_yaw;
+    real32 cam_animation_rate;
     
     Vector2i dimensions;
     

@@ -39,7 +39,6 @@ draw_camera_debug(Camera *cam, Vector2i dim) {
     glEnable(GL_DEPTH_TEST);
 }
 
-
 internal void
 update_vectors(Camera *cam) {
     assert(cam);
