@@ -4,6 +4,7 @@ global_variable Vector3 light_pos = make_vector3(-2.f, 4.f, -1.f);
 global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
 global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .25f, origin.z);
 
+global_variable Vector3 mouse_ray;
 global_variable Vector3 intersect_position;
 global_variable Sokoban_Entity placed_entity;
 
@@ -26,15 +27,19 @@ make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
     return result;
 }
 
+internal void
+snap(Vector3 *pos, real32 value) {
+    real32 r = 1.f / value;
+    pos->x = roundf(pos->x * r) / r;
+    //pos->y = roundf(pos->y * r) / r;
+    pos->z = roundf(pos->z * r) / r;
+}
+
 internal Sokoban_Entity
 place_entity(Sokoban_World world, Sokoban_Entity_Kind kind, Vector3 position) {
     Sokoban_Entity result = {};
     result.kind = kind;
-    
-    result.position.x = roundf(position.x * 2.f) / 2.f;
-    result.position.y = position.y;
-    result.position.z = roundf(position.z * 2.f) / 2.f;
-    
+    result.position = position;
     return result;
 }
 
@@ -135,7 +140,7 @@ intersects(Vector3 p, Vector3 v, Vector3 n, real32 d) {
     real32 denom = inner(n, v);
     if (fabs(denom) > 0.0001f) // your favorite epsilon
     {
-        t = -(inner(n, p) + d) / inner(n, v);
+        t = -(inner(n, p) + d) / denom;
     }
     return p + t * v;
 }
@@ -395,6 +400,16 @@ draw_game_playing(Sokoban_State *state) {
         //draw_mesh(&state->player.mesh, state->player.position, a);
     }
     
+    // Ray test
+    {
+        
+        mouse_ray = ray_from_mouse(state->dimensions, &state->cam);
+        intersect_position = intersects(state->cam.position, mouse_ray, make_vector3(0.f, 1.f, 0.f), origin.y);
+        snap(&intersect_position, 0.25f);
+        Vector3 position = intersect_position;
+        draw_mesh(&state->block, position, quaternion_identity(), 1.f);
+    }
+    
     //
     // Draw placed entity
     //
@@ -478,8 +493,6 @@ draw_grid(Sokoban_State *state) {
     Vector3 zs = make_vector3(0.f, 0.0f, -len);
     Vector3 ze = make_vector3(0.f, 0.0f, len);
     
-    Vector3 m = ray_from_mouse(state->dimensions, &state->cam);
-    
     immediate_line(xs, xe, xcolor);
     immediate_line(ys, ye, ycolor);
     immediate_line(zs, ze, zcolor);
@@ -527,13 +540,6 @@ draw_grid(Sokoban_State *state) {
         draw_mesh(&state->arrow, ze, z1, arrow_scale);
     }
     
-    // Ray test
-    {
-        set_shader(global_basic_3d_shader);
-        intersect_position = intersects(state->cam.position, m, make_vector3(0.f, 1.f, 0.f), origin.y);
-        Vector3 position = intersect_position;
-        draw_mesh(&state->block, position, quaternion_identity(), 1.f);
-    }
 #endif
 }
 
@@ -555,7 +561,6 @@ draw_game_view(Sokoban_State *state) {
         glClearColor(0.f/255.f, 170.f/255.f, 255.f/255.f, 255.f/255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        Vector3 m = ray_from_mouse(dim, &state->cam);
         //
         // Draw grid
         //
@@ -576,6 +581,7 @@ draw_game_view(Sokoban_State *state) {
         draw_camera_debug(&state->cam, state->dimensions);
         
         {
+            Vector3 m = mouse_ray;
             char buf[256];
             sprintf(buf, "Mouse Pos (XYZ): %.2f, %.2f, %.2f\n", m.x, m.y, m.z);
             
