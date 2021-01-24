@@ -493,7 +493,9 @@ draw_game_playing(Sokoban_State *state) {
             
         } else {
             real32 t = intersect_plane(state->cam.position, mouse_ray, n, origin.y);
-            intersect_position = state->cam.position + t * mouse_ray;
+            if (t >= 0.f) {
+                intersect_position = state->cam.position + t * mouse_ray;
+            }
         }
         snap(&intersect_position, 0.25f);
         Vector3 position = intersect_position;
