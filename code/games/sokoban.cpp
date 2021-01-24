@@ -134,15 +134,15 @@ init_game(Sokoban_State *state) {
     state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
 }
 
-internal Vector3
-intersects(Vector3 p, Vector3 v, Vector3 n, real32 d) {
-    real32 t = 0.f;
+internal real32
+intersect_plane(Vector3 p, Vector3 v, Vector3 n, real32 d) {
+    real32 t = -1.f;
     real32 denom = inner(n, v);
     if (fabs(denom) > 0.0001f) // your favorite epsilon
     {
         t = -(inner(n, p) + d) / denom;
     }
-    return p + t * v;
+    return t;
 }
 
 internal Vector3
@@ -198,11 +198,11 @@ update_game(Sokoban_State *state, Game_Input *input) {
         cam->yaw   = move_towards(cam->yaw,   state->lock_yaw,   anim_amount * 10.f);
         update_vectors(cam);
         
-        if (pressed(Button_S)) {
-            fade_out(state->requiem);
-        }
         if (pressed(Button_W)) {
             fade_in(state->requiem);
+        }
+        if (pressed(Button_S)) {
+            fade_out(state->requiem);
         }
         
 #if 0
@@ -404,7 +404,12 @@ draw_game_playing(Sokoban_State *state) {
     {
         
         mouse_ray = ray_from_mouse(state->dimensions, &state->cam);
-        intersect_position = intersects(state->cam.position, mouse_ray, make_vector3(0.f, 1.f, 0.f), origin.y);
+        
+        Vector3 n = make_vector3(0.f, 1.f, 0.f);
+        
+        real32 t = intersect_plane(state->cam.position, mouse_ray, n, origin.y);
+        intersect_position = state->cam.position + t * mouse_ray;
+        
         snap(&intersect_position, 0.25f);
         Vector3 position = intersect_position;
         draw_mesh(&state->block, position, quaternion_identity(), 1.f);
