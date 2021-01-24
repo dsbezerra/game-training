@@ -400,10 +400,33 @@ operator+ (Vector3 a, Vector3 b) {
     return result;
 }
 
+inline Vector3
+operator+ (Vector3 a, real32 b) {
+    Vector3 result;
+    
+    result.x = a.x + b;
+    result.y = a.y + b;
+    result.z = a.z + b;
+    
+    return result;
+}
+
+
 inline Vector3 &
 operator+= (Vector3 &a, Vector3 b) {
     a = a + b;
     return a;
+}
+
+inline Vector3
+operator- (Vector3 a, real32 b) {
+    Vector3 result;
+    
+    result.x = a.x - b;
+    result.y = a.y - b;
+    result.z = a.z - b;
+    
+    return result;
 }
 
 inline Vector3

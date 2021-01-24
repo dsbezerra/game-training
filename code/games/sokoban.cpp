@@ -31,7 +31,7 @@ internal void
 snap(Vector3 *pos, real32 value) {
     real32 r = 1.f / value;
     pos->x = roundf(pos->x * r) / r;
-    //pos->y = roundf(pos->y * r) / r;
+    pos->y = roundf(pos->y * r) / r;
     pos->z = roundf(pos->z * r) / r;
 }
 
@@ -145,6 +145,59 @@ intersect_plane(Vector3 p, Vector3 v, Vector3 n, real32 d) {
     return t;
 }
 
+struct AABB {
+    Vector3 min;
+    Vector3 max;
+};
+
+#define X_AXIS 0
+#define Y_AXIS 1
+#define Z_AXIS 2
+
+internal b32
+clip_line(int axis, AABB& box, Vector3& v0, Vector3& v1, real32& t_low, real32& t_high)
+{
+    real32 t_dim_low;
+    real32 t_dim_high;
+    
+    t_dim_low  = (box.min.e[axis] - v0.e[axis]) / (v1.e[axis] - v0.e[axis]);
+    t_dim_high = (box.max.e[axis] - v0.e[axis]) / (v1.e[axis] - v0.e[axis]);
+    
+    if (t_dim_high < t_dim_low) {
+        real32 aux = t_dim_low;
+        t_dim_low = t_dim_high;
+        t_dim_high = aux;
+    }
+    
+    if (t_dim_high < t_low) return false;
+    
+    if (t_dim_low > t_high) return false;
+    
+    t_low  = max(t_dim_low, t_low);
+    t_high = min(t_dim_high, t_high);
+    
+    if (t_low > t_high) return false;
+    
+    return true;
+}
+
+internal b32
+line_aabb_intersection(AABB& box, Vector3& v0, Vector3& v1, Vector3& intersection, real32& t) {
+    
+    real32 t_low = 0.f;
+    real32 t_high = 1.f;
+    
+    if (!clip_line(X_AXIS, box, v0, v1, t_low, t_high)) return false;
+    if (!clip_line(Y_AXIS, box, v0, v1, t_low, t_high)) return false;
+    if (!clip_line(Z_AXIS, box, v0, v1, t_low, t_high)) return false;
+    
+    intersection = v0 + (v1 - v0) * t_low;
+    
+    t = t_low;
+    
+    return true;
+}
+
 internal Vector3
 ray_from_mouse(Vector2i dim, Camera *cam) {
     Vector3 result = {};
@@ -175,6 +228,32 @@ ray_from_mouse(Vector2i dim, Camera *cam) {
     result = normalize(result);
     
     return result;
+}
+
+internal b32
+trace_line(Sokoban_World& world, Vector3& v0, Vector3& v1, Vector3& intersection) {
+    
+    real32 low_t = 1.f;
+    
+    Vector3 tVec;
+    real32 t;
+    
+    for (u32 i = 0; i < world.num_entities; i++) {
+        Sokoban_Entity *entity = &world.entities[i];
+        if (entity->kind == SokobanEntityKind_Block) {
+            AABB box = {};
+            box.min = entity->position - 0.5f;
+            box.max = entity->position + 0.5f;
+            if (line_aabb_intersection(box, v0, v1, tVec, t) && t < low_t) {
+                intersection = tVec;
+                low_t = t;
+            }
+        }
+    }
+    
+    if (low_t < 1) return true;
+    
+    return false;
 }
 
 internal void
@@ -407,9 +486,15 @@ draw_game_playing(Sokoban_State *state) {
         
         Vector3 n = make_vector3(0.f, 1.f, 0.f);
         
-        real32 t = intersect_plane(state->cam.position, mouse_ray, n, origin.y);
-        intersect_position = state->cam.position + t * mouse_ray;
+        Vector3 d = mouse_ray * 100.f;
+        Vector3 end = state->cam.position + d;
         
+        if (trace_line(state->world, state->cam.position, end, intersect_position)) {
+            
+        } else {
+            real32 t = intersect_plane(state->cam.position, mouse_ray, n, origin.y);
+            intersect_position = state->cam.position + t * mouse_ray;
+        }
         snap(&intersect_position, 0.25f);
         Vector3 position = intersect_position;
         draw_mesh(&state->block, position, quaternion_identity(), 1.f);
