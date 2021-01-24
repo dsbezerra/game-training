@@ -307,7 +307,6 @@ draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float s
     m._22 = scale;
     m._33 = scale;
     
-    
     set_mat4("model", m * r);
     
     open_gl->glBindVertexArray(mesh->vao);

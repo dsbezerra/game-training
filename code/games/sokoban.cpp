@@ -4,6 +4,9 @@ global_variable Vector3 light_pos = make_vector3(-2.f, 4.f, -1.f);
 global_variable Vector3 origin = make_vector3(0.f, 0.f, 0.f);
 global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .25f, origin.z);
 
+global_variable Vector3 intersect_position;
+global_variable Sokoban_Entity placed_entity;
+
 global_variable Loaded_Sound requiem;
 
 internal Sokoban_Entity
@@ -19,6 +22,18 @@ make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
     position.z = (real32) tile_y * .5f;
     
     result.position = position;
+    
+    return result;
+}
+
+internal Sokoban_Entity
+place_entity(Sokoban_World world, Sokoban_Entity_Kind kind, Vector3 position) {
+    Sokoban_Entity result = {};
+    result.kind = kind;
+    
+    result.position.x = roundf(position.x * 2.f) / 2.f;
+    result.position.y = position.y;
+    result.position.z = roundf(position.z * 2.f) / 2.f;
     
     return result;
 }
@@ -114,6 +129,49 @@ init_game(Sokoban_State *state) {
     state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
 }
 
+internal Vector3
+intersects(Vector3 p, Vector3 v, Vector3 n, real32 d) {
+    real32 t = 0.f;
+    real32 denom = inner(n, v);
+    if (fabs(denom) > 0.0001f) // your favorite epsilon
+    {
+        t = -(inner(n, p) + d) / inner(n, v);
+    }
+    return p + t * v;
+}
+
+internal Vector3
+ray_from_mouse(Vector2i dim, Camera *cam) {
+    Vector3 result = {};
+    
+    Vector2i mouse_position;
+    platform_get_cursor_position(&mouse_position);
+    
+    // 1. Normalized device coords
+    real32 x = (2.f * mouse_position.x) / dim.width - 1.f;
+    real32 y = 1.f - (2.f * mouse_position.y) / dim.height;
+    
+    // 2. Clip coords
+    Vector4 clip = make_vector4(x, y, -1, 1.f);
+    
+    // 3. Eye coords
+    Mat4 inverted_projection = inverse(projection_matrix);
+    Vector4 eye_coords = inverted_projection * clip;
+    eye_coords.z = -1.f;
+    eye_coords.w =  0.f;
+    
+    Mat4 vmatrix = get_view_matrix(cam);
+    // 4. World coords
+    Vector4 world_coords = inverse(vmatrix) * eye_coords;
+    
+    result.x = world_coords.x;
+    result.y = world_coords.y;
+    result.z = world_coords.z;
+    result = normalize(result);
+    
+    return result;
+}
+
 internal void
 update_game(Sokoban_State *state, Game_Input *input) {
     
@@ -186,6 +244,10 @@ update_game(Sokoban_State *state, Game_Input *input) {
             set_camera_mode(cam, CameraMode_Free);
             platform_show_cursor(false);
         }
+    }
+    
+    if (released(Button_Mouse1)) {
+        placed_entity = place_entity(state->world, SokobanEntityKind_Star, intersect_position);
     }
 }
 
@@ -332,6 +394,11 @@ draw_game_playing(Sokoban_State *state) {
     {
         //draw_mesh(&state->player.mesh, state->player.position, a);
     }
+    
+    //
+    // Draw placed entity
+    //
+    draw_mesh(&state->block, placed_entity.position, a);
 }
 
 internal void
@@ -394,6 +461,7 @@ draw_grid(Sokoban_State *state) {
     
 #define DRAW_ORIGIN_AXIS 1
 #if DRAW_ORIGIN_AXIS
+    
     // Origin axises
     Vector4 xcolor = make_color(0xffc80000);
     Vector4 ycolor = make_color(0xff00c800);
@@ -410,6 +478,8 @@ draw_grid(Sokoban_State *state) {
     Vector3 zs = make_vector3(0.f, 0.0f, -len);
     Vector3 ze = make_vector3(0.f, 0.0f, len);
     
+    Vector3 m = ray_from_mouse(state->dimensions, &state->cam);
+    
     immediate_line(xs, xe, xcolor);
     immediate_line(ys, ye, ycolor);
     immediate_line(zs, ze, zcolor);
@@ -417,6 +487,7 @@ draw_grid(Sokoban_State *state) {
     
     set_shader(global_arrow_shader);
     refresh_shader_transform();
+    
     
     real32 arrow_scale = 0.1f;
     
@@ -455,6 +526,14 @@ draw_grid(Sokoban_State *state) {
         draw_mesh(&state->arrow, zs, z0, arrow_scale);
         draw_mesh(&state->arrow, ze, z1, arrow_scale);
     }
+    
+    // Ray test
+    {
+        set_shader(global_basic_3d_shader);
+        intersect_position = intersects(state->cam.position, m, make_vector3(0.f, 1.f, 0.f), origin.y);
+        Vector3 position = intersect_position;
+        draw_mesh(&state->block, position, quaternion_identity(), 1.f);
+    }
 #endif
 }
 
@@ -464,8 +543,11 @@ draw_game_view(Sokoban_State *state) {
         
         draw_game_shadow(state);
         
-        int width = state->dimensions.width;
-        int height = state->dimensions.height;
+        Vector2i dim = state->dimensions;
+        
+        int width = dim.width;
+        int height = dim.height;
+        
         ensure_framebuffer(width, height);
         use_framebuffer(&immediate->multisampled_framebuffer);
         
@@ -473,6 +555,7 @@ draw_game_view(Sokoban_State *state) {
         glClearColor(0.f/255.f, 170.f/255.f, 255.f/255.f, 255.f/255.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        Vector3 m = ray_from_mouse(dim, &state->cam);
         //
         // Draw grid
         //
@@ -491,6 +574,24 @@ draw_game_view(Sokoban_State *state) {
         
         draw_game_playing(state);
         draw_camera_debug(&state->cam, state->dimensions);
+        
+        {
+            char buf[256];
+            sprintf(buf, "Mouse Pos (XYZ): %.2f, %.2f, %.2f\n", m.x, m.y, m.z);
+            
+            int line_count;
+            real32 w = get_text_width(&global_camera_font, buf, &line_count);
+            
+            real32 margin = 100.f;
+            Vector2 p = make_vector2(dim.width - w - margin, margin);
+            Vector4 white = make_color(0xffffffff);
+            
+            glDisable(GL_DEPTH_TEST);
+            draw_text(p.x, p.y + 1.f, (u8*) buf, &global_camera_font, make_color(0));
+            draw_text(p.x, p.y, (u8*) buf, &global_camera_font, white);
+            glEnable(GL_DEPTH_TEST);
+        }
+        
     } else {
         game_frame_begin(state->dimensions.width, state->dimensions.height);
         draw_menu(SOKOBAN_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);

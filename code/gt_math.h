@@ -361,6 +361,24 @@ operator*= (Vector3 &b, real32 a) {
 }
 
 inline Vector3
+operator/ (real32 a, Vector3 b) {
+    Vector3 result = {};
+    
+    result.x = a / b.x;
+    result.y = a / b.y;
+    result.z = a / b.z;
+    
+    return result;
+}
+
+inline Vector3
+operator/ (Vector3 b, real32 a) {
+    Vector3 result = {};
+    b = a / b;
+    return result;
+}
+
+inline Vector3
 operator- (Vector3 a) {
     Vector3 result;
     
@@ -442,6 +460,11 @@ make_vector4(real32 x, real32 y, real32 z, real32 w) {
     result.w = w;
     
     return result;
+}
+
+internal inline Vector4
+make_vector4(Vector4 v) {
+    return make_vector4(v.x, v.y, v.z, v.w);
 }
 
 inline real32
@@ -993,12 +1016,23 @@ Vector2 rotate(Vector2 a, real32 angle) {
     return result;
 }
 
+inline void
+set_translate(Mat4 *matrix, Vector2 pos) {
+    matrix->_14 = pos.x;
+    matrix->_24 = pos.y;
+}
+
+inline void
+set_translate(Mat4 *matrix, Vector3 pos) {
+    matrix->_14 = pos.x;
+    matrix->_24 = pos.y;
+    matrix->_34 = pos.z;
+}
+
 inline Mat4
 translate(Vector2 pos) {
     Mat4 result = mat4_identity();
-    
-    result._14 = pos.x;
-    result._24 = pos.y;
+    set_translate(&result, pos);
     
     return result;
 }
@@ -1006,26 +1040,22 @@ translate(Vector2 pos) {
 inline Mat4
 translate(Vector3 pos) {
     Mat4 result = mat4_identity();
-    
-    result._14 = pos.x;
-    result._24 = pos.y;
-    result._34 = pos.z;
+    set_translate(&result, pos);
     
     return result;
+}
+
+internal b32
+operator==(Mat4 a, Mat4 b) {
+    return ((a._11 == b._11 && a._21 == b._21 && a._31 == b._31 && a._41 == b._41) &&
+            (a._12 == b._12 && a._22 == b._22 && a._32 == b._32 && a._42 == b._42) &&
+            (a._13 == b._13 && a._23 == b._23 && a._33 == b._33 && a._43 == b._43) &&
+            (a._14 == b._14 && a._24 == b._24 && a._34 == b._34 && a._44 == b._44));
 }
 
 internal Mat4
 operator*(Mat4 a, Mat4 b) {
     Mat4 result = {};
-    // memory layout:
-    //
-    //                row no (=vertical)
-    //               |  0   1   2   3
-    //            ---+----------------
-    //            0  | m00 m10 m20 m30
-    // column no  1  | m01 m11 m21 m31
-    // (=horiz)   2  | m02 m12 m22 m32
-    //            3  | m03 m13 m23 m33
     
     result._11 = a._11 * b._11 + a._12 * b._21 + a._13 * b._31 + a._14 * b._41;
     result._12 = a._11 * b._12 + a._12 * b._22 + a._13 * b._32 + a._14 * b._42;
@@ -1046,6 +1076,33 @@ operator*(Mat4 a, Mat4 b) {
     result._42 = a._41 * b._12 + a._42 * b._22 + a._43 * b._32 + a._44 * b._42;
     result._43 = a._41 * b._13 + a._42 * b._23 + a._43 * b._33 + a._44 * b._43;
     result._44 = a._41 * b._14 + a._42 * b._24 + a._43 * b._34 + a._44 * b._44;
+    
+    return result;
+}
+
+internal Mat4
+operator*(Mat4 a, real32 b) {
+    Mat4 result = {};
+    
+    result._11 = a._11 * b;
+    result._12 = a._12 * b;
+    result._13 = a._13 * b;
+    result._14 = a._14 * b;
+    
+    result._21 = a._21 * b;
+    result._22 = a._23 * b;
+    result._23 = a._24 * b;
+    result._24 = a._24 * b;
+    
+    result._31 = a._31 * b;
+    result._32 = a._32 * b;
+    result._33 = a._33 * b;
+    result._34 = a._34 * b;
+    
+    result._41 = a._41 * b;
+    result._42 = a._42 * b;
+    result._43 = a._43 * b;
+    result._44 = a._44 * b;
     
     return result;
 }
@@ -1126,12 +1183,23 @@ look_at(Vector3 position, Vector3 target, Vector3 up = make_vector3(0.f, 1.f, .0
     return result;
 }
 
+inline void
+set_scale(Mat4 *matrix, Vector2 scale) {
+    matrix->_11 = scale.x;
+    matrix->_22 = scale.y;
+}
+
+inline void
+set_scale(Mat4 *matrix, Vector3 scale) {
+    matrix->_11 = scale.x;
+    matrix->_22 = scale.y;
+    matrix->_33 = scale.z;
+}
+
 inline Mat4
 scale(Vector2 scale) {
     Mat4 result = mat4_identity();
-    
-    result._11 = scale.x;
-    result._22 = scale.y;
+    set_scale(&result, scale);
     
     return result;
 }
@@ -1139,10 +1207,7 @@ scale(Vector2 scale) {
 inline Mat4
 scale(Vector3 scale) {
     Mat4 result = mat4_identity();
-    
-    result._11 = scale.x;
-    result._22 = scale.y;
-    result._33 = scale.z;
+    set_scale(&result, scale);
     
     return result;
 }
@@ -1150,12 +1215,69 @@ scale(Vector3 scale) {
 inline Mat4
 scale(Mat4 matrix, Vector3 scale) {
     Mat4 result = mat4_identity();
-    
-    result._11 = scale.x;
-    result._22 = scale.y;
-    result._33 = scale.z;
+    set_scale(&result, scale);
     
     return matrix * result;
+}
+
+inline Mat4
+transpose(Mat4 matrix) {
+    Mat4 result = {};
+    
+    result._11 = matrix._11;
+    result._12 = matrix._21;
+    result._13 = matrix._31;
+    result._14 = matrix._41;
+    
+    result._21 = matrix._12;
+    result._22 = matrix._22;
+    result._23 = matrix._32;
+    result._24 = matrix._42;
+    
+    result._31 = matrix._13;
+    result._32 = matrix._23;
+    result._33 = matrix._33;
+    result._34 = matrix._43;
+    
+    result._41 = matrix._14;
+    result._42 = matrix._24;
+    result._43 = matrix._34;
+    result._44 = matrix._44;
+    
+    return result;
+}
+
+inline Mat4
+inverse_scale(Mat4 matrix) {
+    Mat4 result = matrix;
+    
+    assert(result._12 == 0.f && result._13 == 0.f && result._14 == .0f);
+    assert(result._21 == 0.f && result._23 == 0.f && result._24 == .0f);
+    assert(result._31 == 0.f && result._32 == 0.f && result._34 == .0f);
+    assert(result._41 == 0.f && result._42 == 0.f && result._43 == .0f);
+    
+    result._11 = 1.f / result._11;
+    result._22 = 1.f / result._22;
+    result._33 = 1.f / result._33;
+    
+    return result;
+}
+
+inline Mat4
+inverse_rotate(Mat4 matrix) {
+    Mat4 result = transpose(matrix);
+    return result;
+}
+
+inline Mat4
+inverse_translate(Mat4 matrix) {
+    Mat4 result = mat4_identity();
+    
+    result._14 = -matrix._14;
+    result._24 = -matrix._24;
+    result._34 = -matrix._34;
+    
+    return result;
 }
 
 // NOTE(diego): Not tested.
@@ -1167,10 +1289,10 @@ x_rotation(real32 angle)
     
     Mat4 result = mat4_identity();
     
-    result.rc[1][1] = c;
-    result.rc[1][2] = -s;
-    result.rc[2][1] = s;
-    result.rc[2][2] = c;
+    result._22 = c;
+    result._23 = -s;
+    result._32 = s;
+    result._33 = c;
     
     return result;
 }
@@ -1183,10 +1305,10 @@ y_rotation(real32 angle) {
     
     Mat4 result = mat4_identity();
     
-    result.rc[0][0] = c;
-    result.rc[0][2] = s;
-    result.rc[2][0] = -s;
-    result.rc[2][2] = c;
+    result._11 = c;
+    result._13 = s;
+    result._31 = -s;
+    result._33 = c;
     
     return result;
 }
@@ -1199,10 +1321,10 @@ z_rotation(real32 angle) {
     
     Mat4 result = mat4_identity();
     
-    result.rc[0][0] = c;
-    result.rc[0][1] = -s;
-    result.rc[1][0] = s;
-    result.rc[1][1] = c;
+    result._11 = c;
+    result._12 = -s;
+    result._21 = s;
+    result._22 = c;
     
     return result;
 }
@@ -1281,4 +1403,101 @@ set_rotation(Mat4 *m, Quaternion q) {
     m->_24 = 0.0f;
     m->_34 = 0.0f;
     m->_44 = 1.0f;
+}
+
+internal Vector4
+transform(Mat4 m, Vector4 v) {
+    Vector4 result = {};
+    
+    result.x = m._11 * v.x + m._12 * v.y + m._13 * v.z + m._14 * v.w;
+    result.y = m._21 * v.x + m._22 * v.y + m._23 * v.z + m._24 * v.w;
+    result.z = m._31 * v.x + m._32 * v.y + m._33 * v.z + m._34 * v.w;
+    result.w = m._41 * v.x + m._42 * v.y + m._43 * v.z + m._44 * v.w;
+    
+    return result;
+}
+
+internal Vector4
+operator*(Mat4 a, Vector4 b) {
+    return transform(a, b);
+}
+
+internal real32
+determinant(Mat4 m) {
+    real32 coef0 = m._11*m._22*m._33*m._44 + m._11*m._23*m._34*m._42 + m._11*m._24*m._32*m._43;
+    real32 coef1 = m._11*m._24*m._33*m._42 - m._11*m._23*m._32*m._44 - m._11*m._22*m._34*m._43;
+    real32 coef2 = m._12*m._21*m._33*m._44 - m._13*m._21*m._34*m._42 - m._14*m._21*m._32*m._43;
+    real32 coef3 = m._14*m._21*m._33*m._42 + m._13*m._21*m._32*m._44 + m._12*m._21*m._34*m._43;
+    real32 coef4 = m._12*m._23*m._31*m._44 + m._13*m._24*m._31*m._42 + m._14*m._22*m._31*m._43;
+    real32 coef5 = m._14*m._23*m._31*m._42 - m._13*m._22*m._31*m._44 - m._12*m._24*m._31*m._43;
+    real32 coef6 = m._12*m._23*m._34*m._41 - m._13*m._24*m._32*m._41 - m._14*m._22*m._33*m._41;
+    real32 coef7 = m._14*m._23*m._32*m._41 + m._13*m._22*m._34*m._41 + m._12*m._24*m._33*m._41;
+    return coef0 - coef1 - coef2 + coef3 + coef4 - coef5 - coef6 + coef7;
+}
+
+// Borrowed from:
+// https://github.com/microsoft/referencesource/blob/master/System.Numerics/System/Numerics/Matrix4x4.cs
+internal Mat4
+inverse(Mat4 matrix) {
+    Mat4 result = {};
+    
+    real32 a = matrix._11, b = matrix._12, c = matrix._13, d = matrix._14;
+    real32 e = matrix._21, f = matrix._22, g = matrix._23, h = matrix._24;
+    real32 i = matrix._31, j = matrix._32, k = matrix._33, l = matrix._34;
+    real32 m = matrix._41, n = matrix._42, o = matrix._43, p = matrix._44;
+    
+    real32 kp_lo = k * p - l * o;
+    real32 jp_ln = j * p - l * n;
+    real32 jo_kn = j * o - k * n;
+    real32 ip_lm = i * p - l * m;
+    real32 io_km = i * o - k * m;
+    real32 in_jm = i * n - j * m;
+    
+    real32 a11 = +(f * kp_lo - g * jp_ln + h * jo_kn);
+    real32 a12 = -(e * kp_lo - g * ip_lm + h * io_km);
+    real32 a13 = +(e * jp_ln - f * ip_lm + h * in_jm);
+    real32 a14 = -(e * jo_kn - f * io_km + g * in_jm);
+    
+    real32 det = a * a11 + b * a12 + c * a13 + d * a14;
+    
+    // NOTE(diego): In the original code this returns a matrix filled with NaN.
+    assert(fabs(det) > 0.f);
+    
+    real32 invDet = 1.0f / det;
+    
+    result._11 = a11 * invDet;
+    result._21 = a12 * invDet;
+    result._31 = a13 * invDet;
+    result._41 = a14 * invDet;
+    
+    result._12 = -(b * kp_lo - c * jp_ln + d * jo_kn) * invDet;
+    result._22 = +(a * kp_lo - c * ip_lm + d * io_km) * invDet;
+    result._32 = -(a * jp_ln - b * ip_lm + d * in_jm) * invDet;
+    result._42 = +(a * jo_kn - b * io_km + c * in_jm) * invDet;
+    
+    real32 gp_ho = g * p - h * o;
+    real32 fp_hn = f * p - h * n;
+    real32 fo_gn = f * o - g * n;
+    real32 ep_hm = e * p - h * m;
+    real32 eo_gm = e * o - g * m;
+    real32 en_fm = e * n - f * m;
+    
+    result._13 = +(b * gp_ho - c * fp_hn + d * fo_gn) * invDet;
+    result._23 = -(a * gp_ho - c * ep_hm + d * eo_gm) * invDet;
+    result._33 = +(a * fp_hn - b * ep_hm + d * en_fm) * invDet;
+    result._43 = -(a * fo_gn - b * eo_gm + c * en_fm) * invDet;
+    
+    real32 gl_hk = g * l - h * k;
+    real32 fl_hj = f * l - h * j;
+    real32 fk_gj = f * k - g * j;
+    real32 el_hi = e * l - h * i;
+    real32 ek_gi = e * k - g * i;
+    real32 ej_fi = e * j - f * i;
+    
+    result._14 = -(b * gl_hk - c * fl_hj + d * fk_gj) * invDet;
+    result._24 = +(a * gl_hk - c * el_hi + d * ek_gi) * invDet;
+    result._34 = -(a * fl_hj - b * el_hi + d * ej_fi) * invDet;
+    result._44 = +(a * fk_gj - b * ek_gi + c * ej_fi) * invDet;
+    
+    return result;
 }
