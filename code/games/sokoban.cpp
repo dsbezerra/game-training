@@ -6,7 +6,7 @@ global_variable Vector3 plane_position = make_vector3(origin.x, origin.y - .25f,
 
 global_variable Vector3 mouse_ray;
 global_variable Vector3 intersect_position;
-global_variable Sokoban_Entity placed_entity;
+global_variable Sokoban_Entity *placed_entity = 0;
 
 global_variable Loaded_Sound requiem;
 
@@ -35,12 +35,15 @@ snap(Vector3 *pos, real32 value) {
     pos->z = roundf(pos->z * r) / r;
 }
 
-internal Sokoban_Entity
+internal void
 place_entity(Sokoban_World world, Sokoban_Entity_Kind kind, Vector3 position) {
-    Sokoban_Entity result = {};
-    result.kind = kind;
-    result.position = position;
-    return result;
+    Sokoban_Entity *entity = placed_entity;
+    if (!entity) {
+        placed_entity = (Sokoban_Entity *) platform_alloc(sizeof(Sokoban_Entity));
+        entity = placed_entity;
+    }
+    entity->kind = kind;
+    entity->position = position;
 }
 
 internal void
@@ -68,60 +71,6 @@ init_game(Sokoban_State *state) {
     state->cam.target = origin;
     
     //
-    // Blocks
-    //
-    
-#if 0
-    
-    Sokoban_World world = {};
-    world.x_count = SOKOBAN_WORLD_X;
-    world.y_count = SOKOBAN_WORLD_Y;
-    world.num_entities = world.x_count * world.y_count;
-    world.entities = (Sokoban_Entity *) platform_alloc(world.num_entities * sizeof(Sokoban_Entity));
-    
-    real32 block_size = 0.5f;
-    real32 bb = block_size / 2.f;
-    
-    u32 idx = 0;
-    
-    // Last row
-    world.entities[idx++] = make_block(make_vector3(0.0f, bb, 2.0f));
-    world.entities[idx++] = make_block(make_vector3(0.5f, bb, 2.0f));
-    world.entities[idx++] = make_block(make_vector3(1.0f, bb, 2.0f));
-    
-    world.entities[idx++] = make_block(make_vector3(-0.5f, bb, 1.5f));
-    world.entities[idx++] = make_block(make_vector3(-0.5f, bb, 1.0f));
-    
-    world.entities[idx++] = make_block(make_vector3(-1.0f, bb, 0.5f));
-    world.entities[idx++] = make_block(make_vector3(-1.5f, bb, 0.5f));
-    
-    // left wall
-    world.entities[idx++] = make_block(make_vector3(-2.0f, bb, 0.0f));
-    world.entities[idx++] = make_block(make_vector3(-2.0f, bb, -0.5f));
-    world.entities[idx++] = make_block(make_vector3(-2.0f, bb, -1.0f));
-    
-    // right wall
-    world.entities[idx++] = make_block(make_vector3(2.0f, bb,  1.0f));
-    world.entities[idx++] = make_block(make_vector3(2.0f, bb,  0.5f));
-    world.entities[idx++] = make_block(make_vector3(2.0f, bb,  0.0f));
-    world.entities[idx++] = make_block(make_vector3(2.0f, bb, -0.5f));
-    world.entities[idx++] = make_block(make_vector3(2.0f, bb, -1.0f));
-    world.entities[idx++] = make_block(make_vector3(2.0f, bb, -1.5f));
-    
-    // top wall
-    world.entities[idx++] = make_block(make_vector3(-1.0f, bb, -2.0f));
-    world.entities[idx++] = make_block(make_vector3(-0.5f, bb, -2.0f));
-    world.entities[idx++] = make_block(make_vector3(0.0f, bb, -2.0f));
-    world.entities[idx++] = make_block(make_vector3(0.5f, bb, -2.0f));
-    world.entities[idx++] = make_block(make_vector3(1.0f, bb, -2.0f));
-    world.entities[idx++] = make_block(make_vector3(1.5f, bb, -2.0f));
-    
-    // Star
-    world.entities[idx++] = make_star(make_vector3(0.f, 0.15f, 1.f));
-    world.entities[idx++] = make_sun(light_pos);
-#endif 
-    
-    //
     // Load meshes
     //
     Vector3 plane_color = make_vector3(206.f/255.f, 209.f/255.f, 200.f/255.f);
@@ -132,17 +81,6 @@ init_game(Sokoban_State *state) {
     state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
     state->sun   = load_mesh("./data/models/sokoban/sun.obj", MESH_FLIP_UVS);
     state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
-}
-
-internal real32
-intersect_plane(Vector3 p, Vector3 v, Vector3 n, real32 d) {
-    real32 t = -1.f;
-    real32 denom = inner(n, v);
-    if (fabs(denom) > 0.0001f) // your favorite epsilon
-    {
-        t = -(inner(n, p) + d) / denom;
-    }
-    return t;
 }
 
 struct AABB {
@@ -196,6 +134,29 @@ line_aabb_intersection(AABB& box, Vector3& v0, Vector3& v1, Vector3& intersectio
     t = t_low;
     
     return true;
+}
+
+internal b32
+line_plane_intersection(Vector3 &n, Vector3& c, Vector3& v0, Vector3& v1, Vector3& intersection, real32& t) {
+    // n - plane normal
+    // c - any point in plane
+    // v0 - the beginning of our line
+    // v1 - the end of our line
+    
+    Vector3 v = v1 - v0;
+    Vector3 w = c - v0;
+    
+    real32 k = -1.f;
+    
+    real32 denom = inner(v, n);
+    if (fabs(denom) > 0.0001f)
+    {
+        k = inner(w, n) / denom;
+        intersection = v0 + k * v;
+        t = k;
+    }
+    
+    return k >= 0.f && k <= 1.f;
 }
 
 internal Vector3
@@ -331,7 +292,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
     }
     
     if (released(Button_Mouse1)) {
-        placed_entity = place_entity(state->world, SokobanEntityKind_Star, intersect_position);
+        place_entity(state->world, SokobanEntityKind_Star, intersect_position);
     }
 }
 
@@ -479,33 +440,39 @@ draw_game_playing(Sokoban_State *state) {
         //draw_mesh(&state->player.mesh, state->player.position, a);
     }
     
+    //
+    // Draw placed entity
+    //
+    if (placed_entity) {
+        draw_mesh(&state->block, placed_entity->position, a);
+    }
+    
     // Ray test
     {
         
         mouse_ray = ray_from_mouse(state->dimensions, &state->cam);
         
         Vector3 n = make_vector3(0.f, 1.f, 0.f);
-        
         Vector3 d = mouse_ray * 100.f;
+        
+        Vector3 start = state->cam.position;
         Vector3 end = state->cam.position + d;
         
-        if (trace_line(state->world, state->cam.position, end, intersect_position)) {
-            
+        b32 draw_intersection = false;
+        if (trace_line(state->world, start, end, intersect_position)) {
+            draw_intersection = true;
         } else {
-            real32 t = intersect_plane(state->cam.position, mouse_ray, n, origin.y);
-            if (t >= 0.f) {
-                intersect_position = state->cam.position + t * mouse_ray;
+            real32 t;
+            if (line_plane_intersection(n, origin, start, end, intersect_position, t)) {
+                draw_intersection = true;
             }
         }
-        snap(&intersect_position, 0.25f);
-        Vector3 position = intersect_position;
-        draw_mesh(&state->block, position, quaternion_identity(), 1.f);
+        if (draw_intersection) {
+            snap(&intersect_position, 0.25f);
+            Vector3 position = intersect_position;
+            draw_mesh(&state->block, position, quaternion_identity(), 1.f);
+        }
     }
-    
-    //
-    // Draw placed entity
-    //
-    draw_mesh(&state->block, placed_entity.position, a);
 }
 
 internal void
