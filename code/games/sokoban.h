@@ -44,7 +44,8 @@ struct Sokoban_World {
 struct Sokoban_State {
     Game_Mode Game_Mode;
     
-    Sokoban_World world;
+    Sokoban_World *world;
+    u32 current_level;
     
     Triangle_Mesh block;
     Triangle_Mesh star;
@@ -70,10 +71,14 @@ struct Sokoban_State {
 internal Sokoban_Entity make_block(Vector3 position);
 internal Sokoban_Entity make_star(Vector3 position);
 
+internal void adjust_camera_to_level(Sokoban_State *state, b32 animate);
 internal void init_game(Sokoban_State *state);
 internal void update_game(Sokoban_State *state, Game_Input *input);
 
-internal Sokoban_World load_level(char *levelname);
+internal void release_current_level(Sokoban_State *state);
+internal void previous_level(Sokoban_State *state);
+internal void  next_level(Sokoban_State *state);
+internal Sokoban_World * load_level(char *levelname);
 
 internal void draw_game_view(Sokoban_State *state);
 

@@ -10,6 +10,8 @@ global_variable Sokoban_Entity *placed_entity = 0;
 
 global_variable Loaded_Sound requiem;
 
+#define LEVEL_CAMERA_OFFSET 1.5f
+
 internal Sokoban_Entity
 make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
     Sokoban_Entity result = {};
@@ -36,7 +38,7 @@ snap(Vector3 *pos, real32 value) {
 }
 
 internal void
-place_entity(Sokoban_World world, Sokoban_Entity_Kind kind, Vector3 position) {
+place_entity(Sokoban_World *world, Sokoban_Entity_Kind kind, Vector3 position) {
     Sokoban_Entity *entity = placed_entity;
     if (!entity) {
         placed_entity = (Sokoban_Entity *) platform_alloc(sizeof(Sokoban_Entity));
@@ -47,40 +49,50 @@ place_entity(Sokoban_World world, Sokoban_Entity_Kind kind, Vector3 position) {
 }
 
 internal void
+adjust_camera_to_level(Sokoban_State *state, b32 animate) {
+    Sokoban_World *world = state->world;
+    
+    real32 cam_height = (real32) max(world->x_count, world->y_count);
+    state->cam_animation_rate = 5.f;
+    state->cam.target = origin;
+    state->world = world;
+    
+    // Move camera to lock position.
+    if (state->cam.mode == CameraMode_Free) { // Look at is the lock camera.
+        // Keep camera where it is.
+    } else {
+        state->cam.position  = make_vector3(0.f, 0.f, 0.f);
+        state->lock_position = state->cam.position + make_vector3(0.f, cam_height * LEVEL_CAMERA_OFFSET, 0.f);
+        if (!animate) {
+            state->cam.position = state->lock_position;
+        }
+    }
+    
+    update_vectors(&state->cam);
+}
+
+internal void
 init_game(Sokoban_State *state) {
-    state->requiem = play_sound("Requiem", &requiem);
+    if (!state->requiem) {
+        state->requiem = play_sound("Requiem", &requiem);
+    }
     set_volume(state->requiem, .1f);
     
     state->Game_Mode = GameMode_Playing;
     state->lock_pitch = -89.f;
     state->lock_yaw = -90.f;
+    state->current_level = 1;
     
     init_camera(&state->cam, state->lock_yaw, state->lock_pitch, 45.f);
     
     set_camera_mode(&state->cam, CameraMode_LookAt);
     platform_show_cursor(true);
     
-    Sokoban_World world = load_level("sasquatch_v_1");
+    Sokoban_World *world = load_level("sasquatch_v_1");
+    assert(world);
     state->world = world;
     
-    real32 cam_height = (real32) max(world.x_count, world.y_count);
-    state->cam.position  = make_vector3(0.f, 0.f, 0.f);
-    state->lock_position = state->cam.position + make_vector3(0.f, cam_height*1.2f, 0.f);
-    state->cam_animation_rate = 5.f;
-    
-    state->cam.target = origin;
-    
-    //
-    // Load meshes
-    //
-    Vector3 plane_color = make_vector3(206.f/255.f, 209.f/255.f, 200.f/255.f);
-    Vector3 block_color = make_vector3(180.f/255.f, 118.f/255.f, 61.f/255.f);
-    
-    state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);
-    state->star  = load_mesh("./data/models/sokoban/star.obj", MESH_FLIP_UVS);
-    state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
-    state->sun   = load_mesh("./data/models/sokoban/sun.obj", MESH_FLIP_UVS);
-    state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
+    adjust_camera_to_level(state, true);
 }
 
 struct AABB {
@@ -159,8 +171,9 @@ line_plane_intersection(Vector3 &n, Vector3& c, Vector3& v0, Vector3& v1, Vector
     return k >= 0.f && k <= 1.f;
 }
 
+// NOTE(diego): Depends on current current set view and projection matrix.
 internal Vector3
-ray_from_mouse(Vector2i dim, Camera *cam) {
+ray_from_mouse(Vector2i dim) {
     Vector3 result = {};
     
     Vector2i mouse_position;
@@ -179,9 +192,8 @@ ray_from_mouse(Vector2i dim, Camera *cam) {
     eye_coords.z = -1.f;
     eye_coords.w =  0.f;
     
-    Mat4 vmatrix = get_view_matrix(cam);
     // 4. World coords
-    Vector4 world_coords = inverse(vmatrix) * eye_coords;
+    Vector4 world_coords = inverse(view_matrix) * eye_coords;
     
     result.x = world_coords.x;
     result.y = world_coords.y;
@@ -192,15 +204,15 @@ ray_from_mouse(Vector2i dim, Camera *cam) {
 }
 
 internal b32
-trace_line(Sokoban_World& world, Vector3& v0, Vector3& v1, Vector3& intersection) {
+trace_line(Sokoban_World *world, Vector3& v0, Vector3& v1, Vector3& intersection) {
     
     real32 low_t = 1.f;
     
     Vector3 tVec;
     real32 t;
     
-    for (u32 i = 0; i < world.num_entities; i++) {
-        Sokoban_Entity *entity = &world.entities[i];
+    for (u32 i = 0; i < world->num_entities; i++) {
+        Sokoban_Entity *entity = &world->entities[i];
         if (entity->kind == SokobanEntityKind_Block) {
             AABB box = {};
             box.min = entity->position - 0.5f;
@@ -221,8 +233,17 @@ internal void
 update_game(Sokoban_State *state, Game_Input *input) {
     
     Camera *cam = &state->cam;
-    update_camera(cam, input);
     
+    if (input->alt_is_down) {
+        if (pressed(Button_Left)) {
+            previous_level(state);
+        }
+        if (pressed(Button_Right)) {
+            next_level(state);
+        }
+    } else {
+        update_camera(cam, input);
+    }
     
     real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
@@ -294,12 +315,52 @@ update_game(Sokoban_State *state, Game_Input *input) {
     if (released(Button_Mouse1)) {
         place_entity(state->world, SokobanEntityKind_Star, intersect_position);
     }
+    
 }
 
-internal Sokoban_World
+internal void
+release_current_level(Sokoban_State *state) {
+    if (state->world->num_entities > 0 && state->world->entities) {
+        platform_free(state->world->entities);
+        platform_free(state->world);
+    }
+}
+
+internal void
+previous_level(Sokoban_State *state) {
+    // @Speed check the level number is faster than trying to load a txt.
+    char lvlname[256];
+    sprintf(lvlname, "sasquatch_v_%d", state->current_level - 1);
+    
+    Sokoban_World *level = load_level(lvlname);
+    if (!level) {
+        return;
+    }
+    release_current_level(state);
+    state->world = level;
+    state->current_level--;
+    adjust_camera_to_level(state, false);
+}
+
+internal void
+next_level(Sokoban_State *state) {
+    char lvlname[256];
+    sprintf(lvlname, "sasquatch_v_%d", state->current_level + 1);
+    
+    Sokoban_World *level = load_level(lvlname);
+    if (!level) {
+        return;
+    }
+    release_current_level(state);
+    state->world = level;
+    state->current_level++;
+    adjust_camera_to_level(state, false);
+}
+
+internal Sokoban_World *
 load_level(char *levelname) {
     
-    Sokoban_World result = {};
+    Sokoban_World *result = 0;
     
     char *folder = "./data/levels/sokoban/";
     char *lvl = ".lvl";
@@ -310,8 +371,13 @@ load_level(char *levelname) {
     platform_free(filename);
     
     File_Contents level = platform_read_entire_file(filepath);
-    assert(level.file_size > 0);
+    if (level.file_size == 0) {
+        return result;
+    }
+    
     platform_free(filepath);
+    
+    result = (Sokoban_World *) platform_alloc(sizeof(Sokoban_World));
     
     u8 *at = level.contents;
     
@@ -321,9 +387,9 @@ load_level(char *levelname) {
             // No-op
         }
         else if (*at == '\n') {
-            result.y_count++;
-            if (x_count > result.x_count) {
-                result.x_count = x_count;
+            result->y_count++;
+            if (x_count > result->x_count) {
+                result->x_count = x_count;
             }
             x_count = 0;
         }
@@ -334,10 +400,10 @@ load_level(char *levelname) {
         at++;
     }
     
-    result.num_entities += result.x_count*result.y_count;
-    assert(result.num_entities > 0);
+    result->num_entities += result->x_count*result->y_count;
+    assert(result->num_entities > 0);
     
-    result.entities = (Sokoban_Entity *) platform_alloc(result.num_entities);
+    result->entities = (Sokoban_Entity *) platform_alloc(result->num_entities);
     
     at = level.contents;
     
@@ -370,11 +436,11 @@ load_level(char *levelname) {
             }
             if (kind != SokobanEntityKind_None) {
                 Sokoban_Entity entity = make_entity(kind, xx, yy);
-                real32 size_x = result.x_count * .5f;
-                real32 size_y = result.y_count * .5f;
+                real32 size_x = result->x_count * .5f;
+                real32 size_y = result->y_count * .5f;
                 entity.position.x -= size_x * .5f - .25f;
                 entity.position.z -= size_y * .5f - .25f;
-                result.entities[entity_id++] = entity;
+                result->entities[entity_id++] = entity;
             }
             xx++;
         }
@@ -407,8 +473,8 @@ draw_game_playing(Sokoban_State *state) {
         sun_angle += core.time_info.dt * 1.f;
         if (sun_angle >= 360.f) sun_angle -= 360.f;
         
-        for (u32 i = 0; i < state->world.num_entities; ++i) {
-            Sokoban_Entity entity = state->world.entities[i];
+        for (u32 i = 0; i < state->world->num_entities; ++i) {
+            Sokoban_Entity entity = state->world->entities[i];
             if (entity.kind == SokobanEntityKind_None) continue;
             
             
@@ -446,33 +512,6 @@ draw_game_playing(Sokoban_State *state) {
     if (placed_entity) {
         draw_mesh(&state->block, placed_entity->position, a);
     }
-    
-    // Ray test
-    {
-        
-        mouse_ray = ray_from_mouse(state->dimensions, &state->cam);
-        
-        Vector3 n = make_vector3(0.f, 1.f, 0.f);
-        Vector3 d = mouse_ray * 100.f;
-        
-        Vector3 start = state->cam.position;
-        Vector3 end = state->cam.position + d;
-        
-        b32 draw_intersection = false;
-        if (trace_line(state->world, start, end, intersect_position)) {
-            draw_intersection = true;
-        } else {
-            real32 t;
-            if (line_plane_intersection(n, origin, start, end, intersect_position, t)) {
-                draw_intersection = true;
-            }
-        }
-        if (draw_intersection) {
-            snap(&intersect_position, 0.25f);
-            Vector3 position = intersect_position;
-            draw_mesh(&state->block, position, quaternion_identity(), 1.f);
-        }
-    }
 }
 
 internal void
@@ -508,10 +547,11 @@ draw_grid(Sokoban_State *state) {
     Vector4 pink = make_color(0xffff00ff);
     Vector4 white = lerp_color(make_color(0x00ffffff), 1.f, make_color(0xffffffff));
     
-    u32 xc = state->world.x_count;
-    u32 yc = state->world.y_count;
+    u32 xc = state->world->x_count;
+    u32 yc = state->world->y_count;
     
     int max_count = (int) (xc > yc ? xc : yc);
+    max_count *= 2;
     
     real32 min_x = (real32) -max_count * .5f;
     real32 max_x = (real32) max_count  * .5f;
@@ -626,6 +666,8 @@ draw_game_view(Sokoban_State *state) {
         
         view_matrix = get_view_matrix(&state->cam);
         
+        mouse_ray = ray_from_mouse(state->dimensions);
+        
         draw_grid(state);
         
         set_shader(global_basic_3d_shader);
@@ -637,6 +679,31 @@ draw_game_view(Sokoban_State *state) {
         set_texture("shadow_map", &immediate->depth_map);
         
         draw_game_playing(state);
+        
+        // Ray test
+        {
+            Vector3 n = make_vector3(0.f, 1.f, 0.f);
+            Vector3 d = mouse_ray * 100.f;
+            
+            Vector3 start = state->cam.position;
+            Vector3 end = state->cam.position + d;
+            
+            b32 draw_intersection = false;
+            if (trace_line(state->world, start, end, intersect_position)) {
+                draw_intersection = true;
+            } else {
+                real32 t;
+                if (line_plane_intersection(n, origin, start, end, intersect_position, t)) {
+                    draw_intersection = true;
+                }
+            }
+            if (draw_intersection) {
+                snap(&intersect_position, 0.25f);
+                Vector3 position = intersect_position;
+                draw_mesh(&state->block, position, quaternion_identity(), 1.f);
+            }
+        }
+        
         draw_camera_debug(&state->cam, state->dimensions);
         
         {
@@ -685,6 +752,12 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         state = (Sokoban_State *) game_alloc(memory, megabytes(12));
+        
+        state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);
+        state->star  = load_mesh("./data/models/sokoban/star.obj", MESH_FLIP_UVS);
+        state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
+        state->sun   = load_mesh("./data/models/sokoban/sun.obj", MESH_FLIP_UVS);
+        state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
         
         requiem = load_sound("./data/sounds/requiem.wav");
         

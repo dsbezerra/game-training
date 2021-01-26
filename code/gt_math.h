@@ -1484,7 +1484,10 @@ inverse(Mat4 matrix) {
     real32 det = a * a11 + b * a12 + c * a13 + d * a14;
     
     // NOTE(diego): In the original code this returns a matrix filled with NaN.
-    assert(fabs(det) > 0.f);
+    if (fabs(det) <= 0.f) {
+        return matrix;
+    }
+    
     
     real32 invDet = 1.0f / det;
     
