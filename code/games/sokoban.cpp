@@ -187,8 +187,7 @@ ray_from_mouse(Vector2i dim) {
     Vector4 clip = make_vector4(x, y, -1, 1.f);
     
     // 3. Eye coords
-    Mat4 inverted_projection = inverse(projection_matrix);
-    Vector4 eye_coords = inverted_projection * clip;
+    Vector4 eye_coords = inverse(projection_matrix) * clip;
     eye_coords.z = -1.f;
     eye_coords.w =  0.f;
     
