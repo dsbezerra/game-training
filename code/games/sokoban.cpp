@@ -667,8 +667,6 @@ draw_game_view(Sokoban_State *state) {
         
         mouse_ray = ray_from_mouse(state->dimensions);
         
-        draw_grid(state);
-        
         set_shader(global_basic_3d_shader);
         refresh_shader_transform();
         
@@ -703,25 +701,8 @@ draw_game_view(Sokoban_State *state) {
             }
         }
         
+        draw_grid(state);
         draw_camera_debug(&state->cam, state->dimensions);
-        
-        {
-            Vector3 m = mouse_ray;
-            char buf[256];
-            sprintf(buf, "Mouse Pos (XYZ): %.2f, %.2f, %.2f\n", m.x, m.y, m.z);
-            
-            int line_count;
-            real32 w = get_text_width(&global_camera_font, buf, &line_count);
-            
-            real32 margin = 100.f;
-            Vector2 p = make_vector2(dim.width - w - margin, margin);
-            Vector4 white = make_color(0xffffffff);
-            
-            glDisable(GL_DEPTH_TEST);
-            draw_text(p.x, p.y + 1.f, (u8*) buf, &global_camera_font, make_color(0));
-            draw_text(p.x, p.y, (u8*) buf, &global_camera_font, white);
-            glEnable(GL_DEPTH_TEST);
-        }
         
     } else {
         game_frame_begin(state->dimensions.width, state->dimensions.height);

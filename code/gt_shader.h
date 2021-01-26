@@ -29,7 +29,6 @@ struct Shader_Catalog {
     Shader *data;
 };
 
-// TODO(diego): Replace with hash map
 #define SHADER_CATALOG_SIZE 32
 global_variable Shader_Catalog shader_catalog = {};
 

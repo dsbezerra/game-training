@@ -116,8 +116,8 @@ internal Debug_Draw_Mixer
 init_debug_draw_mixer() {
     Debug_Draw_Mixer result = {};
     
-    result.playing_sound_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 14.f);
-    result.header_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 16.f);
+    result.playing_sound_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 16.f);
+    result.header_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 18.f);
     
     return result;
 }
@@ -139,7 +139,6 @@ draw_debug_draw_mixer(Vector2i dimensions) {
     Vector4 played_color = make_color(0xff00d5ed);
     Vector4 bar_color    = make_color(0xff003f46);
     Vector4 white        = make_color(0xffffffff);
-    Vector4 shadow       = make_color(0xff000000);
     
     u32 count = 0;
     
@@ -181,7 +180,6 @@ draw_debug_draw_mixer(Vector2i dimensions) {
             
             real32 cy = y - height * .5f + debug_draw_mixer.playing_sound_font.line_height * .4f;
             real32 tx = x + 2.f;
-            draw_text(tx + 1.f, cy + 1.f, (u8 *) buf, &debug_draw_mixer.playing_sound_font, shadow);
             draw_text(tx, cy, (u8 *) buf, &debug_draw_mixer.playing_sound_font, white);
         }
         
@@ -194,7 +192,6 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         char buf[256];
         sprintf(buf, "Playing sounds: %d", count);
         u8 *title = (u8*) buf;
-        draw_text(x, y + 1.f, title, &debug_draw_mixer.header_font, shadow);
         draw_text(x, y, title, &debug_draw_mixer.header_font, white);
     }
 #endif

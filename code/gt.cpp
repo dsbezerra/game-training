@@ -1,10 +1,10 @@
 #include "gt.h"
 #include "gt_hotloader.cpp"
-#include "gt_audio.cpp"
 #include "gt_font.cpp"
 #include "gt_opengl.cpp"
 #include "gt_shader.cpp"
 #include "gt_draw.cpp"
+#include "gt_audio.cpp"
 #include "gt_profiler.cpp"
 #include "gt_mesh.cpp"
 

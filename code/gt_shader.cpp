@@ -212,7 +212,7 @@ load_shader(char *filepath) {
     result.short_name     = short_name;
     
     // NOTE(diego): We are using the same routine to load all shaders.
-    // For this reason glGetError() can return error information regarding not found uniforms that we don't care about.
+    // For this reason glGetError() can return error regarding not found uniforms that we don't care about.
     int skipped = 0;
     while (glGetError() != NO_ERROR) {
         skipped++;
