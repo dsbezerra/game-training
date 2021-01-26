@@ -171,7 +171,7 @@ line_plane_intersection(Vector3 &n, Vector3& c, Vector3& v0, Vector3& v1, Vector
     return k >= 0.f && k <= 1.f;
 }
 
-// NOTE(diego): Depends on current current set view and projection matrix.
+// NOTE(diego): Depends on current set view and projection matrix.
 internal Vector3
 ray_from_mouse(Vector2i dim) {
     Vector3 result = {};
