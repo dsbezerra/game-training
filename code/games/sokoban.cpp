@@ -21,7 +21,11 @@ make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
     
     Vector3 position = {};
     position.x = (real32) tile_x * .5f;
-    position.y = (real32) origin.y;
+    if (kind != SokobanEntityKind_Goal) {
+        position.y = (real32) origin.y;
+    } else {
+        position.y = (real32) origin.y - 0.25f;
+    }
     position.z = (real32) tile_y * .5f;
     
     result.position = position;
@@ -88,7 +92,7 @@ init_game(Sokoban_State *state) {
     set_camera_mode(&state->cam, CameraMode_LookAt);
     platform_show_cursor(true);
     
-    Sokoban_World *world = load_level("sasquatch_v_1");
+    Sokoban_World *world = load_level(state, "sasquatch_v_1");
     assert(world);
     state->world = world;
     
@@ -229,6 +233,15 @@ trace_line(Sokoban_World *world, Vector3& v0, Vector3& v1, Vector3& intersection
 }
 
 internal void
+print_entity_position(char *name, Sokoban_Entity *e) {
+    if (!e) return;
+    
+    char buf[16];
+    sprintf(buf, "%s %d,%d\n", name, e->tile_x, e->tile_y);
+    OutputDebugString(buf);
+}
+
+internal void
 update_game(Sokoban_State *state, Game_Input *input) {
     
     Camera *cam = &state->cam;
@@ -244,7 +257,6 @@ update_game(Sokoban_State *state, Game_Input *input) {
         update_camera(cam, input);
     }
     
-    real32 move_step = 0.5f;
     if (cam->mode == CameraMode_LookAt) {
         
         Vector3 pos = cam->position;
@@ -258,47 +270,67 @@ update_game(Sokoban_State *state, Game_Input *input) {
         cam->yaw   = move_towards(cam->yaw,   state->lock_yaw,   anim_amount * 10.f);
         update_vectors(cam);
         
-        if (pressed(Button_W)) {
-            fade_in(state->requiem);
-        }
-        if (pressed(Button_S)) {
-            fade_out(state->requiem);
-        }
         
-#if 0
-        b32 player_moved = false;
-        Vector3 new_player_position = state->player.position;
-        if (pressed(Button_W)) {
-            new_player_position.z -= move_step;
-        }
-        if (pressed(Button_S)) {
-            new_player_position.z += move_step;
-            set_volume(state->requiem, .5f);
-        }
-        if (pressed(Button_A)) {
-            new_player_position.x -= move_step;
-            set_volume(state->requiem, .0f);
-        }
-        if (pressed(Button_D)) {
-            new_player_position.x += move_step;
-        }
+        Sokoban_Entity *player = state->player.entity;
         
-        if (new_player_position != state->player.position) {
-            b32 allow_move = true;
-            for (u32 i = 0; i < state->world.num_entities; ++i) {
-                Sokoban_Entity entity = state->world.entities[i];
-                if (entity.kind == SokobanEntityKind_Block) {
-                    if (entity.position.x == new_player_position.x && entity.position.z == new_player_position.z) {
-                        allow_move = false;
-                        break;
+        real32 move_step = 0.5f;
+        
+        if (player) {
+            Vector3 new_player_position = player->position;
+            
+            Sokoban_World *current_world = state->world;
+            
+            u32 player_x = player->tile_x;
+            u32 player_y = player->tile_y;
+            
+            u32 new_player_x = player_x;
+            u32 new_player_y = player_y;
+            
+            // TODO(diego): Calculate position based on tile_x and tile_y
+            if (pressed(Button_W)) {
+                new_player_position.z -= move_step;
+                new_player_y -= 1;
+            }
+            if (pressed(Button_S)) {
+                new_player_position.z += move_step;
+                new_player_y += 1;
+            }
+            if (pressed(Button_A)) {
+                new_player_position.x -= move_step;
+                new_player_x -= 1;
+            }
+            if (pressed(Button_D)) {
+                new_player_position.x += move_step;
+                new_player_x += 1;
+            }
+            
+            new_player_x = clamp(0, new_player_x, current_world->x_count);
+            new_player_y = clamp(0, new_player_y, current_world->y_count);
+            
+            state->new_player_x = new_player_x;
+            state->new_player_y = new_player_y;
+            
+            if (new_player_x != player_x || new_player_y != player_y) {
+                b32 allow_move = true;
+                for (u32 i = 0; i < current_world->num_entities; ++i) {
+                    Sokoban_Entity *entity = &current_world->entities[i];
+                    if (player->id == entity->id) continue;
+                    
+                    b32 entity_exists_in_new_position = entity->tile_x == new_player_x && entity->tile_y == new_player_y;
+                    if (entity_exists_in_new_position) {
+                        if (entity->kind == SokobanEntityKind_Block) {
+                            allow_move = false;
+                            break;
+                        }
                     }
                 }
-            }
-            if (allow_move) {
-                state->player.position = new_player_position;
+                if (allow_move) {
+                    player->tile_x = new_player_x;
+                    player->tile_y = new_player_y;
+                    player->position = new_player_position;
+                }
             }
         }
-#endif
     }
     
     if (pressed(Button_F2)) {
@@ -327,11 +359,12 @@ release_current_level(Sokoban_State *state) {
 
 internal void
 previous_level(Sokoban_State *state) {
-    // @Speed check the level number is faster than trying to load a txt.
+    if (state->current_level - 1 < 0) return;
+    
     char lvlname[256];
     sprintf(lvlname, "sasquatch_v_%d", state->current_level - 1);
     
-    Sokoban_World *level = load_level(lvlname);
+    Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
         return;
     }
@@ -346,7 +379,7 @@ next_level(Sokoban_State *state) {
     char lvlname[256];
     sprintf(lvlname, "sasquatch_v_%d", state->current_level + 1);
     
-    Sokoban_World *level = load_level(lvlname);
+    Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
         return;
     }
@@ -357,7 +390,7 @@ next_level(Sokoban_State *state) {
 }
 
 internal Sokoban_World *
-load_level(char *levelname) {
+load_level(Sokoban_State *state, char *levelname) {
     
     Sokoban_World *result = 0;
     
@@ -408,15 +441,17 @@ load_level(char *levelname) {
     
     u32 entity_id = 0;
     
-    int xx = 0;
-    int yy = 0;
+    u32 xx = 0;
+    u32 yy = 0;
     while (*at) {
         if (*at == '\r') {
             // No-op
         }
         else if (*at == '\n') {
             yy++;
-            xx = 0;
+            if (xx >= result->x_count) {
+                xx = 0;
+            }
         }
         // We say empty spaces are entities for now.
         else {
@@ -433,13 +468,28 @@ load_level(char *levelname) {
             else if (*at == '@') {
                 kind = SokobanEntityKind_Player;
             }
+            
             if (kind != SokobanEntityKind_None) {
                 Sokoban_Entity entity = make_entity(kind, xx, yy);
                 real32 size_x = result->x_count * .5f;
                 real32 size_y = result->y_count * .5f;
+                
+                entity.id = entity_id;
                 entity.position.x -= size_x * .5f - .25f;
                 entity.position.z -= size_y * .5f - .25f;
-                result->entities[entity_id++] = entity;
+                
+                Sokoban_Entity *entity_slot = &result->entities[entity_id];
+                
+                // If player set the player
+                if (kind == SokobanEntityKind_Player) {
+                    entity.color = make_color(0xffff00ff);
+                    
+                    Sokoban_Player player = {};
+                    player.entity = entity_slot;
+                    state->player = player;
+                }
+                *entity_slot = entity;
+                entity_id++;
             }
             xx++;
         }
@@ -476,33 +526,41 @@ draw_game_playing(Sokoban_State *state) {
             Sokoban_Entity entity = state->world->entities[i];
             if (entity.kind == SokobanEntityKind_None) continue;
             
-            
+            Vector4 *override_color = 0;
             Triangle_Mesh *mesh = 0;
+            
+            Quaternion orientation = quaternion_identity();
+            real32 scale = 1.f;
+            
             switch (entity.kind) {
-                case SokobanEntityKind_Block: mesh = &state->block; break; 
-                case SokobanEntityKind_Star:  mesh = &state->star;  break; 
-                case SokobanEntityKind_Sun:   mesh = &state->sun;   break;
+                case SokobanEntityKind_Block: {
+                    mesh = &state->block; 
+                } break;
+                case SokobanEntityKind_Goal: {
+                    mesh = &state->goal;
+                } break;
+                case SokobanEntityKind_Star: {
+                    orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), angle);
+                    entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
+                    mesh = &state->star;
+                } break; 
+                case SokobanEntityKind_Sun: {
+                    orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), sun_angle);
+                    mesh = &state->sun;
+                } break;
+                case SokobanEntityKind_Player: {
+                    override_color = &entity.color;
+                    scale = 0.5f;
+                    mesh = &state->block;
+                } break;
+                
                 default: break;
             }
             
             if (mesh) {
-                Quaternion orientation = quaternion_identity();
-                if (entity.kind == SokobanEntityKind_Star) {
-                    orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), angle);
-                    entity.position.y += sinf(core.time_info.current_time * 2.f) * .02f;
-                } else if (entity.kind == SokobanEntityKind_Sun) {
-                    orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), sun_angle);
-                }
-                draw_mesh(mesh, entity.position, orientation);
+                draw_mesh(mesh, entity.position, orientation, scale, override_color);
             }
         }
-    }
-    
-    //
-    // Draw player
-    //
-    {
-        //draw_mesh(&state->player.mesh, state->player.position, a);
     }
     
     //
@@ -738,6 +796,7 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
         state->sun   = load_mesh("./data/models/sokoban/sun.obj", MESH_FLIP_UVS);
         state->arrow = load_mesh("./data/models/sokoban/arrow.obj", MESH_FLIP_UVS);
+        state->goal  = load_mesh("./data/models/sokoban/goal.obj", MESH_FLIP_UVS);
         
         requiem = load_sound("./data/sounds/requiem.wav");
         

@@ -280,13 +280,11 @@ make_solid_material(Vector3 color, real32 shininess) {
     result.ambient_color = color * .2f;
     result.shininess = shininess;
     
-    //result.name = ;
-    
     return result;
 }
 
 internal void
-draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float scale) {
+draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float scale, Vector4 *override_color) {
     assert(mesh);
     
     Vector3 p = position;
@@ -330,6 +328,11 @@ draw_mesh(Triangle_Mesh *mesh, Vector3 position, Quaternion orientation, float s
             set_float3("material.diffuse", make_vector3(1.f, 1.f, 1.f));
             set_float3("material.specular", make_vector3(1.0f, 0.f, 1.f));
             set_float("material.shininess", 32.f);
+        }
+        
+        if (override_color) {
+            Vector3 color = make_vector3(override_color->r, override_color->g, override_color->b);
+            set_float3("material.diffuse", color);
         }
         
         set_texture("diffuse_texture", tli->diffuse_map);
