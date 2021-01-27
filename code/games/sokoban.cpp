@@ -13,21 +13,24 @@ global_variable Loaded_Sound requiem;
 #define LEVEL_CAMERA_OFFSET 1.5f
 
 internal Sokoban_Entity
-make_entity(Sokoban_Entity_Kind kind, u32 tile_x, u32 tile_y) {
+make_entity(Sokoban_Entity_Kind kind, u32 x, u32 y) {
     Sokoban_Entity result = {};
     result.kind = kind;
-    result.tile_x = tile_x;
-    result.tile_y = tile_y;
+    
+    Sokoban_World_Position world_position = {};
+    world_position.x = x;
+    world_position.y = y;
     
     Vector3 position = {};
-    position.x = (real32) tile_x * .5f;
+    position.x = (real32) x * .5f;
     if (kind != SokobanEntityKind_Goal) {
         position.y = (real32) origin.y;
     } else {
         position.y = (real32) origin.y - 0.25f;
     }
-    position.z = (real32) tile_y * .5f;
+    position.z = (real32) y * .5f;
     
+    result.world_position = world_position;
     result.position = position;
     
     return result;
@@ -237,8 +240,56 @@ print_entity_position(char *name, Sokoban_Entity *e) {
     if (!e) return;
     
     char buf[16];
-    sprintf(buf, "%s %d,%d\n", name, e->tile_x, e->tile_y);
+    sprintf(buf, "%s %d,%d\n", name, e->world_position.x, e->world_position.y);
     OutputDebugString(buf);
+}
+
+
+internal Vector3
+to_visual_position(Sokoban_World *world, Sokoban_World_Position world_position) {
+    Vector3 result = {};
+    
+    real32 size_x = world->x_count * .5f;
+    real32 size_y = world->y_count * .5f;
+    
+    result.x = world_position.x * .5f - size_x * .5f - .25f;
+    result.z = world_position.y * .5f - size_y * .5f - .25f;
+    
+    return result;
+}
+
+internal b32
+are_same_world_position(Sokoban_World_Position *a, Sokoban_World_Position *b) {
+    assert(a && b);
+    
+    b32 result = false;
+    
+    result = a->x == b->x && a->y == b->y;
+    
+    return result;
+}
+
+internal void
+ensure_world_position_is_valid(Sokoban_World *world, Sokoban_World_Position *world_position) {
+    world_position->x = clamp(0, world_position->x, world->x_count);
+    world_position->y = clamp(0, world_position->y, world->y_count);
+}
+
+internal void
+change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Position *old_position, Sokoban_World_Position *new_position) {
+    if (old_position && are_same_world_position(old_position, new_position)) {
+        // Do nothing
+    } else {
+        if (old_position) {
+            ensure_world_position_is_valid(world, new_position);
+            
+            Sokoban_Entity *entity = &world->entities[entity_index];
+            entity->world_position = *new_position;
+            entity->position = to_visual_position(world, entity->world_position);
+        } else {
+            // Entity is not in the world.
+        }
+    }
 }
 
 internal void
@@ -271,53 +322,33 @@ update_game(Sokoban_State *state, Game_Input *input) {
         update_vectors(cam);
         
         
-        Sokoban_Entity *player = state->player.entity;
-        
-        real32 move_step = 0.5f;
+        Sokoban_World *current_world = state->world;
+        Sokoban_Entity *player = &current_world->entities[state->player.entity_index];
         
         if (player) {
-            Vector3 new_player_position = player->position;
             
-            Sokoban_World *current_world = state->world;
-            
-            u32 player_x = player->tile_x;
-            u32 player_y = player->tile_y;
-            
-            u32 new_player_x = player_x;
-            u32 new_player_y = player_y;
-            
-            // TODO(diego): Calculate position based on tile_x and tile_y
+            Sokoban_World_Position old_player_position = player->world_position;
+            Sokoban_World_Position new_player_position = player->world_position;
             if (pressed(Button_W)) {
-                new_player_position.z -= move_step;
-                new_player_y -= 1;
+                new_player_position.y -= 1;
             }
             if (pressed(Button_S)) {
-                new_player_position.z += move_step;
-                new_player_y += 1;
+                new_player_position.y += 1;
             }
             if (pressed(Button_A)) {
-                new_player_position.x -= move_step;
-                new_player_x -= 1;
+                new_player_position.x -= 1;
             }
             if (pressed(Button_D)) {
-                new_player_position.x += move_step;
-                new_player_x += 1;
+                new_player_position.x += 1;
             }
             
-            new_player_x = clamp(0, new_player_x, current_world->x_count);
-            new_player_y = clamp(0, new_player_y, current_world->y_count);
-            
-            state->new_player_x = new_player_x;
-            state->new_player_y = new_player_y;
-            
-            if (new_player_x != player_x || new_player_y != player_y) {
+            if (!are_same_world_position(&old_player_position, &new_player_position)) {
                 b32 allow_move = true;
                 for (u32 i = 0; i < current_world->num_entities; ++i) {
                     Sokoban_Entity *entity = &current_world->entities[i];
                     if (player->id == entity->id) continue;
                     
-                    b32 entity_exists_in_new_position = entity->tile_x == new_player_x && entity->tile_y == new_player_y;
-                    if (entity_exists_in_new_position) {
+                    if (are_same_world_position(&entity->world_position, &new_player_position)) {
                         if (entity->kind == SokobanEntityKind_Block) {
                             allow_move = false;
                             break;
@@ -325,9 +356,7 @@ update_game(Sokoban_State *state, Game_Input *input) {
                     }
                 }
                 if (allow_move) {
-                    player->tile_x = new_player_x;
-                    player->tile_y = new_player_y;
-                    player->position = new_player_position;
+                    change_entity_location(current_world, player->id, &old_player_position, &new_player_position);
                 }
             }
         }
@@ -471,12 +500,8 @@ load_level(Sokoban_State *state, char *levelname) {
             
             if (kind != SokobanEntityKind_None) {
                 Sokoban_Entity entity = make_entity(kind, xx, yy);
-                real32 size_x = result->x_count * .5f;
-                real32 size_y = result->y_count * .5f;
-                
                 entity.id = entity_id;
-                entity.position.x -= size_x * .5f - .25f;
-                entity.position.z -= size_y * .5f - .25f;
+                entity.position = to_visual_position(result, entity.world_position);
                 
                 Sokoban_Entity *entity_slot = &result->entities[entity_id];
                 
@@ -485,7 +510,7 @@ load_level(Sokoban_State *state, char *levelname) {
                     entity.color = make_color(0xffff00ff);
                     
                     Sokoban_Player player = {};
-                    player.entity = entity_slot;
+                    player.entity_index = entity_id;
                     state->player = player;
                 }
                 *entity_slot = entity;

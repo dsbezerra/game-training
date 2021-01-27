@@ -24,19 +24,23 @@ enum Sokoban_Entity_Kind {
     SokobanEntityKind_Count,
 };
 
+struct Sokoban_World_Position {
+    s32 x;
+    s32 y;
+};
+
 struct Sokoban_Entity {
     u32 id;
     
     Sokoban_Entity_Kind kind;
+    Sokoban_World_Position world_position;
+    
     Vector3 position;
     Vector4 color;
-    
-    u32 tile_x;
-    u32 tile_y;
 };
 
 struct Sokoban_Player {
-    Sokoban_Entity *entity;
+    s32 entity_index;
 };
 
 struct Sokoban_World {
@@ -52,9 +56,6 @@ struct Sokoban_State {
     
     Sokoban_World *world;
     Sokoban_Player player;
-    
-    u32 new_player_x;
-    u32 new_player_y;
     
     u32 current_level;
     
@@ -86,6 +87,13 @@ internal Sokoban_Entity make_star(Vector3 position);
 internal void adjust_camera_to_level(Sokoban_State *state, b32 animate);
 internal void init_game(Sokoban_State *state);
 internal void update_game(Sokoban_State *state, Game_Input *input);
+
+
+internal b32 are_same_world_position(Sokoban_World_Position *a, Sokoban_World_Position *b);
+internal void ensure_world_position_is_valid(Sokoban_World *world, Sokoban_World_Position *world_position);
+
+internal Vector3 to_visual_position(Sokoban_World *world, Sokoban_World_Position world_position);
+internal void change_entity_location(Sokoban_World *world, Sokoban_World_Position *old_position, Sokoban_World_Position *new_position);
 
 internal b32 push_entity(Sokoban_State *state, Sokoban_Entity *entity);
 
