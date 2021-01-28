@@ -540,6 +540,7 @@ win32_process_pending_messages(HWND window) {
                 process_button(VK_RETURN, Button_Enter);
                 process_button(VK_ESCAPE, Button_Escape);
                 process_button(VK_SPACE, Button_Space);
+                process_button(VK_CONTROL, Button_Control);
                 
                 process_button(VK_UP, Button_Up);
                 process_button(VK_DOWN, Button_Down);
@@ -550,6 +551,9 @@ win32_process_pending_messages(HWND window) {
                 process_button(0x44, Button_D);
                 process_button(0x57, Button_W);
                 process_button(0x53, Button_S);
+                
+                process_button(0x59, Button_Y);
+                process_button(0x5A, Button_Z);
                 
                 // Function keys
                 process_button(VK_F1, Button_F1);

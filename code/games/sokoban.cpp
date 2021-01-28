@@ -22,16 +22,14 @@ make_entity(Sokoban_Entity_Kind kind, u32 x, u32 y) {
     world_position.y = y;
     
     Vector3 position = {};
-    position.x = (real32) x * .5f;
-    if (kind != SokobanEntityKind_Goal) {
-        position.y = (real32) origin.y;
-    } else {
-        position.y = (real32) origin.y - 0.25f;
-    }
-    position.z = (real32) y * .5f;
+    position.x = (real32) x;
+    position.y = origin.y;
+    position.z = (real32) y;
     
     result.world_position = world_position;
     result.position = position;
+    result.entity_activated_index = -1;
+    result.color = make_color(0xffffffff);
     
     return result;
 }
@@ -89,6 +87,12 @@ init_game(Sokoban_State *state) {
     state->lock_pitch = -89.f;
     state->lock_yaw = -90.f;
     state->current_level = 1;
+    
+    release_sentinel(&state->undo_sentinel);
+    release_sentinel(&state->redo_sentinel);
+    
+    sentinelize(&state->undo_sentinel);
+    sentinelize(&state->redo_sentinel);
     
     init_camera(&state->cam, state->lock_yaw, state->lock_pitch, 45.f);
     
@@ -246,14 +250,21 @@ print_entity_position(char *name, Sokoban_Entity *e) {
 
 
 internal Vector3
-to_visual_position(Sokoban_World *world, Sokoban_World_Position world_position) {
+to_visual_position(Sokoban_World *world, Sokoban_World_Position world_position, Sokoban_Entity_Kind kind) {
     Vector3 result = {};
     
-    real32 size_x = world->x_count * .5f;
-    real32 size_y = world->y_count * .5f;
+    real32 tile_size = .25f;
+    real32 offset_to_center_at_origin = tile_size;
     
-    result.x = world_position.x * .5f - size_x * .5f - .25f;
-    result.z = world_position.y * .5f - size_y * .5f - .25f;
+    real32 offset_x = world->x_count * tile_size - offset_to_center_at_origin;
+    real32 offset_y = world->y_count * tile_size - offset_to_center_at_origin;
+    
+    result.x = world_position.x*.5f - offset_x;
+    result.z = world_position.y*.5f - offset_y;
+    
+    if (kind == SokobanEntityKind_Goal) {
+        result.y -= 0.25f;
+    }
     
     return result;
 }
@@ -275,6 +286,127 @@ ensure_world_position_is_valid(Sokoban_World *world, Sokoban_World_Position *wor
     world_position->y = clamp(0, world_position->y, world->y_count);
 }
 
+internal b32
+is_empty(Sokoban_Change *list) {
+    b32 result = (list->next == list);
+    assert((result && (list->prev == list)) ||
+           (!result && (list->prev != list)));
+    return result;
+}
+
+internal b32
+undo_available(Sokoban_State *state) {
+    b32 result = !is_empty(&state->undo_sentinel);
+    return result;
+}
+
+internal b32
+redo_available(Sokoban_State *state) {
+    b32 result = !is_empty(&state->redo_sentinel);
+    return result;
+}
+
+internal void
+link(Sokoban_Change *prev, Sokoban_Change *change) {
+    change->prev = prev;
+    change->next = prev->next;
+    
+    change->prev->next = change;
+    change->next->prev = change;
+}
+
+internal void
+sentinelize(Sokoban_Change *change) {
+    change->prev = change;
+    change->next = change;
+}
+
+internal void
+release_sentinel(Sokoban_Change *change) {
+    // TODO(diego): Clear sentinel memory
+}
+
+internal void
+unlink(Sokoban_Change *change) {
+    change->prev->next = change->next;
+    change->next->prev = change->prev;
+    
+    change->prev = change;
+    change->next = change;
+}
+
+internal Sokoban_Change *
+pop_first(Sokoban_Change *prev) {
+    Sokoban_Change *result = 0;
+    if (prev->next != prev) {
+        result = prev->next;
+        unlink(prev->next);
+    }
+    return result;
+}
+
+internal void
+push_first(Sokoban_Change *prev, Sokoban_Change *pushed) {
+    link(prev, pushed);
+}
+
+internal void
+undo(Sokoban_State *state) {
+    Sokoban_Change *change = pop_first(&state->undo_sentinel);
+    assert(change);
+    apply_change(state, change, SOKOBAN_CHANGE_FROM);
+    push_first(&state->redo_sentinel, change);
+}
+
+internal void
+redo(Sokoban_State *state)
+{
+    Sokoban_Change *change = pop_first(&state->redo_sentinel);
+    assert(change);
+    apply_change(state, change, SOKOBAN_CHANGE_TO);
+    push_first(&state->undo_sentinel, change);
+}
+
+internal void
+apply_change(Sokoban_State *state, Sokoban_Change *change, int type) {
+    switch (change->type) {
+        case SokobanChange_entity_location: {
+            Sokoban_Entity_Location_Change *entity_location = &change->entity_location;
+            if (type == SOKOBAN_CHANGE_FROM) {
+                change_entity_location(state->world, entity_location->entity_index, &entity_location->change_to_value, &entity_location->change_from_value);
+            } else {
+                change_entity_location(state->world, entity_location->entity_index, &entity_location->change_from_value, &entity_location->change_to_value);
+            }
+        } break;
+        
+        default: invalid_code_path; break;
+    }
+}
+
+#define ALLOCATE_SOKOBAN_CHANGE(state, type) (&allocate_sokoban_change(state, SokobanChange_##type)->type)
+
+internal Sokoban_Change *
+allocate_sokoban_change(Sokoban_State *state, Sokoban_Change_Type change_type)
+{
+    Sokoban_Change *result = (Sokoban_Change *) platform_alloc(sizeof(Sokoban_Change));
+    result->type = change_type;
+    push_first(&state->undo_sentinel, result);
+    return result;
+}
+
+internal void
+recorded_change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Position *old_position, Sokoban_World_Position *new_position) {
+    Sokoban_Entity_Location_Change *change = ALLOCATE_SOKOBAN_CHANGE(world->state, entity_location);
+    change->entity_index = entity_index;
+    
+    Sokoban_Entity *entity = &world->entities[entity_index];
+    change->change_from_value = entity->world_position;
+    
+    change_entity_location(world, entity_index, old_position, new_position);
+    
+    change->change_to_value = entity->world_position;
+}
+
 internal void
 change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Position *old_position, Sokoban_World_Position *new_position) {
     if (old_position && are_same_world_position(old_position, new_position)) {
@@ -285,7 +417,17 @@ change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Pos
             
             Sokoban_Entity *entity = &world->entities[entity_index];
             entity->world_position = *new_position;
-            entity->position = to_visual_position(world, entity->world_position);
+            entity->position = to_visual_position(world, entity->world_position, entity->kind);
+            
+            // Active or deactivate goal if we changed a star
+            if (entity->kind == SokobanEntityKind_Star) {
+                s32 goal_activated = entity->entity_activated_index;
+                if (goal_activated >= 0 && goal_activated < (s32) world->num_entities) {
+                    Sokoban_Entity *activated_goal = &world->entities[goal_activated];
+                    set_activate_goal_state(activated_goal, -1);
+                    entity->entity_activated_index = -1;
+                }
+            }
         } else {
             // Entity is not in the world.
         }
@@ -344,19 +486,25 @@ update_game(Sokoban_State *state, Game_Input *input) {
             
             if (!are_same_world_position(&old_player_position, &new_player_position)) {
                 b32 allow_move = true;
-                for (u32 i = 0; i < current_world->num_entities; ++i) {
-                    Sokoban_Entity *entity = &current_world->entities[i];
+                for (u32 entity_index = 0; entity_index < current_world->num_entities; ++entity_index) {
+                    Sokoban_Entity *entity = &current_world->entities[entity_index];
                     if (player->id == entity->id) continue;
                     
                     if (are_same_world_position(&entity->world_position, &new_player_position)) {
                         if (entity->kind == SokobanEntityKind_Block) {
                             allow_move = false;
                             break;
+                        } else if (is_pushable(entity->kind)) {
+                            Sokoban_World_Position diff = {};
+                            diff.x = new_player_position.x - old_player_position.x;
+                            diff.y = new_player_position.y - old_player_position.y;
+                            allow_move = push_entity(current_world, entity_index, diff);
+                            if (allow_move) break;
                         }
                     }
                 }
                 if (allow_move) {
-                    change_entity_location(current_world, player->id, &old_player_position, &new_player_position);
+                    recorded_change_entity_location(current_world, player->id, &old_player_position, &new_player_position);
                 }
             }
         }
@@ -376,6 +524,89 @@ update_game(Sokoban_State *state, Game_Input *input) {
         place_entity(state->world, SokobanEntityKind_Star, intersect_position);
     }
     
+    if (is_down(Button_Control)) {
+        
+        if (pressed(Button_Z)) {
+            if (undo_available(state)) undo(state);
+        }
+        
+        if (pressed(Button_Y)) {
+            if (redo_available(state)) redo(state);
+        }
+    }
+    
+}
+
+internal s32
+is_position_occupied(Sokoban_World *world, Sokoban_World_Position test_position) {
+    s32 result = -1;
+    for (u32 entity_index = 0; entity_index < world->num_entities; ++entity_index) {
+        Sokoban_Entity *entity = &world->entities[entity_index];
+        b32 same_position = are_same_world_position(&test_position, &entity->world_position);
+        if (same_position) {
+            switch (entity->kind) {
+                case SokobanEntityKind_Block:
+                case SokobanEntityKind_Star:
+                case SokobanEntityKind_Player:
+                case SokobanEntityKind_Goal: {
+                    result = entity_index;
+                } break;
+                default: break;
+            }
+            if (result > -1) break;
+        }
+    }
+    return result;
+}
+
+internal b32
+is_pushable(Sokoban_Entity_Kind kind) {
+    return kind == SokobanEntityKind_Star;
+}
+
+// TODO(diego): Combine change_entity_location of player and pushed entity to one
+// change so our undo and redo works correctly!!
+internal b32
+push_entity(Sokoban_World *world, s32 entity_index, Sokoban_World_Position diff) {
+    assert(entity_index >= 0 && (u32) entity_index < world->num_entities);
+    if (diff.x == 0 && diff.y == 0) return false;
+    
+    Sokoban_Entity *entity = &world->entities[entity_index];
+    
+    Sokoban_World_Position final_position = {};
+    final_position.x = entity->world_position.x + diff.x;
+    final_position.y = entity->world_position.y + diff.y;
+    
+    Sokoban_Entity *occupied = 0;
+    
+    s32 occupied_index = is_position_occupied(world, final_position);
+    if (occupied_index >= 0) {
+        occupied = &world->entities[occupied_index];
+        if (occupied->kind != SokobanEntityKind_Goal)
+            return false;
+    }
+    
+    recorded_change_entity_location(world, entity_index, &entity->world_position, &final_position);
+    
+    // Activate Goal if necessary
+    if (occupied && occupied->kind == SokobanEntityKind_Goal) {
+        entity->entity_activated_index = occupied_index;
+        set_activate_goal_state(occupied, entity_index);
+    }
+    
+    return true;
+}
+
+internal void
+set_activate_goal_state(Sokoban_Entity *entity, s32 activator_index) {
+    assert(entity->kind == SokobanEntityKind_Goal);
+    
+    entity->entity_activated_index = activator_index;
+    if (activator_index == -1) {
+        entity->color = make_color(0xffffffff);
+    } else {
+        entity->color = make_color(0xffff00ff);
+    }
 }
 
 internal void
@@ -461,6 +692,7 @@ load_level(Sokoban_State *state, char *levelname) {
         at++;
     }
     
+    result->state = state;
     result->num_entities += result->x_count*result->y_count;
     assert(result->num_entities > 0);
     
@@ -501,7 +733,7 @@ load_level(Sokoban_State *state, char *levelname) {
             if (kind != SokobanEntityKind_None) {
                 Sokoban_Entity entity = make_entity(kind, xx, yy);
                 entity.id = entity_id;
-                entity.position = to_visual_position(result, entity.world_position);
+                entity.position = to_visual_position(result, entity.world_position, kind);
                 
                 Sokoban_Entity *entity_slot = &result->entities[entity_id];
                 
@@ -563,6 +795,7 @@ draw_game_playing(Sokoban_State *state) {
                 } break;
                 case SokobanEntityKind_Goal: {
                     mesh = &state->goal;
+                    override_color = &entity.color;
                 } break;
                 case SokobanEntityKind_Star: {
                     orientation = make_quaternion(make_vector3(0.f, 1.f, .0f), angle);

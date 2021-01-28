@@ -79,6 +79,7 @@ enum Button {
     Button_Escape,
     Button_Enter,
     Button_Space,
+    Button_Control,
     
     Button_Up,
     Button_Down,
@@ -89,6 +90,9 @@ enum Button {
     Button_A,
     Button_S,
     Button_D,
+    
+    Button_Y,
+    Button_Z,
     
     Button_Mouse1,
     
@@ -114,6 +118,7 @@ struct Game_Input {
             Game_Button_State escape;
             Game_Button_State enter;
             Game_Button_State space;
+            Game_Button_State control;
             
             Game_Button_State up;
             Game_Button_State down;
@@ -124,6 +129,9 @@ struct Game_Input {
             Game_Button_State a;
             Game_Button_State s;
             Game_Button_State d;
+            
+            Game_Button_State y;
+            Game_Button_State z;
             
             Game_Button_State mouse1;
             

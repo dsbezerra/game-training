@@ -131,7 +131,7 @@ float SoftShadows_DirectionalLight(vec3 ShadowCoords) {
 }
 
 void main() {
-  vec3 material_diffuse_color = texture(diffuse_texture, fs_in.uv).rgb;
+  vec3 material_diffuse_color = texture(diffuse_texture, fs_in.uv).rgb * material.diffuse;
   vec3 material_ambient_color = vec3(0.1) * material_diffuse_color;
 
   vec3 n = normalize(fs_in.normal);
