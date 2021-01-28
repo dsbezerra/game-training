@@ -14,6 +14,8 @@ Variant: Add all sorts of level gimmicks: teleport tiles, conveyor belts, button
 #define SOKOBAN_WORLD_X 9
 #define SOKOBAN_WORLD_Y 9
 
+#define SOKOBAN_UNDO_REDO_TIME 0.1f
+
 enum Sokoban_Entity_Kind {
     SokobanEntityKind_None,
     SokobanEntityKind_Player,
@@ -65,8 +67,20 @@ enum Sokoban_Change_Type {
     SokobanChange_None,
     
     SokobanChange_entity_location,
+    SokobanChange_entity_push,
     
     SokobanChange_Count,
+};
+
+struct Sokoban_Entity_Push_Change {
+    s32 pusher_index;
+    s32 pushed_index;
+    
+    Sokoban_World_Position pusher_change_to_value;
+    Sokoban_World_Position pusher_change_from_value;
+    
+    Sokoban_World_Position pushed_change_to_value;
+    Sokoban_World_Position pushed_change_from_value;
 };
 
 struct Sokoban_Entity_Location_Change {
@@ -82,6 +96,7 @@ struct Sokoban_Change {
     Sokoban_Change_Type type;
     union {
         Sokoban_Entity_Location_Change entity_location;
+        Sokoban_Entity_Push_Change entity_push;
     };
 };
 
@@ -93,6 +108,9 @@ struct Sokoban_State {
     
     Sokoban_Change undo_sentinel;
     Sokoban_Change redo_sentinel;
+    
+    real32 last_undo_time;
+    real32 last_redo_time;
     
     u32 current_level;
     
@@ -150,7 +168,9 @@ internal void change_entity_location(Sokoban_World *world, s32 entity_index, Sok
 
 internal s32 is_position_occupied(Sokoban_World *world, Sokoban_World_Position test_position);
 internal b32 is_pushable(Sokoban_Entity_Kind kind);
-internal b32 push_entity(Sokoban_World *world, s32 entity_index, Sokoban_World_Position diff);
+
+internal b32 recorded_push_entity(Sokoban_State *state, s32 pusher_index, s32 pushed_index, Sokoban_World_Position diff);
+internal b32 push_entity(Sokoban_World *world, s32 pusher_index, s32 pushed_index, Sokoban_World_Position diff);
 
 internal void set_activate_goal_state(Sokoban_Entity *entity, s32 activator_index);
 

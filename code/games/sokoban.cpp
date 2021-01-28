@@ -102,6 +102,8 @@ init_game(Sokoban_State *state) {
     Sokoban_World *world = load_level(state, "sasquatch_v_1");
     assert(world);
     state->world = world;
+    state->last_undo_time = 0.f;
+    state->last_redo_time = 0.f;
     
     adjust_camera_to_level(state, true);
 }
@@ -352,19 +354,34 @@ push_first(Sokoban_Change *prev, Sokoban_Change *pushed) {
 
 internal void
 undo(Sokoban_State *state) {
+    real32 now = get_time();
+    if (now - state->last_undo_time < SOKOBAN_UNDO_REDO_TIME) {
+        return;
+    }
+    
     Sokoban_Change *change = pop_first(&state->undo_sentinel);
     assert(change);
     apply_change(state, change, SOKOBAN_CHANGE_FROM);
     push_first(&state->redo_sentinel, change);
+    
+    state->last_redo_time = 0.f;
+    state->last_undo_time = get_time();
 }
 
 internal void
-redo(Sokoban_State *state)
-{
+redo(Sokoban_State *state) {
+    real32 now = get_time();
+    if (now - state->last_redo_time < SOKOBAN_UNDO_REDO_TIME) {
+        return;
+    }
+    
     Sokoban_Change *change = pop_first(&state->redo_sentinel);
     assert(change);
     apply_change(state, change, SOKOBAN_CHANGE_TO);
     push_first(&state->undo_sentinel, change);
+    
+    state->last_undo_time = 0.f;
+    state->last_redo_time = get_time();
 }
 
 internal void
@@ -376,6 +393,17 @@ apply_change(Sokoban_State *state, Sokoban_Change *change, int type) {
                 change_entity_location(state->world, entity_location->entity_index, &entity_location->change_to_value, &entity_location->change_from_value);
             } else {
                 change_entity_location(state->world, entity_location->entity_index, &entity_location->change_from_value, &entity_location->change_to_value);
+            }
+        } break;
+        
+        case SokobanChange_entity_push: {
+            Sokoban_Entity_Push_Change *entity_push = &change->entity_push;
+            if (type == SOKOBAN_CHANGE_FROM) {
+                change_entity_location(state->world, entity_push->pusher_index, &entity_push->pusher_change_to_value, &entity_push->pusher_change_from_value);
+                change_entity_location(state->world, entity_push->pushed_index, &entity_push->pushed_change_to_value, &entity_push->pushed_change_from_value);
+            } else {
+                change_entity_location(state->world, entity_push->pusher_index, &entity_push->pusher_change_to_value, &entity_push->pusher_change_from_value);
+                change_entity_location(state->world, entity_push->pushed_index, &entity_push->pushed_change_to_value, &entity_push->pushed_change_from_value);
             }
         } break;
         
@@ -498,8 +526,10 @@ update_game(Sokoban_State *state, Game_Input *input) {
                             Sokoban_World_Position diff = {};
                             diff.x = new_player_position.x - old_player_position.x;
                             diff.y = new_player_position.y - old_player_position.y;
-                            allow_move = push_entity(current_world, entity_index, diff);
-                            if (allow_move) break;
+                            if (recorded_push_entity(state, player->id, entity_index, diff)) {
+                                allow_move = false;
+                                break;
+                            }
                         }
                     }
                 }
@@ -525,12 +555,10 @@ update_game(Sokoban_State *state, Game_Input *input) {
     }
     
     if (is_down(Button_Control)) {
-        
-        if (pressed(Button_Z)) {
+        if (pressed(Button_Z) || is_down(Button_Z)) {
             if (undo_available(state)) undo(state);
         }
-        
-        if (pressed(Button_Y)) {
+        if (pressed(Button_Y) || is_down(Button_Y)) {
             if (redo_available(state)) redo(state);
         }
     }
@@ -564,34 +592,62 @@ is_pushable(Sokoban_Entity_Kind kind) {
     return kind == SokobanEntityKind_Star;
 }
 
-// TODO(diego): Combine change_entity_location of player and pushed entity to one
-// change so our undo and redo works correctly!!
 internal b32
-push_entity(Sokoban_World *world, s32 entity_index, Sokoban_World_Position diff) {
-    assert(entity_index >= 0 && (u32) entity_index < world->num_entities);
+recorded_push_entity(Sokoban_State *state, s32 pusher_index, s32 pushed_index, Sokoban_World_Position diff) {
+    
+    Sokoban_Entity *pusher_entity = &state->world->entities[pusher_index];
+    Sokoban_Entity *pushed_entity = &state->world->entities[pushed_index];
+    
+    Sokoban_World_Position pusher_old_position = pusher_entity->world_position;
+    Sokoban_World_Position pushed_old_position = pushed_entity->world_position;
+    
+    b32 result = push_entity(state->world, pusher_index, pushed_index, diff);
+    if (result) {
+        Sokoban_Entity_Push_Change *change = ALLOCATE_SOKOBAN_CHANGE(state, entity_push);
+        change->pusher_index = pusher_index;
+        change->pushed_index = pushed_index;
+        
+        change->pusher_change_from_value = pusher_old_position;
+        change->pushed_change_from_value = pushed_old_position;
+        
+        change->pusher_change_to_value = pusher_entity->world_position;
+        change->pushed_change_to_value = pushed_entity->world_position;
+    }
+    
+    return result;
+}
+
+internal b32
+push_entity(Sokoban_World *world, s32 pusher_index, s32 pushed_index, Sokoban_World_Position diff) {
+    assert(pusher_index >= 0 && (u32) pusher_index < world->num_entities);
+    assert(pushed_index >= 0 && (u32) pushed_index < world->num_entities);
     if (diff.x == 0 && diff.y == 0) return false;
     
-    Sokoban_Entity *entity = &world->entities[entity_index];
+    Sokoban_Entity *pusher = &world->entities[pusher_index];
+    Sokoban_Entity *pushed = &world->entities[pushed_index];
     
+    // Calculate entity to be pushed final position
     Sokoban_World_Position final_position = {};
-    final_position.x = entity->world_position.x + diff.x;
-    final_position.y = entity->world_position.y + diff.y;
+    final_position.x = pushed->world_position.x + diff.x;
+    final_position.y = pushed->world_position.y + diff.y;
     
     Sokoban_Entity *occupied = 0;
     
     s32 occupied_index = is_position_occupied(world, final_position);
     if (occupied_index >= 0) {
         occupied = &world->entities[occupied_index];
-        if (occupied->kind != SokobanEntityKind_Goal)
-            return false;
+        if (occupied->kind != SokobanEntityKind_Goal || occupied->entity_activated_index >= 0)
+            return true;
     }
     
-    recorded_change_entity_location(world, entity_index, &entity->world_position, &final_position);
+    // If we can push it then change both entities position
+    change_entity_location(world, pusher_index, &pusher->world_position, &pushed->world_position);
+    change_entity_location(world, pushed_index, &pushed->world_position, &final_position);
     
     // Activate Goal if necessary
     if (occupied && occupied->kind == SokobanEntityKind_Goal) {
-        entity->entity_activated_index = occupied_index;
-        set_activate_goal_state(occupied, entity_index);
+        pushed->entity_activated_index = occupied_index;
+        set_activate_goal_state(occupied, pushed_index);
     }
     
     return true;
