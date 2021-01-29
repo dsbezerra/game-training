@@ -10,6 +10,15 @@ struct Vertex {
     Vector3 normal;
 };
 
+enum Primitive {
+    Primitive_None,
+    
+    Primitive_Triangles,
+    Primitive_Lines,
+    
+    Primitive_Count,
+};
+
 enum Rendering_Mode {
     RenderingMode_None,
     RenderingMode_2D,
@@ -34,6 +43,7 @@ struct Immediate {
     int num_vertices;
     
     Rendering_Mode mode;
+    Primitive primitive;
     
     Opengl_Framebuffer menu_framebuffer;
     Opengl_Framebuffer multisampled_framebuffer;

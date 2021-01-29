@@ -107,6 +107,7 @@ internal void
 immediate_begin() {
     assert(immediate);
     
+    immediate->primitive = Primitive_None;
     immediate->num_vertices = 0;
 }
 
@@ -221,6 +222,15 @@ immediate_circle_filled(Vector2 center, real32 radius, Vector4 color) {
 
 internal void
 immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, real32 z, Vector4 color) {
+    
+    if (immediate->primitive != Primitive_Triangles) {
+		immediate_flush();
+		immediate_begin();
+        
+        immediate->primitive = Primitive_Triangles;
+    }
+    
+    
     Vector2 default_uv = make_vector2(-1.f, -1.f);
     immediate_vertex(make_vector3(x0, y0, z), color, default_uv);
     immediate_vertex(make_vector3(x0, y1, z), color, default_uv);
@@ -348,8 +358,6 @@ immediate_flush() {
     
     draw_call_count++;
     
-    b32 lines = immediate->num_vertices % 6 != 0;
-    
     open_gl->glBindVertexArray(immediate->vao);
     open_gl->glBindBuffer(GL_ARRAY_BUFFER, immediate->vbo);
     open_gl->glBufferData(GL_ARRAY_BUFFER, sizeof(immediate->vertices[0]) * count, immediate->vertices, GL_STREAM_DRAW);
@@ -373,7 +381,7 @@ immediate_flush() {
     open_gl->glEnableVertexAttribArray(normal_loc);
     
     GLuint primitive = GL_TRIANGLES;
-    if (lines) {
+    if (immediate->primitive == Primitive_Lines) {
         primitive = GL_LINES;
     }
     glDrawArrays(primitive, 0, immediate->num_vertices);
@@ -395,6 +403,14 @@ draw_text(real32 x, real32 y, u8 *text, Loaded_Font *font, Vector4 color) {
 
 internal void
 immediate_line(Vector3 min, Vector3 max, Vector4 color) {
+    
+    if (immediate->primitive != Primitive_Lines) {
+		immediate_flush();
+		immediate_begin();
+        
+        immediate->primitive = Primitive_Lines;
+    }
+    
     Vector2 default_uv  = make_vector2(.0f, .0f);
     immediate_vertex(min, color, default_uv);
     immediate_vertex(max, color, default_uv);
@@ -436,13 +452,6 @@ draw_lines() {
     
     open_gl->glBindVertexArray(0);
     open_gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-internal void
-draw_line(Vector3 min, Vector3 max, Vector4 color) {
-    immediate_begin();
-    immediate_line(min, max, color);
-    draw_lines();
 }
 
 internal void

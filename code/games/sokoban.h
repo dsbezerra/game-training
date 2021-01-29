@@ -26,6 +26,10 @@ enum Sokoban_Entity_Kind {
     SokobanEntityKind_Count,
 };
 
+struct Sokoban_Assets {
+    Loaded_Font levelname_font;
+};
+
 struct Sokoban_World_Position {
     s32 x;
     s32 y;
@@ -103,6 +107,7 @@ struct Sokoban_Change {
 struct Sokoban_State {
     Game_Mode Game_Mode;
     
+    Sokoban_Assets assets;
     Sokoban_World *world;
     Sokoban_Player player;
     
@@ -113,6 +118,7 @@ struct Sokoban_State {
     real32 last_redo_time;
     
     u32 current_level;
+    char *current_level_name;
     
     Triangle_Mesh block;
     Triangle_Mesh star;
@@ -181,6 +187,7 @@ internal void previous_level(Sokoban_State *state);
 internal void next_level(Sokoban_State *state);
 internal Sokoban_World * load_level(Sokoban_State *state, char *levelname);
 
+internal void draw_hud(Sokoban_State *state);
 internal void draw_game_view(Sokoban_State *state);
 
 internal void sokoban_menu_art(Vector2 min, Vector2 max);

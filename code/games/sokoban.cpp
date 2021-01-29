@@ -86,10 +86,7 @@ init_game(Sokoban_State *state) {
     state->Game_Mode = GameMode_Playing;
     state->lock_pitch = -89.f;
     state->lock_yaw = -90.f;
-    state->current_level = 1;
-    
-    release_sentinel(&state->undo_sentinel);
-    release_sentinel(&state->redo_sentinel);
+    state->current_level = 0;
     
     sentinelize(&state->undo_sentinel);
     sentinelize(&state->redo_sentinel);
@@ -99,9 +96,8 @@ init_game(Sokoban_State *state) {
     set_camera_mode(&state->cam, CameraMode_LookAt);
     platform_show_cursor(true);
     
-    Sokoban_World *world = load_level(state, "manicosmos_01");
-    assert(world);
-    state->world = world;
+    next_level(state);
+    
     state->last_undo_time = 0.f;
     state->last_redo_time = 0.f;
     
@@ -325,7 +321,10 @@ sentinelize(Sokoban_Change *change) {
 
 internal void
 release_sentinel(Sokoban_Change *change) {
-    // TODO(diego): Clear sentinel memory
+    while (!is_empty(change)) {
+        Sokoban_Change *result = pop_first(change);
+        if (result) platform_free(result);
+    }
 }
 
 internal void
@@ -418,7 +417,12 @@ allocate_sokoban_change(Sokoban_State *state, Sokoban_Change_Type change_type)
 {
     Sokoban_Change *result = (Sokoban_Change *) platform_alloc(sizeof(Sokoban_Change));
     result->type = change_type;
+    
+    // Erase redo data when a new change is made
+    release_sentinel(&state->redo_sentinel);
+    
     push_first(&state->undo_sentinel, result);
+    
     return result;
 }
 
@@ -692,9 +696,16 @@ set_activate_goal_state(Sokoban_Entity *entity, s32 activator_index) {
 
 internal void
 release_current_level(Sokoban_State *state) {
+    if (!state->world) return;
+    
     if (state->world->num_entities > 0 && state->world->entities) {
         platform_free(state->world->entities);
         platform_free(state->world);
+    }
+    release_sentinel(&state->undo_sentinel);
+    release_sentinel(&state->redo_sentinel);
+    if (state->current_level_name) {
+        platform_free(state->current_level_name);
     }
 }
 
@@ -703,7 +714,7 @@ previous_level(Sokoban_State *state) {
     if (state->current_level - 1 < 0) return;
     
     char lvlname[256];
-    sprintf(lvlname, "manicosmos_0%d", state->current_level - 1);
+    sprintf(lvlname, "minicosmos_0%d", state->current_level - 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
@@ -712,13 +723,14 @@ previous_level(Sokoban_State *state) {
     release_current_level(state);
     state->world = level;
     state->current_level--;
+    state->current_level_name = copy_string(lvlname);
     adjust_camera_to_level(state, false);
 }
 
 internal void
 next_level(Sokoban_State *state) {
     char lvlname[256];
-    sprintf(lvlname, "manicosmos_0%d", state->current_level + 1);
+    sprintf(lvlname, "minicosmos_0%d", state->current_level + 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
@@ -727,6 +739,7 @@ next_level(Sokoban_State *state) {
     release_current_level(state);
     state->world = level;
     state->current_level++;
+    state->current_level_name = copy_string(lvlname);
     adjust_camera_to_level(state, false);
 }
 
@@ -772,6 +785,8 @@ load_level(Sokoban_State *state, char *levelname) {
         }
         at++;
     }
+    
+    result->y_count++;
     
     result->state = state;
     result->num_entities += result->x_count*result->y_count;
@@ -837,6 +852,24 @@ load_level(Sokoban_State *state, char *levelname) {
     platform_free(level.contents);
     
     return result;
+}
+
+internal void
+draw_hud(Sokoban_State *state) {
+    Vector2i dim = state->dimensions;
+    
+    render_2d_right_handed(dim.width, dim.height);
+    
+    Vector4 text_color = make_color(0xffffffff);
+    Vector4 shadow_color = make_color(0xaa000000);
+    
+    real32 text_width = get_text_width(&state->assets.levelname_font, state->current_level_name);
+    
+    real32 text_x = (dim.width / 2.f) - text_width / 2.f;
+    real32 text_y = dim.height * 0.1f; 
+    
+    draw_text(text_x + 2.f, text_y + 2.f, (u8 *) state->current_level_name, &state->assets.levelname_font, shadow_color);
+    draw_text(text_x, text_y, (u8 *) state->current_level_name, &state->assets.levelname_font, text_color);
 }
 
 internal void
@@ -955,17 +988,21 @@ draw_grid(Sokoban_State *state) {
     real32 min_y = (real32) -max_count * .5f;
     real32 max_y = (real32) max_count  * .5f;
     
-    immediate_begin();
     real32 ground = -0.24f;
+    
+    // Vertical lines
     for (int x = -max_count; x < max_count; x++) {
-        Vector3 p0 = make_vector3(x * .5f + .25f, ground, min_y);
-        Vector3 p1 = make_vector3(x * .5f + .25f, ground, max_y);
+        real32 xx = x * .5f + .25f;
+        Vector3 p0 = make_vector3(xx, ground, min_y);
+        Vector3 p1 = make_vector3(xx, ground, max_y);
         immediate_line(p0, p1, white);
     }
     
+    // Horizontal lines
     for (int y = -max_count; y < max_count; y++) {
-        Vector3 p0 = make_vector3(min_x, ground, y * .5f + .25f);
-        Vector3 p1 = make_vector3(max_x, ground, y * .5f + .25f);
+        real32 yy = y * .5f + .25f;
+        Vector3 p0 = make_vector3(min_x, ground, yy);
+        Vector3 p1 = make_vector3(max_x, ground, yy);
         immediate_line(p0, p1, white);
     }
     
@@ -1100,7 +1137,7 @@ draw_game_view(Sokoban_State *state) {
         
         draw_grid(state);
         draw_camera_debug(&state->cam, state->dimensions);
-        
+        draw_hud(state);
     } else {
         game_frame_begin(state->dimensions.width, state->dimensions.height);
         draw_menu(SOKOBAN_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
@@ -1130,6 +1167,10 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         state = (Sokoban_State *) game_alloc(memory, megabytes(12));
         
+        Sokoban_Assets assets = {};
+        assets.levelname_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);
+        
+        state->assets = assets;
         state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);
         state->star  = load_mesh("./data/models/sokoban/star.obj", MESH_FLIP_UVS);
         state->plane = load_mesh("./data/models/sokoban/plane.obj", MESH_FLIP_UVS);
