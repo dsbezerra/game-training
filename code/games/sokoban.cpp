@@ -254,14 +254,11 @@ to_visual_position(Sokoban_World *world, Sokoban_World_Position world_position, 
     real32 tile_size = .25f;
     real32 offset_to_center_at_origin = tile_size;
     
-    real32 offset_x = world->x_count * tile_size;
+    real32 offset_x = world->x_count * tile_size - offset_to_center_at_origin;
     real32 offset_y = world->y_count * tile_size;
     
-    if (world->x_count > world->y_count) {
-        offset_x -= .25f;
-    } else if (world->x_count == world->y_count) {
-        offset_x -= .25f;
-        offset_y += .25f;
+    if (world->x_count == world->y_count) {
+        offset_y +=  offset_to_center_at_origin;
     }
     
     result.x = world_position.x*.5f - offset_x;
@@ -721,7 +718,7 @@ previous_level(Sokoban_State *state) {
     if (state->current_level - 1 < 0) return;
     
     char lvlname[256];
-    sprintf(lvlname, "minicosmos_0%d", state->current_level - 1);
+    sprintf(lvlname, "minicosmos_%02d", state->current_level - 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
@@ -737,7 +734,7 @@ previous_level(Sokoban_State *state) {
 internal void
 next_level(Sokoban_State *state) {
     char lvlname[256];
-    sprintf(lvlname, "minicosmos_0%d", state->current_level + 1);
+    sprintf(lvlname, "minicosmos_%02d", state->current_level + 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
