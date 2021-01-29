@@ -223,6 +223,8 @@ immediate_circle_filled(Vector2 center, real32 radius, Vector4 color) {
 internal void
 immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, real32 z, Vector4 color) {
     
+    // @Speed check this every immediate can be expensive later. 
+    // A better way would be pass the primitive as a parameter of immediate_begin;
     if (immediate->primitive != Primitive_Triangles) {
 		immediate_flush();
 		immediate_begin();

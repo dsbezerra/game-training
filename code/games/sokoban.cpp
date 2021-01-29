@@ -254,8 +254,15 @@ to_visual_position(Sokoban_World *world, Sokoban_World_Position world_position, 
     real32 tile_size = .25f;
     real32 offset_to_center_at_origin = tile_size;
     
-    real32 offset_x = world->x_count * tile_size - offset_to_center_at_origin;
-    real32 offset_y = world->y_count * tile_size - offset_to_center_at_origin;
+    real32 offset_x = world->x_count * tile_size;
+    real32 offset_y = world->y_count * tile_size;
+    
+    if (world->x_count > world->y_count) {
+        offset_x -= .25f;
+    } else if (world->x_count == world->y_count) {
+        offset_x -= .25f;
+        offset_y += .25f;
+    }
     
     result.x = world_position.x*.5f - offset_x;
     result.z = world_position.y*.5f - offset_y;
@@ -786,8 +793,6 @@ load_level(Sokoban_State *state, char *levelname) {
         at++;
     }
     
-    result->y_count++;
-    
     result->state = state;
     result->num_entities += result->x_count*result->y_count;
     assert(result->num_entities > 0);
@@ -980,7 +985,6 @@ draw_grid(Sokoban_State *state) {
     u32 yc = state->world->y_count;
     
     int max_count = (int) (xc > yc ? xc : yc);
-    max_count *= 2;
     
     real32 min_x = (real32) -max_count * .5f;
     real32 max_x = (real32) max_count  * .5f;
@@ -991,18 +995,16 @@ draw_grid(Sokoban_State *state) {
     real32 ground = -0.24f;
     
     // Vertical lines
-    for (int x = -max_count; x < max_count; x++) {
-        real32 xx = x * .5f + .25f;
-        Vector3 p0 = make_vector3(xx, ground, min_y);
-        Vector3 p1 = make_vector3(xx, ground, max_y);
+    for (real32 x = min_x; x < max_x; x += .5f) {
+        Vector3 p0 = make_vector3(x, ground, min_y);
+        Vector3 p1 = make_vector3(x, ground, max_y);
         immediate_line(p0, p1, white);
     }
     
     // Horizontal lines
-    for (int y = -max_count; y < max_count; y++) {
-        real32 yy = y * .5f + .25f;
-        Vector3 p0 = make_vector3(min_x, ground, yy);
-        Vector3 p1 = make_vector3(max_x, ground, yy);
+    for (real32 y = min_y; y < max_y; y += .5f) {
+        Vector3 p0 = make_vector3(min_x, ground, y);
+        Vector3 p1 = make_vector3(max_x, ground, y);
         immediate_line(p0, p1, white);
     }
     
