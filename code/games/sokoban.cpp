@@ -449,17 +449,42 @@ change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Pos
             
             // Active or deactivate goal if we changed a star
             if (entity->kind == SokobanEntityKind_Star) {
+                
+                // If the star is currently activating a goal, ensure we deactivate the old goal
                 s32 goal_activated = entity->entity_activated_index;
                 if (goal_activated >= 0 && goal_activated < (s32) world->num_entities) {
                     Sokoban_Entity *activated_goal = &world->entities[goal_activated];
                     set_activate_goal_state(activated_goal, -1);
-                    entity->entity_activated_index = -1;
                 }
+                
+                // If the is is going to land in another goal, then activate it.
+                Sokoban_Entity *landed_entity  = find_first_entity(world, SokobanEntityKind_Goal, new_position);
+                
+                s32 new_activated_index = -1;
+                if (landed_entity) {
+                    new_activated_index = landed_entity->id;
+                    set_activate_goal_state(landed_entity, 1);
+                }
+                
+                entity->entity_activated_index = new_activated_index;
             }
         } else {
             // Entity is not in the world.
         }
     }
+}
+
+internal Sokoban_Entity *
+find_first_entity(Sokoban_World *world, Sokoban_Entity_Kind kind, Sokoban_World_Position *position) {
+    Sokoban_Entity *result = 0;
+    for (u32 i = 0; i < world->num_entities; i++) {
+        Sokoban_Entity *entity = &world->entities[i];
+        if (entity->kind == kind && are_same_world_position(&entity->world_position, position)) {
+            result = entity;
+            break;
+        }
+    }
+    return result;
 }
 
 internal void

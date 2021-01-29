@@ -166,6 +166,8 @@ internal void recorded_change_entity_location(Sokoban_State *state, s32 entity_i
 
 internal void change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Position *old_position, Sokoban_World_Position *new_position);
 
+internal Sokoban_Entity * find_first_entity(Sokoban_World *world, Sokoban_Entity_Kind kind,  Sokoban_World_Position *position);
+
 internal s32 is_position_occupied(Sokoban_World *world, Sokoban_World_Position test_position);
 internal b32 is_pushable(Sokoban_Entity_Kind kind);
 
