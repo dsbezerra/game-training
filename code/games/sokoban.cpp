@@ -99,7 +99,7 @@ init_game(Sokoban_State *state) {
     set_camera_mode(&state->cam, CameraMode_LookAt);
     platform_show_cursor(true);
     
-    Sokoban_World *world = load_level(state, "sasquatch_v_1");
+    Sokoban_World *world = load_level(state, "manicosmos_01");
     assert(world);
     state->world = world;
     state->last_undo_time = 0.f;
@@ -678,7 +678,7 @@ previous_level(Sokoban_State *state) {
     if (state->current_level - 1 < 0) return;
     
     char lvlname[256];
-    sprintf(lvlname, "sasquatch_v_%d", state->current_level - 1);
+    sprintf(lvlname, "manicosmos_0%d", state->current_level - 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
@@ -693,7 +693,7 @@ previous_level(Sokoban_State *state) {
 internal void
 next_level(Sokoban_State *state) {
     char lvlname[256];
-    sprintf(lvlname, "sasquatch_v_%d", state->current_level + 1);
+    sprintf(lvlname, "manicosmos_0%d", state->current_level + 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
