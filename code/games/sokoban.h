@@ -107,6 +107,9 @@ struct Sokoban_Change {
 struct Sokoban_State {
     Game_Mode Game_Mode;
     
+    Memory_Arena undo_redo_arena;
+    Memory_Arena world_arena;
+    
     Sokoban_Assets assets;
     Sokoban_World *world;
     Sokoban_Player player;
@@ -160,7 +163,7 @@ internal b32 undo_available(Sokoban_State *state);
 internal b32 redo_available(Sokoban_State *state);
 internal void link(Sokoban_Change *prev, Sokoban_Change *change);
 internal void sentinelize(Sokoban_Change *change);
-internal void release_sentinel(Sokoban_Change *change);
+internal void release_sentinel(Sokoban_State *state, Sokoban_Change *change);
 internal void unlink(Sokoban_Change *change);
 internal Sokoban_Change * pop_first(Sokoban_Change *prev);
 internal void push_first(Sokoban_Change *prev, Sokoban_Change *pushed);

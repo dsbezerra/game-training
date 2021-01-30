@@ -46,7 +46,7 @@ internal void
 place_entity(Sokoban_World *world, Sokoban_Entity_Kind kind, Vector3 position) {
     Sokoban_Entity *entity = placed_entity;
     if (!entity) {
-        placed_entity = (Sokoban_Entity *) platform_alloc(sizeof(Sokoban_Entity));
+        placed_entity = push_struct(&world->state->world_arena, Sokoban_Entity);
         entity = placed_entity;
     }
     entity->kind = kind;
@@ -324,11 +324,13 @@ sentinelize(Sokoban_Change *change) {
 }
 
 internal void
-release_sentinel(Sokoban_Change *change) {
+release_sentinel(Sokoban_State *state, Sokoban_Change *change) {
+    Memory_Index released = 0;
     while (!is_empty(change)) {
         Sokoban_Change *result = pop_first(change);
-        if (result) platform_free(result);
+        if (result) released += sizeof(*result); // NOTE(diego): Size of the content, not pointer!!!
     }
+    state->undo_redo_arena.used -= released;
 }
 
 internal void
@@ -417,13 +419,15 @@ apply_change(Sokoban_State *state, Sokoban_Change *change, int type) {
 #define ALLOCATE_SOKOBAN_CHANGE(state, type) (&allocate_sokoban_change(state, SokobanChange_##type)->type)
 
 internal Sokoban_Change *
-allocate_sokoban_change(Sokoban_State *state, Sokoban_Change_Type change_type)
-{
-    Sokoban_Change *result = (Sokoban_Change *) platform_alloc(sizeof(Sokoban_Change));
-    result->type = change_type;
-    
+allocate_sokoban_change(Sokoban_State *state, Sokoban_Change_Type change_type) {
     // Erase redo data when a new change is made
-    release_sentinel(&state->redo_sentinel);
+    // NOTE(diego): This must be called before push_struct with undo_redo_arena
+    // to ensure that anthing the exists in our redo sentinel is "freed" before
+    // we "allocate" a new change. 
+    release_sentinel(state, &state->redo_sentinel);
+    
+    Sokoban_Change *result = push_struct(&state->undo_redo_arena, Sokoban_Change);
+    result->type = change_type;
     
     push_first(&state->undo_sentinel, result);
     
@@ -700,14 +704,8 @@ set_activate_goal_state(Sokoban_Entity *entity, s32 activator_index) {
 
 internal void
 release_current_level(Sokoban_State *state) {
-    if (!state->world) return;
-    
-    if (state->world->num_entities > 0 && state->world->entities) {
-        platform_free(state->world->entities);
-        platform_free(state->world);
-    }
-    release_sentinel(&state->undo_sentinel);
-    release_sentinel(&state->redo_sentinel);
+    reset_arena(&state->world_arena);
+    reset_arena(&state->undo_redo_arena);
     if (state->current_level_name) {
         platform_free(state->current_level_name);
     }
@@ -715,7 +713,9 @@ release_current_level(Sokoban_State *state) {
 
 internal void
 previous_level(Sokoban_State *state) {
-    if (state->current_level - 1 < 0) return;
+    if (state->current_level - 1 <= 0) return;
+    
+    release_current_level(state);
     
     char lvlname[256];
     sprintf(lvlname, "minicosmos_%02d", state->current_level - 1);
@@ -724,7 +724,7 @@ previous_level(Sokoban_State *state) {
     if (!level) {
         return;
     }
-    release_current_level(state);
+    
     state->world = level;
     state->current_level--;
     state->current_level_name = copy_string(lvlname);
@@ -733,14 +733,19 @@ previous_level(Sokoban_State *state) {
 
 internal void
 next_level(Sokoban_State *state) {
+    release_current_level(state);
+    
     char lvlname[256];
     sprintf(lvlname, "minicosmos_%02d", state->current_level + 1);
     
     Sokoban_World *level = load_level(state, lvlname);
     if (!level) {
+        // NOTE(diego): Reload the current level.
+        state->current_level--;
+        next_level(state);
         return;
     }
-    release_current_level(state);
+    
     state->world = level;
     state->current_level++;
     state->current_level_name = copy_string(lvlname);
@@ -767,7 +772,7 @@ load_level(Sokoban_State *state, char *levelname) {
     
     platform_free(filepath);
     
-    result = (Sokoban_World *) platform_alloc(sizeof(Sokoban_World));
+    result = push_struct(&state->world_arena, Sokoban_World);
     
     u8 *at = level.contents;
     
@@ -794,7 +799,7 @@ load_level(Sokoban_State *state, char *levelname) {
     result->num_entities += result->x_count*result->y_count;
     assert(result->num_entities > 0);
     
-    result->entities = (Sokoban_Entity *) platform_alloc(result->num_entities);
+    result->entities = push_array(&state->world_arena, result->num_entities, Sokoban_Entity);
     
     at = level.contents;
     
@@ -1164,7 +1169,21 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        state = (Sokoban_State *) game_alloc(memory, megabytes(12));
+        
+        // NOTE(diego): Currently there's not limit memory for undo/redo.
+        // Be aware that the game may crash if we make too much moves.
+        
+        Memory_Index world_size = kilobytes(16); // This size depends on World data.
+        Memory_Index undo_redo_size = kilobytes(8); // This is arbitrary and may crash the game if we move too much and pass it.
+        
+        Memory_Index total_memory_size = world_size + undo_redo_size;
+        Memory_Index total_available_size = memory->permanent_storage_size - sizeof(Sokoban_State);
+        
+        state = (Sokoban_State *) game_alloc(memory, total_memory_size);
+        
+        init_arena(&state->world_arena, total_available_size - undo_redo_size, (u8 *) memory->permanent_storage + sizeof(Sokoban_State));
+        
+        init_arena(&state->undo_redo_arena, total_available_size - world_size, (u8 *) memory->permanent_storage + sizeof(Sokoban_State) + world_size);
         
         Sokoban_Assets assets = {};
         assets.levelname_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);

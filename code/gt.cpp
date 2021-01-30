@@ -1,4 +1,5 @@
 #include "gt.h"
+#include "gt_memory.cpp"
 #include "gt_hotloader.cpp"
 #include "gt_font.cpp"
 #include "gt_opengl.cpp"
