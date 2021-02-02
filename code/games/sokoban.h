@@ -62,7 +62,12 @@ struct Sokoban_World {
     u32 y_count;
     
     Sokoban_Entity *entities;
+    
+    u32 num_goals;
+    u32 num_stars;
+    u32 num_activated_goals;
     u32 num_entities;
+    
 };
 
 #define SOKOBAN_CHANGE_FROM 0
@@ -183,7 +188,7 @@ internal b32 is_pushable(Sokoban_Entity_Kind kind);
 internal b32 recorded_push_entity(Sokoban_State *state, s32 pusher_index, s32 pushed_index, Sokoban_World_Position diff);
 internal b32 push_entity(Sokoban_World *world, s32 pusher_index, s32 pushed_index, Sokoban_World_Position diff);
 
-internal void set_activate_goal_state(Sokoban_Entity *entity, s32 activator_index);
+internal void set_activate_goal_state(Sokoban_World *world, Sokoban_Entity *entity, s32 activator_index);
 
 internal void release_current_level(Sokoban_State *state);
 internal void previous_level(Sokoban_State *state);

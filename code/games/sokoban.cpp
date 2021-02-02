@@ -466,7 +466,7 @@ change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Pos
                 s32 goal_activated = entity->entity_activated_index;
                 if (goal_activated >= 0 && goal_activated < (s32) world->num_entities) {
                     Sokoban_Entity *activated_goal = &world->entities[goal_activated];
-                    set_activate_goal_state(activated_goal, -1);
+                    set_activate_goal_state(world, activated_goal, -1);
                 }
                 
                 // If the is is going to land in another goal, then activate it.
@@ -475,7 +475,7 @@ change_entity_location(Sokoban_World *world, s32 entity_index, Sokoban_World_Pos
                 s32 new_activated_index = -1;
                 if (landed_entity) {
                     new_activated_index = landed_entity->id;
-                    set_activate_goal_state(landed_entity, 1);
+                    set_activate_goal_state(world, landed_entity, new_activated_index);
                 }
                 
                 entity->entity_activated_index = new_activated_index;
@@ -681,25 +681,26 @@ push_entity(Sokoban_World *world, s32 pusher_index, s32 pushed_index, Sokoban_Wo
     change_entity_location(world, pusher_index, &pusher->world_position, &pushed->world_position);
     change_entity_location(world, pushed_index, &pushed->world_position, &final_position);
     
-    // Activate Goal if necessary
-    if (occupied && occupied->kind == SokobanEntityKind_Goal) {
-        pushed->entity_activated_index = occupied_index;
-        set_activate_goal_state(occupied, pushed_index);
-    }
-    
     return true;
 }
 
 internal void
-set_activate_goal_state(Sokoban_Entity *entity, s32 activator_index) {
+set_activate_goal_state(Sokoban_World *world, Sokoban_Entity *entity, s32 activator_index) {
     assert(entity->kind == SokobanEntityKind_Goal);
+    
+    if (entity->entity_activated_index == activator_index) return;
     
     entity->entity_activated_index = activator_index;
     if (activator_index == -1) {
         entity->color = make_color(0xffffffff);
+        world->num_activated_goals--;
     } else {
         entity->color = make_color(0xffff00ff);
+        world->num_activated_goals++;
     }
+    
+    assert(world->num_activated_goals <= world->num_goals);
+    assert(world->num_activated_goals <= world->num_stars);
 }
 
 internal void
@@ -825,9 +826,11 @@ load_level(Sokoban_State *state, char *levelname) {
             }
             else if (*at == '$') {
                 kind = SokobanEntityKind_Star;
+                result->num_stars++;
             }
             else if (*at == '.') {
                 kind = SokobanEntityKind_Goal;
+                result->num_goals++;
             }
             else if (*at == '@') {
                 kind = SokobanEntityKind_Player;
@@ -1174,10 +1177,10 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         // Be aware that the game may crash if we make too much moves.
         
         Memory_Index world_size = kilobytes(16); // This size depends on World data.
-        Memory_Index undo_redo_size = kilobytes(8); // This is arbitrary and may crash the game if we move too much and pass it.
+        Memory_Index undo_redo_size = kilobytes(128); // This is arbitrary and may crash the game if we move too much and pass it.
         
         Memory_Index total_memory_size = world_size + undo_redo_size;
-        Memory_Index total_available_size = memory->permanent_storage_size - sizeof(Sokoban_State);
+        Memory_Index total_available_size = total_memory_size - sizeof(Sokoban_State);
         
         state = (Sokoban_State *) game_alloc(memory, total_memory_size);
         
