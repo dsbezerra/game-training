@@ -87,6 +87,7 @@ init_game(Sokoban_State *state) {
     state->lock_pitch = -89.f;
     state->lock_yaw = -90.f;
     state->current_level = 0;
+    state->level_completed = false;
     
     sentinelize(&state->undo_sentinel);
     sentinelize(&state->redo_sentinel);
@@ -422,7 +423,7 @@ internal Sokoban_Change *
 allocate_sokoban_change(Sokoban_State *state, Sokoban_Change_Type change_type) {
     // Erase redo data when a new change is made
     // NOTE(diego): This must be called before push_struct with undo_redo_arena
-    // to ensure that anthing the exists in our redo sentinel is "freed" before
+    // to ensure that anything that exists in our redo sentinel is "freed" before
     // we "allocate" a new change. 
     release_sentinel(state, &state->redo_sentinel);
     
@@ -504,7 +505,9 @@ update_game(Sokoban_State *state, Game_Input *input) {
     
     Camera *cam = &state->cam;
     
-    if (input->alt_is_down) {
+    check_level_completed(state);
+    
+    if (state->level_completed) {
         if (pressed(Button_Left)) {
             previous_level(state);
         }
@@ -528,50 +531,52 @@ update_game(Sokoban_State *state, Game_Input *input) {
         cam->yaw   = move_towards(cam->yaw,   state->lock_yaw,   anim_amount * 10.f);
         update_vectors(cam);
         
-        
-        Sokoban_World *current_world = state->world;
-        Sokoban_Entity *player = &current_world->entities[state->player.entity_index];
-        
-        if (player) {
+        if (!state->level_completed) {
             
-            Sokoban_World_Position old_player_position = player->world_position;
-            Sokoban_World_Position new_player_position = player->world_position;
-            if (pressed(Button_W)) {
-                new_player_position.y -= 1;
-            }
-            if (pressed(Button_S)) {
-                new_player_position.y += 1;
-            }
-            if (pressed(Button_A)) {
-                new_player_position.x -= 1;
-            }
-            if (pressed(Button_D)) {
-                new_player_position.x += 1;
-            }
+            Sokoban_World *current_world = state->world;
+            Sokoban_Entity *player = &current_world->entities[state->player.entity_index];
             
-            if (!are_same_world_position(&old_player_position, &new_player_position)) {
-                b32 allow_move = true;
-                for (u32 entity_index = 0; entity_index < current_world->num_entities; ++entity_index) {
-                    Sokoban_Entity *entity = &current_world->entities[entity_index];
-                    if (player->id == entity->id) continue;
-                    
-                    if (are_same_world_position(&entity->world_position, &new_player_position)) {
-                        if (entity->kind == SokobanEntityKind_Block) {
-                            allow_move = false;
-                            break;
-                        } else if (is_pushable(entity->kind)) {
-                            Sokoban_World_Position diff = {};
-                            diff.x = new_player_position.x - old_player_position.x;
-                            diff.y = new_player_position.y - old_player_position.y;
-                            if (recorded_push_entity(state, player->id, entity_index, diff)) {
+            if (player) {
+                
+                Sokoban_World_Position old_player_position = player->world_position;
+                Sokoban_World_Position new_player_position = player->world_position;
+                if (pressed(Button_W)) {
+                    new_player_position.y -= 1;
+                }
+                if (pressed(Button_S)) {
+                    new_player_position.y += 1;
+                }
+                if (pressed(Button_A)) {
+                    new_player_position.x -= 1;
+                }
+                if (pressed(Button_D)) {
+                    new_player_position.x += 1;
+                }
+                
+                if (!are_same_world_position(&old_player_position, &new_player_position)) {
+                    b32 allow_move = true;
+                    for (u32 entity_index = 0; entity_index < current_world->num_entities; ++entity_index) {
+                        Sokoban_Entity *entity = &current_world->entities[entity_index];
+                        if (player->id == entity->id) continue;
+                        
+                        if (are_same_world_position(&entity->world_position, &new_player_position)) {
+                            if (entity->kind == SokobanEntityKind_Block) {
                                 allow_move = false;
                                 break;
+                            } else if (is_pushable(entity->kind)) {
+                                Sokoban_World_Position diff = {};
+                                diff.x = new_player_position.x - old_player_position.x;
+                                diff.y = new_player_position.y - old_player_position.y;
+                                if (recorded_push_entity(state, player->id, entity_index, diff)) {
+                                    allow_move = false;
+                                    break;
+                                }
                             }
                         }
                     }
-                }
-                if (allow_move) {
-                    recorded_change_entity_location(current_world, player->id, &old_player_position, &new_player_position);
+                    if (allow_move) {
+                        recorded_change_entity_location(current_world, player->id, &old_player_position, &new_player_position);
+                    }
                 }
             }
         }
@@ -705,6 +710,8 @@ set_activate_goal_state(Sokoban_World *world, Sokoban_Entity *entity, s32 activa
 
 internal void
 release_current_level(Sokoban_State *state) {
+    release_sentinel(state, &state->undo_sentinel);
+    release_sentinel(state, &state->redo_sentinel);
     reset_arena(&state->world_arena);
     reset_arena(&state->undo_redo_arena);
     if (state->current_level_name) {
@@ -751,6 +758,19 @@ next_level(Sokoban_State *state) {
     state->current_level++;
     state->current_level_name = copy_string(lvlname);
     adjust_camera_to_level(state, false);
+}
+
+internal void
+check_level_completed(Sokoban_State *state) {
+    // NOTE(diego): For now we just check if the activated goals number is equal to
+    // the number of goals and the number of stars.
+    
+    Sokoban_World *world = state->world;
+    
+    b32 stars_match = world->num_stars == world->num_goals;
+    b32 goals_match = world->num_goals == world->num_activated_goals;
+    
+    state->level_completed = stars_match && goals_match;
 }
 
 internal Sokoban_World *
@@ -873,9 +893,42 @@ draw_hud(Sokoban_State *state) {
     Vector4 text_color = make_color(0xffffffff);
     Vector4 shadow_color = make_color(0xaa000000);
     
+    real32 center_x = (dim.width / 2.f);
+    real32 center_y = (dim.height / 2.f);
+    
+    if (state->level_completed) {
+        immediate_begin();
+        immediate_quad(make_vector2(0.f, 0.f), make_vector2((real32) dim.width, (real32) dim.height), shadow_color);
+        immediate_flush();
+        
+        {
+            // LEVEL COMPLETED
+            {
+                char *text = "Level Completed!";
+                real32 text_width = get_text_width(&state->assets.levelcomplete_font, text);
+                real32 text_x = center_x - text_width / 2.f;
+                real32 text_y = (dim.height * .4f) - state->assets.levelcomplete_font.line_height * .5f;
+                
+                draw_text(text_x, text_y, (u8 *) text, &state->assets.levelcomplete_font, text_color);
+            }
+            
+            // Press left arrow key to go to previous level
+            // Press right arrow key to go to next level
+            {
+                int line_count;
+                char *text = "Use left/right arrow keys\nto go to previous/next levels";
+                real32 text_width = get_text_width(&state->assets.levelname_font, text, &line_count);
+                real32 text_x = center_x - text_width / 2.f;
+                real32 text_y = (dim.height * .6f) - state->assets.levelname_font.line_height * .5f;
+                
+                draw_text(text_x, text_y, (u8 *) text, &state->assets.levelname_font, text_color);
+            }
+        }
+    }
+    
     real32 text_width = get_text_width(&state->assets.levelname_font, state->current_level_name);
     
-    real32 text_x = (dim.width / 2.f) - text_width / 2.f;
+    real32 text_x = center_x - text_width / 2.f;
     real32 text_y = dim.height * 0.1f; 
     
     draw_text(text_x + 2.f, text_y + 2.f, (u8 *) state->current_level_name, &state->assets.levelname_font, shadow_color);
@@ -1190,6 +1243,7 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         Sokoban_Assets assets = {};
         assets.levelname_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);
+        assets.levelcomplete_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 56.f);
         
         state->assets = assets;
         state->block = load_mesh("./data/models/sokoban/block.obj", MESH_FLIP_UVS);

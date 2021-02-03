@@ -28,6 +28,7 @@ enum Sokoban_Entity_Kind {
 
 struct Sokoban_Assets {
     Loaded_Font levelname_font;
+    Loaded_Font levelcomplete_font;
 };
 
 struct Sokoban_World_Position {
@@ -128,6 +129,8 @@ struct Sokoban_State {
     u32 current_level;
     char *current_level_name;
     
+    b32 level_completed;
+    
     Triangle_Mesh block;
     Triangle_Mesh star;
     Triangle_Mesh plane;
@@ -193,6 +196,7 @@ internal void set_activate_goal_state(Sokoban_World *world, Sokoban_Entity *enti
 internal void release_current_level(Sokoban_State *state);
 internal void previous_level(Sokoban_State *state);
 internal void next_level(Sokoban_State *state);
+internal void check_level_completed(Sokoban_State *state);
 internal Sokoban_World * load_level(Sokoban_State *state, char *levelname);
 
 internal void draw_hud(Sokoban_State *state);
