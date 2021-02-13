@@ -22,6 +22,13 @@ enum Othello_Tile_Kind {
     OthelloTileKind_Count,
 };
 
+struct Othello_Tile_Find_Direction {
+    s32 x;
+    s32 y;
+};
+
+struct Othello_State;
+
 struct Othello_Tile {
     Othello_Tile_Kind kind;
     u32 x;
@@ -29,13 +36,32 @@ struct Othello_Tile {
 };
 
 struct Othello_Board {
+    Othello_State *state;
     Othello_Tile tiles[OTHELLO_BOARD_COUNT][OTHELLO_BOARD_COUNT];
+};
+
+struct Othello_Move {
+    u32 x;
+    u32 y;
+    
+    Othello_Move *next;
+};
+
+struct Othello_Move_List {
+    Othello_Move *first;
+    Othello_Move *head;
+    u32 size;
 };
 
 struct Othello_State {
     Game_Mode game_mode;
     
+    Memory_Arena move_arena;
+    
     Othello_Board board;
+    Othello_Move_List move_list;
+    
+    Othello_Tile_Kind current_player;
     
     Vector2i dimensions;
     
@@ -52,9 +78,17 @@ internal void draw_game_view(Othello_State *state);
 internal void reset_board(Othello_Board *board);
 internal void clear_board(Othello_Board *board);
 
+internal void move_list_clear(Othello_State *state);
+internal Othello_Move * move_list_find(Othello_State *state, Othello_Move move);
+internal void move_list_add(Othello_State *state, Othello_Move move);
+internal void move_list_add_if_unique(Othello_State *state, Othello_Move move);
+internal void move_list_update(Othello_State *state);
+internal void move_list_check(Othello_State *state, Othello_Tile *tile, s32 x, s32 y);
+
 internal b32 is_empty(Othello_Board *board, u32 tile_x, u32 tile_y);
 
 internal void set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y);
+internal Othello_Tile * find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile_Find_Direction direction);
 
 internal void othello_menu_art(App_State *state, Vector2 min, Vector2 max);
 internal void othello_game_restart(Othello_State *state);

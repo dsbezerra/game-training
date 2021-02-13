@@ -1,10 +1,12 @@
-
 internal void
 init_game(Othello_State *state) {
     
     state->game_mode = GameMode_Playing;
+    state->board.state = state;
+    state->current_player = OthelloTileKind_Black;
     
-    // Clear board
+    move_list_clear(state);
+    
     reset_board(&state->board);
 }
 
@@ -28,7 +30,6 @@ draw_board(Othello_State *state) {
     real32 width  = tile_size * OTHELLO_BOARD_COUNT;
     
     {
-        
         real32 remaining_wspace = dim.width - width;
         real32 remaining_hspace = dim.height - height;
         
@@ -51,7 +52,7 @@ draw_board(Othello_State *state) {
         real32 x_offset = .0f;
         real32 y_offset = .0f;
         
-        real32 line_thickness = 2.f;
+        real32 line_thickness = 1.f;
         
         for (u32 line_index = 0; line_index < num_lines; ++line_index) {
             
@@ -72,10 +73,10 @@ draw_board(Othello_State *state) {
     
     // Tiles
     {
-        Othello_Board *b = &state->board;
-        
         Vector4 white = make_color(0xffffffff);
         Vector4 black = make_color(0xff000000);
+        
+        Othello_Board *b = &state->board;
         
         real32 tile_margin = tile_size * 0.1f;
         
@@ -100,6 +101,36 @@ draw_board(Othello_State *state) {
                 real32 radius = tile_size * 0.4f;
                 immediate_circle_filled(center, radius, color);
             }
+        }
+    }
+    
+    // Draw move list
+    {
+        Vector4 opaque;
+        Vector4 transparent;
+        if (state->current_player == OthelloTileKind_Black) {
+            opaque = make_color(0xff000000);
+            transparent = make_color(0x00000000);
+        } else {
+            opaque = make_color(0xffffffff);
+            transparent = make_color(0x00ffffff);
+        }
+        
+        Vector4 color = lerp_color(transparent, 0.2f, opaque);
+        
+        Othello_Move *move = state->move_list.first;
+        while (move) {
+            
+            real32 sx = start_x + move->x * tile_size;
+            real32 sy = start_y + move->y * tile_size;
+            
+            // Move to center of tile size
+            Vector2 center = make_vector2(sx + tile_size * .5f, sy + tile_size * .5f);
+            
+            real32 radius = tile_size * 0.4f;
+            immediate_circle_filled(center, radius, color);
+            
+            move = move->next;
         }
     }
     
@@ -130,6 +161,8 @@ reset_board(Othello_Board *board) {
     set_tile(board, OthelloTileKind_Black, 4, 3);
     set_tile(board, OthelloTileKind_Black, 3, 4);
     set_tile(board, OthelloTileKind_White, 4, 4);
+    
+    move_list_update(board->state);
 }
 
 internal void
@@ -137,8 +170,106 @@ clear_board(Othello_Board *board) {
     for (u32 tile_x = 0; tile_x < OTHELLO_BOARD_COUNT; ++tile_x) {
         for (u32 tile_y = 0; tile_y < OTHELLO_BOARD_COUNT; ++tile_y) {
             Othello_Tile empty = {};
+            empty.x = tile_x;
+            empty.y = tile_y;
             board->tiles[tile_x][tile_y] = empty;
         }
+    }
+}
+
+internal void
+move_list_clear(Othello_State *state) {
+    reset_arena(&state->move_arena);
+    
+    state->move_list.first = 0;
+    state->move_list.head = 0;
+    state->move_list.size = 0;
+}
+
+internal Othello_Move *
+move_list_find(Othello_State *state, Othello_Move move) {
+    Othello_Move *result = 0;
+    
+    Othello_Move_List *list = &state->move_list;
+    if (list->size != 0) {
+        Othello_Move *m = list->first;
+        while (m) {
+            if (m->x == move.x && m->y == move.y) {
+                result = m;
+                break;
+            }
+            m = m->next;
+        }
+    }
+    
+    return result;
+}
+
+internal void
+move_list_add(Othello_State *state, Othello_Move move) {
+    Othello_Move_List *list = &state->move_list;
+    
+    Othello_Move *result = push_struct(&state->move_arena, Othello_Move);
+    
+    result->x = move.x;
+    result->y = move.y;
+    result->next = 0;
+    
+    if (!list->first) {
+        list->first = result;
+    } else {
+        list->head->next = result;
+    }
+    
+    list->head = result;
+    list->size++;
+}
+
+internal void
+move_list_add_if_unique(Othello_State *state, Othello_Move move) {
+    Othello_Move *found = move_list_find(state, move);
+    if (found) return;
+    
+    move_list_add(state, move);
+}
+
+internal void
+move_list_update(Othello_State *state) {
+    move_list_clear(state);
+    
+    Othello_Board *board = &state->board;
+    
+    for (u32 tile_x = 0; tile_x < OTHELLO_BOARD_COUNT; ++tile_x) {
+        for (u32 tile_y = 0; tile_y < OTHELLO_BOARD_COUNT; ++tile_y) {
+            Othello_Tile *tile = &board->tiles[tile_x][tile_y];
+            
+            b32 is_player_tile = tile->kind == state->current_player;
+            if (is_player_tile) {
+                move_list_check(state, tile, -1,  0); // Check left
+                move_list_check(state, tile,  1,  0); // Check right
+                move_list_check(state, tile,  0, -1); // Check up
+                move_list_check(state, tile,  0,  1); // Check down
+                move_list_check(state, tile, -1, -1); // Check up-right
+                move_list_check(state, tile,  1, -1); // Check up-left
+                move_list_check(state, tile, -1,  1); // Check down-right
+                move_list_check(state, tile,  1,  1); // Check down-left
+            }
+        }
+    }
+}
+
+internal void
+move_list_check(Othello_State *state, Othello_Tile *tile, s32 x, s32 y) {
+    Othello_Tile_Find_Direction direction = {};
+    direction.x = x;
+    direction.y = y;
+    
+    Othello_Tile *result = find_valid_move_for_tile(&state->board, tile, direction);
+    if (result) {
+        Othello_Move move = {};
+        move.x = result->x;
+        move.y = result->y;
+        move_list_add_if_unique(state, move);
     }
 }
 
@@ -166,6 +297,37 @@ set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y) {
     tile->y = tile_y;
 }
 
+internal Othello_Tile *
+find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile_Find_Direction direction) {
+    
+    Othello_Tile_Kind player = board->state->current_player;
+    Othello_Tile_Kind last_tile_kind = OthelloTileKind_None;
+    
+    Othello_Tile *result = 0;
+    
+    s32 x = tile->x;
+    s32 y = tile->y;
+    while (1) {
+        x += direction.x;
+        y += direction.y;
+        
+        if (x < 0 || y < 0 || x > OTHELLO_BOARD_COUNT || y > OTHELLO_BOARD_COUNT) {
+            break;
+        }
+        
+        Othello_Tile *landed = &board->tiles[x][y];
+        if (landed->kind == OthelloTileKind_None) {
+            if (last_tile_kind != OthelloTileKind_None && last_tile_kind != player)
+                result = landed;
+            break;
+        }
+        
+        last_tile_kind = landed->kind;
+    }
+    
+    return result;
+}
+
 internal void
 othello_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
@@ -186,8 +348,15 @@ othello_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        state = (Othello_State *) game_alloc(memory, kilobytes(16));
+        // This is used to store dynamic valid player moves.
+        Memory_Index move_size = kilobytes(16);
         
+        Memory_Index total_memory_size = move_size;
+        Memory_Index total_available_size = total_memory_size - sizeof(Othello_State);
+        
+        state = (Othello_State *) game_alloc(memory, total_memory_size);
+        
+        init_arena(&state->move_arena, total_available_size, (u8 *) memory->permanent_storage + sizeof(Othello_State));
         init_game(state);
     }
     
