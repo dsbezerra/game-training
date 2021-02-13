@@ -152,6 +152,7 @@ free_menu_arts(App_State *state) {
 #include "games/tetris.cpp"
 #include "games/katamari.cpp"
 #include "games/sokoban.cpp"
+#include "games/othello.cpp"
 
 //
 // Game titles
@@ -166,6 +167,7 @@ global_variable char* game_titles[] = {
     TETRIS_TITLE,
     KATAMARI_DAMACY_TITLE,
     SOKOBAN_TITLE,
+    OTHELLO_TITLE,
 };
 
 //
@@ -182,6 +184,7 @@ void (*menu_table[])(App_State *state, Vector2 min, Vector2 max) = {
     tetris_menu_art,
     katamari_menu_art,
     sokoban_menu_art,
+    othello_menu_art,
 };
 
 //
@@ -198,6 +201,7 @@ void (*game_free_table[])(Game_Memory *memory) = {
     0, // Tetris
     katamari_game_free,
     sokoban_game_free,
+    othello_game_free,
 };
 
 // 
@@ -214,6 +218,7 @@ void (*game_table[])(Game_Memory *memory, Game_Input *input) = {
     tetris_game_update_and_render,
     katamari_game_update_and_render,
     sokoban_game_update_and_render,
+    othello_game_update_and_render,
 };
 
 internal void *

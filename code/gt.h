@@ -171,6 +171,7 @@ enum game {
     Game_Tetris,
     Game_Katamari,
     Game_Sokoban,
+    Game_Othello,
     
     Game_Count,
 };
