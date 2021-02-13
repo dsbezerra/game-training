@@ -11,7 +11,7 @@ Variant: Three player Othello with three different colors. Non-square boards.
 
 #define OTHELLO_TITLE "Othello"
 
-#define OTHELLO_GRID_COUNT 8
+#define OTHELLO_BOARD_COUNT 8
 
 enum Othello_Tile_Kind {
     OthelloTileKind_None,
@@ -26,14 +26,14 @@ struct Othello_Tile {
     Othello_Tile_Kind kind;
 };
 
-struct Othello_Grid {
-    Othello_Tile tiles[OTHELLO_GRID_COUNT][OTHELLO_GRID_COUNT];
+struct Othello_Board {
+    Othello_Tile tiles[OTHELLO_BOARD_COUNT][OTHELLO_BOARD_COUNT];
 };
 
 struct Othello_State {
     Game_Mode game_mode;
     
-    Othello_Grid grid;
+    Othello_Board board;
     
     Vector2i dimensions;
     
@@ -43,7 +43,16 @@ struct Othello_State {
 
 internal void init_game(Othello_State *state);
 internal void update_game(Othello_State *state, Game_Input *input);
+
+internal void draw_board(Othello_State *state);
 internal void draw_game_view(Othello_State *state);
+
+internal void reset_board(Othello_Board *board);
+internal void clear_board(Othello_Board *board);
+
+internal b32 is_empty(Othello_Board *board, u32 tile_x, u32 tile_y);
+
+internal void set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y);
 
 internal void othello_menu_art(App_State *state, Vector2 min, Vector2 max);
 internal void othello_game_restart(Othello_State *state);
