@@ -56,6 +56,7 @@ struct Game_Menu_Art {
     GLuint nibbles;
     GLuint tetris;
     GLuint katamari;
+    GLuint sokoban;
 };
 
 struct Game_Button_State {

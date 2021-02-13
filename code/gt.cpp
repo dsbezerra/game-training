@@ -121,6 +121,7 @@ load_menu_arts(App_State *state) {
     state->menu_art.nibbles         = load_texture("./data/menu_arts/nibbles.png");
     state->menu_art.tetris          = load_texture("./data/menu_arts/tetris.png");
     state->menu_art.katamari        = load_texture("./data/menu_arts/katamari.png");
+    state->menu_art.sokoban         = load_texture("./data/menu_arts/sokoban.png");
 }
 
 internal real32
@@ -138,6 +139,7 @@ free_menu_arts(App_State *state) {
         state->menu_art.nibbles,
         state->menu_art.tetris,
         state->menu_art.katamari,
+        state->menu_art.sokoban,
     };
     glDeleteTextures(array_count(arts), arts);
 }

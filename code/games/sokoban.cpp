@@ -931,8 +931,10 @@ draw_hud(Sokoban_State *state) {
     real32 text_x = center_x - text_width / 2.f;
     real32 text_y = dim.height * 0.1f; 
     
-    draw_text(text_x + 2.f, text_y + 2.f, (u8 *) state->current_level_name, &state->assets.levelname_font, shadow_color);
-    draw_text(text_x, text_y, (u8 *) state->current_level_name, &state->assets.levelname_font, text_color);
+    immediate_begin();
+    immediate_text(text_x + 2.f, text_y + 2.f, (u8 *) state->current_level_name, &state->assets.levelname_font, shadow_color, -5.f);
+    immediate_text(text_x, text_y, (u8 *) state->current_level_name, &state->assets.levelname_font, text_color, -5.f);
+    immediate_flush();
 }
 
 internal void
@@ -1195,8 +1197,10 @@ draw_game_view(Sokoban_State *state) {
             }
         }
         
+#if 0
         draw_grid(state);
         draw_camera_debug(&state->cam, state->dimensions);
+#endif
         draw_hud(state);
     } else {
         game_frame_begin(state->dimensions.width, state->dimensions.height);
@@ -1206,9 +1210,8 @@ draw_game_view(Sokoban_State *state) {
 
 internal void
 sokoban_menu_art(App_State *state, Vector2 min, Vector2 max) {
-    Vector4 background = make_color(0xFFFF00FF);
     immediate_begin();
-    immediate_quad(min, max, background);
+    immediate_textured_quad(min, max, state->menu_art.sokoban);
     immediate_flush();
 }
 
