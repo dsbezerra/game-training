@@ -111,7 +111,7 @@ struct Sokoban_Change {
 };
 
 struct Sokoban_State {
-    Game_Mode Game_Mode;
+    Game_Mode game_mode;
     
     Memory_Arena undo_redo_arena;
     Memory_Arena world_arena;

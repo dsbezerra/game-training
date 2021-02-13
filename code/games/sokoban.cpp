@@ -83,7 +83,7 @@ init_game(Sokoban_State *state) {
     }
     set_volume(state->requiem, .1f);
     
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
     state->lock_pitch = -89.f;
     state->lock_yaw = -90.f;
     state->current_level = 0;
@@ -1139,7 +1139,7 @@ draw_grid(Sokoban_State *state) {
 
 internal void
 draw_game_view(Sokoban_State *state) {
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         
         draw_game_shadow(state);
         
@@ -1204,7 +1204,7 @@ draw_game_view(Sokoban_State *state) {
         draw_hud(state);
     } else {
         game_frame_begin(state->dimensions.width, state->dimensions.height);
-        draw_menu(SOKOBAN_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(SOKOBAN_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
@@ -1284,14 +1284,14 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     //
     // Update
     //
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
+            state->game_mode = GameMode_Menu;
         } else {
             update_game(state, input);
         }
-    } else if (state->Game_Mode == GameMode_Menu ||
-               state->Game_Mode == GameMode_GameOver) {
+    } else if (state->game_mode == GameMode_Menu ||
+               state->game_mode == GameMode_GameOver) {
         if (pressed(Button_Down)) {
             advance_menu_choice(&state->menu_selected_item, 1);
         }
@@ -1299,10 +1299,10 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
             advance_menu_choice(&state->menu_selected_item, -1);
         }
         if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
+            if (state->game_mode == GameMode_GameOver) {
                 memory->asked_to_quit = true;
             } else {
-                state->Game_Mode = GameMode_Playing;
+                state->game_mode = GameMode_Playing;
             }
         }
         if (pressed(Button_Enter)) {
