@@ -24,6 +24,8 @@ enum Othello_Tile_Kind {
 
 struct Othello_Tile {
     Othello_Tile_Kind kind;
+    u32 x;
+    u32 y;
 };
 
 struct Othello_Board {

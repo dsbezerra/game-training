@@ -162,6 +162,8 @@ set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y) {
     Othello_Tile *tile = &board->tiles[tile_x][tile_y];
     
     tile->kind = kind;
+    tile->x = tile_x;
+    tile->y = tile_y;
 }
 
 internal void
