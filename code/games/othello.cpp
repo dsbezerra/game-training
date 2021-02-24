@@ -180,7 +180,9 @@ draw_board(Othello_State *state) {
         for (u32 tile_x = 0; tile_x < OTHELLO_BOARD_COUNT; ++tile_x) {
             char letter = get_move_letter(tile_x);
             real32 sx = start.x + tile_x * tile_size + half_tile_size;
-            immediate_char(sx, start.y - 10.f, letter, &state->assets.board_font, white);
+            
+            real32 cw = get_char_width(&state->assets.board_font, letter) * .5f;
+            immediate_char(sx - cw, start.y - 10.f, letter, &state->assets.board_font, white);
         }
         for (u32 tile_y = 0; tile_y < OTHELLO_BOARD_COUNT; ++tile_y) {
             char number = get_move_number(tile_y);
