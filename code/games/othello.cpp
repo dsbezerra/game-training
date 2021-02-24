@@ -425,7 +425,7 @@ make_move(Othello_State *state) {
     s32 set_x = move->x;
     s32 set_y = move->y;
     
-    // TODO(diego): Eat all pieces surrounding the current player.
+    // TODO(diego): Check sides for tiles matching the other player and eat all of in between.
     while (1) {
         set_tile(&state->board, state->current_player, set_x, set_y); 
         set_x += diff_x;
