@@ -297,7 +297,7 @@ immediate_char(real32 x, real32 y, char c, Loaded_Font *font, Vector4 color) {
         Vector2 top_right    = make_vector2(q.s1, q.t1);
         Vector2 top_left     = make_vector2(q.s0, q.t1);
         
-        real32 z_index  = 1.f;
+        real32 z_index  = -5.f;
         
         immediate_vertex(make_vector3(q.x0, q.y0, z_index), color, bottom_left);
         immediate_vertex(make_vector3(q.x0, q.y1, z_index), color, top_left);

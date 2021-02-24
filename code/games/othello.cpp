@@ -8,35 +8,58 @@ init_game(Othello_State *state) {
     move_list_clear(state);
     
     reset_board(&state->board);
+    
+    platform_show_cursor(true);
 }
 
 internal void
 update_game(Othello_State *state, Game_Input *input) {
+    update_hovering_tile(state);
+}
+
+internal void
+update_hovering_tile(Othello_State *state) {
+    Vector2i mouse_position;
+    platform_get_cursor_position(&mouse_position);
     
+    real32 tile_size = get_tile_size(state);
+    Vector2 start = get_start_xy(state);
+    
+    real32 max_x = start.x + tile_size * OTHELLO_BOARD_COUNT;
+    real32 max_y = start.y + tile_size * OTHELLO_BOARD_COUNT;
+    
+    state->hovering_tile.x = -1;
+    state->hovering_tile.y = -1;
+    
+    if (mouse_position.x < start.x || mouse_position.x > max_x) return;
+    if (mouse_position.y < start.y || mouse_position.y > max_y) return;
+    
+    s32 x = (s32) ((mouse_position.x - start.x) / tile_size);
+    s32 y = (s32) ((mouse_position.y - start.y) / tile_size);
+    
+    assert(x >= 0 && x < OTHELLO_BOARD_COUNT);
+    assert(y >= 0 && y < OTHELLO_BOARD_COUNT);
+    
+    state->hovering_tile.x = x;
+    state->hovering_tile.y = y;
 }
 
 internal void
 draw_board(Othello_State *state) {
     
-    Vector2i dim = state->dimensions;
+    immediate_begin();
+    
+    Vector2 start = get_start_xy(state);
     
     // Board
-    real32 start_x = .0f;
-    real32 start_y = .0f;
-    
+    Vector2i dim = state->dimensions;
     real32 height = dim.height * .9f;
     real32 tile_size = height / (real32) OTHELLO_BOARD_COUNT;
     
     real32 width  = tile_size * OTHELLO_BOARD_COUNT;
     
     {
-        real32 remaining_wspace = dim.width - width;
-        real32 remaining_hspace = dim.height - height;
-        
-        start_x = remaining_wspace * .5f;
-        start_y = remaining_hspace * .5f;
-        
-        Vector2 min = make_vector2(start_x, start_y);
+        Vector2 min = make_vector2(start.x, start.y);
         Vector2 max = make_vector2(min.x + width, min.y + height);
         Vector4 color = make_color(0xff009a00);
         
@@ -57,12 +80,12 @@ draw_board(Othello_State *state) {
         for (u32 line_index = 0; line_index < num_lines; ++line_index) {
             
             // Horizontal
-            Vector2 h_min = make_vector2(start_x, start_y + y_offset);
+            Vector2 h_min = make_vector2(start.x, start.y + y_offset);
             Vector2 h_max = make_vector2(h_min.x + width, h_min.y + line_thickness);
             immediate_quad(h_min, h_max, line_color);
             
             // Vertical
-            Vector2 v_min = make_vector2(start_x + x_offset, start_y);
+            Vector2 v_min = make_vector2(start.x + x_offset, start.y);
             Vector2 v_max = make_vector2(v_min.x + line_thickness, v_min.y + height);
             immediate_quad(v_min, v_max, line_color);
             
@@ -71,9 +94,10 @@ draw_board(Othello_State *state) {
         }
     }
     
+    Vector4 white = make_color(0xffffffff);
+    
     // Tiles
     {
-        Vector4 white = make_color(0xffffffff);
         Vector4 black = make_color(0xff000000);
         
         Othello_Board *b = &state->board;
@@ -92,8 +116,8 @@ draw_board(Othello_State *state) {
                     color = white;
                 
                 
-                real32 sx = start_x + tile_x * tile_size;
-                real32 sy = start_y + tile_y * tile_size;
+                real32 sx = start.x + tile_x * tile_size;
+                real32 sy = start.y + tile_y * tile_size;
                 
                 // Move to center of tile size
                 Vector2 center = make_vector2(sx + tile_size * .5f, sy + tile_size * .5f);
@@ -121,8 +145,8 @@ draw_board(Othello_State *state) {
         Othello_Move *move = state->move_list.first;
         while (move) {
             
-            real32 sx = start_x + move->x * tile_size;
-            real32 sy = start_y + move->y * tile_size;
+            real32 sx = start.x + move->x * tile_size;
+            real32 sy = start.y + move->y * tile_size;
             
             // Move to center of tile size
             Vector2 center = make_vector2(sx + tile_size * .5f, sy + tile_size * .5f);
@@ -132,6 +156,57 @@ draw_board(Othello_State *state) {
             
             move = move->next;
         }
+    }
+    
+    b32 hovering = state->hovering_tile.x != -1 && state->hovering_tile.y != -1;
+    if (hovering) {
+        u32 tile_x = (u32) state->hovering_tile.x;
+        u32 tile_y = (u32) state->hovering_tile.y;
+        
+        Vector2 min = make_vector2(start.x + tile_x * tile_size, start.y + tile_y * tile_size);
+        Vector2 max = make_vector2(min.x + tile_size, min.y + tile_size);
+        Vector4 color = make_color(0xaafcf45a);
+        immediate_quad(min, max, color);
+    }
+    
+    immediate_flush();
+    
+    // Draw board letters and numbers
+    {
+        real32 hlh = state->assets.board_font.line_height/2.f;
+        real32 half_tile_size = tile_size * .5f;
+        
+        immediate_begin();
+        for (u32 tile_x = 0; tile_x < OTHELLO_BOARD_COUNT; ++tile_x) {
+            char letter = get_move_letter(tile_x);
+            real32 sx = start.x + tile_x * tile_size + half_tile_size;
+            immediate_char(sx, start.y - 10.f, letter, &state->assets.board_font, white);
+        }
+        for (u32 tile_y = 0; tile_y < OTHELLO_BOARD_COUNT; ++tile_y) {
+            char number = get_move_number(tile_y);
+            real32 sy = start.y + tile_y * tile_size + half_tile_size + hlh * .5f;
+            immediate_char(start.x - 20.f, sy, number, &state->assets.board_font, white);
+        }
+        
+        // Draw hovering
+        if (hovering) {
+            u32 tile_x = (u32) state->hovering_tile.x;
+            u32 tile_y = (u32) state->hovering_tile.y;
+            
+            char letter = get_move_letter(tile_x);
+            char number = get_move_number(tile_y);
+            
+            Loaded_Font *f = &state->assets.board_font;
+            
+            char move_pair[3] = {letter, number, '\0'};
+            int line_count;
+            real32 line_width = get_text_width(f, move_pair, &line_count);
+            real32 half_line_width = line_width * .5f;
+            
+            immediate_text(start.x + tile_x * tile_size + half_tile_size - half_line_width, start.y + tile_y * tile_size + half_tile_size + hlh * .5f, (u8 *) move_pair, f, white, -5.f);
+        }
+        
+        immediate_flush();
     }
     
 }
@@ -144,10 +219,10 @@ draw_game_view(Othello_State *state) {
     if (state->game_mode == GameMode_Playing) {
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff2f3242));
+        immediate_flush();
         
         draw_board(state);
         
-        immediate_flush();
     } else {
         draw_menu(OTHELLO_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
@@ -287,6 +362,55 @@ is_empty(Othello_Board *board, u32 tile_x, u32 tile_y) {
     return result;
 }
 
+internal char
+get_move_letter(u32 tile_x) {
+    assert(tile_x >= 0 && tile_x < OTHELLO_BOARD_COUNT);
+    
+    char result = (char) ('A' + tile_x);
+    
+    return result;
+}
+
+internal char
+get_move_number(u32 tile_y) {
+    assert(tile_y >= 0 && tile_y < OTHELLO_BOARD_COUNT);
+    
+    char result = (char) ('1' + tile_y);
+    
+    return result;
+}
+
+internal Vector2
+get_start_xy(Othello_State *state) {
+    
+    Vector2 result = make_vector2(0.f, 0.f);
+    
+    Vector2i dim = state->dimensions;
+    
+    real32 height = dim.height * .9f;
+    real32 tile_size = height / (real32) OTHELLO_BOARD_COUNT;
+    
+    real32 width  = tile_size * OTHELLO_BOARD_COUNT;
+    real32 remaining_wspace = dim.width - width;
+    real32 remaining_hspace = dim.height - height;
+    
+    result.x = remaining_wspace * .5f;
+    result.y = remaining_hspace * .5f;
+    
+    return result;
+}
+
+internal real32
+get_tile_size(Othello_State *state) {
+    real32 result = .0f;
+    
+    real32 height = state->dimensions.height * .9f;
+    
+    result = height / (real32) OTHELLO_BOARD_COUNT;
+    
+    return result;
+}
+
 internal void
 set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y) {
     // NOTE(diego): Assumes tile_x and tile_y are within bounds.
@@ -355,6 +479,11 @@ othello_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Memory_Index total_available_size = total_memory_size - sizeof(Othello_State);
         
         state = (Othello_State *) game_alloc(memory, total_memory_size);
+        
+        Othello_Assets assets = {};
+        assets.board_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 32.f);
+        
+        state->assets = assets;
         
         init_arena(&state->move_arena, total_available_size, (u8 *) memory->permanent_storage + sizeof(Othello_State));
         init_game(state);

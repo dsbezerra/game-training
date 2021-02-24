@@ -22,9 +22,18 @@ enum Othello_Tile_Kind {
     OthelloTileKind_Count,
 };
 
+struct Othello_Hovering_Tile {
+    s32 x;
+    s32 y;
+};
+
 struct Othello_Tile_Find_Direction {
     s32 x;
     s32 y;
+};
+
+struct Othello_Assets {
+    Loaded_Font board_font;
 };
 
 struct Othello_State;
@@ -58,10 +67,13 @@ struct Othello_State {
     
     Memory_Arena move_arena;
     
+    Othello_Assets assets;
     Othello_Board board;
     Othello_Move_List move_list;
     
     Othello_Tile_Kind current_player;
+    
+    Othello_Hovering_Tile hovering_tile;
     
     Vector2i dimensions;
     
@@ -71,6 +83,7 @@ struct Othello_State {
 
 internal void init_game(Othello_State *state);
 internal void update_game(Othello_State *state, Game_Input *input);
+internal void update_hovering_tile(Othello_State *state);
 
 internal void draw_board(Othello_State *state);
 internal void draw_game_view(Othello_State *state);
@@ -86,6 +99,10 @@ internal void move_list_update(Othello_State *state);
 internal void move_list_check(Othello_State *state, Othello_Tile *tile, s32 x, s32 y);
 
 internal b32 is_empty(Othello_Board *board, u32 tile_x, u32 tile_y);
+internal char get_move_letter(u32 tile_x);
+internal char get_move_number(u32 tile_y);
+internal Vector2 get_start_xy(Othello_State *state);
+internal real32 get_tile_size(Othello_State *state);
 
 internal void set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y);
 internal Othello_Tile * find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile_Find_Direction direction);
