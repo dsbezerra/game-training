@@ -16,32 +16,35 @@ Variant: Three player Othello with three different colors. Non-square boards.
 enum Othello_Tile_Kind {
     OthelloTileKind_None,
     
+    OthelloTileKind_Hover,
+    OthelloTileKind_FindDirection,
+    
     OthelloTileKind_Black,
     OthelloTileKind_White,
     
     OthelloTileKind_Count,
 };
 
-struct Othello_Hovering_Tile {
-    s32 x;
-    s32 y;
-};
-
-struct Othello_Tile_Find_Direction {
-    s32 x;
-    s32 y;
+enum Othello_Play_State {
+    OthelloPlayState_None,
+    
+    OthelloPlayState_BlackTurn,
+    OthelloPlayState_WhiteTurn,
+    
+    OthelloPlayState_Count,
 };
 
 struct Othello_Assets {
     Loaded_Font board_font;
+    Loaded_Font turn_font;
 };
 
 struct Othello_State;
 
 struct Othello_Tile {
     Othello_Tile_Kind kind;
-    u32 x;
-    u32 y;
+    s32 x;
+    s32 y;
 };
 
 struct Othello_Board {
@@ -50,8 +53,10 @@ struct Othello_Board {
 };
 
 struct Othello_Move {
-    u32 x;
-    u32 y;
+    s32 x;
+    s32 y;
+    
+    Othello_Tile origin;
     
     Othello_Move *next;
 };
@@ -73,7 +78,8 @@ struct Othello_State {
     
     Othello_Tile_Kind current_player;
     
-    Othello_Hovering_Tile hovering_tile;
+    Othello_Tile hovering_tile;
+    Othello_Play_State play_state;
     
     Vector2i dimensions;
     
@@ -87,6 +93,7 @@ internal void update_hovering_tile(Othello_State *state);
 
 internal void draw_board(Othello_State *state);
 internal void draw_game_view(Othello_State *state);
+internal void draw_hud(Othello_State *state);
 
 internal void reset_board(Othello_Board *board);
 internal void clear_board(Othello_Board *board);
@@ -97,6 +104,9 @@ internal void move_list_add(Othello_State *state, Othello_Move move);
 internal void move_list_add_if_unique(Othello_State *state, Othello_Move move);
 internal void move_list_update(Othello_State *state);
 internal void move_list_check(Othello_State *state, Othello_Tile *tile, s32 x, s32 y);
+internal Othello_Move * move_list_valid(Othello_State *state, Othello_Tile *tile);
+
+internal void make_move(Othello_State *state);
 
 internal b32 is_empty(Othello_Board *board, u32 tile_x, u32 tile_y);
 internal char get_move_letter(u32 tile_x);
@@ -104,8 +114,11 @@ internal char get_move_number(u32 tile_y);
 internal Vector2 get_start_xy(Othello_State *state);
 internal real32 get_tile_size(Othello_State *state);
 
+internal void switch_turns(Othello_State *state);
+
+internal void set_play_state(Othello_State *state, Othello_Play_State new_state);
 internal void set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y);
-internal Othello_Tile * find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile_Find_Direction direction);
+internal Othello_Tile * find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile tile_direction);
 
 internal void othello_menu_art(App_State *state, Vector2 min, Vector2 max);
 internal void othello_game_restart(Othello_State *state);
