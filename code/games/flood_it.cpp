@@ -1,11 +1,17 @@
 internal void
 init_game(Flood_It_State *state) {
     state->game_mode = GameMode_Playing;
+    // TODO(diego): Implement.
 }
 
 internal void
 update_game(Flood_It_State *state, Game_Input *input) {
-    
+    // TODO(diego): Implement.
+}
+
+internal void
+draw_grid(Flood_It_State *state) {
+    // TODO(diego): Implement.
 }
 
 internal void
@@ -19,6 +25,7 @@ draw_game_view(Flood_It_State *state) {
         immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff2f3242));
         immediate_flush();
         
+        draw_grid(state);
         draw_hud(state);
     } else {
         draw_menu(FLOOD_IT_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
@@ -27,6 +34,7 @@ draw_game_view(Flood_It_State *state) {
 
 internal void
 draw_hud(Flood_It_State *state) {
+    // TODO(diego): Implement.
 }
 
 internal void
@@ -52,6 +60,8 @@ flood_it_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         // NOTE(diego): Not used.
         Memory_Index total_memory_size = kilobytes(16);
         state = (Flood_It_State *) game_alloc(memory, total_memory_size);
+        
+        // TODO(diego): Implement.
         
         init_game(state);
     }

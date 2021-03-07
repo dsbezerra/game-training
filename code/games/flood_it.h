@@ -29,9 +29,8 @@ struct Flood_It_State {
 
 internal void init_game(Flood_It_State *state);
 internal void update_game(Flood_It_State *state, Game_Input *input);
-internal void update_hovering_tile(Flood_It_State *state);
 
-internal void draw_board(Flood_It_State *state);
+internal void draw_grid(Flood_It_State *state);
 internal void draw_game_view(Flood_It_State *state);
 internal void draw_hud(Flood_It_State *state);
 
