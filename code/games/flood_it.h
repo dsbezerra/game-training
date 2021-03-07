@@ -11,15 +11,44 @@ Variants: Power ups gained when a certain tile is changed.
 
 #define FLOOD_IT_TITLE "Flood It"
 
+#define FLOOD_IT_GRID_SIZE 17
+
+enum Flood_It_Tile_Kind {
+    FloodItTileKind_None,
+    
+    FloodItTileKind_Red,
+    FloodItTileKind_Green,
+    FloodItTileKind_Blue,
+    FloodItTileKind_Yellow,
+    FloodItTileKind_Orange,
+    FloodItTileKind_Pink,
+    
+    FloodItTileKind_Count,
+};
+
 struct Flood_It_Assets {
 };
 
 struct Flood_It_State;
 
+struct Flood_It_Tile {
+    Flood_It_Tile_Kind kind;
+    
+    u32 x;
+    u32 y;
+    
+    Vector4 color;
+};
+
+struct Flood_It_Grid {
+    Flood_It_Tile tiles[FLOOD_IT_GRID_SIZE][FLOOD_IT_GRID_SIZE];
+};
+
 struct Flood_It_State {
     Game_Mode game_mode;
     
     Flood_It_Assets assets;
+    Flood_It_Grid grid;
     
     Vector2i dimensions;
     
@@ -29,6 +58,10 @@ struct Flood_It_State {
 
 internal void init_game(Flood_It_State *state);
 internal void update_game(Flood_It_State *state, Game_Input *input);
+
+internal void generate_grid(Flood_It_State *state);
+internal Flood_It_Tile make_random_tile(u32 x, u32 y);
+internal Vector4 get_color_for_tile(Flood_It_Tile_Kind kind);
 
 internal void draw_grid(Flood_It_State *state);
 internal void draw_game_view(Flood_It_State *state);
