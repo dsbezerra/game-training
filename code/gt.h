@@ -57,6 +57,7 @@ struct Game_Menu_Art {
     GLuint tetris;
     GLuint katamari;
     GLuint sokoban;
+    GLuint othello;
 };
 
 struct Game_Button_State {
@@ -172,6 +173,7 @@ enum game {
     Game_Katamari,
     Game_Sokoban,
     Game_Othello,
+    Game_FloodIt,
     
     Game_Count,
 };

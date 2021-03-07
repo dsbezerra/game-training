@@ -7,4 +7,4 @@
 #include "games/katamari.h"
 #include "games/sokoban.h"
 #include "games/othello.h"
-
+#include "games/flood_it.h"

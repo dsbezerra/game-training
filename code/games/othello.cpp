@@ -22,8 +22,7 @@ update_game(Othello_State *state, Game_Input *input) {
         if (pressed(Button_Mouse1)) {
             make_move(state);
         }
-    }
-    if (won) {
+    } else if (won) {
         if (pressed(Button_Enter)) {
             othello_game_restart(state);
         }
@@ -273,9 +272,7 @@ draw_hud(Othello_State *state) {
             Vector4 color = make_color(0xffffffff);
             draw_text(x - tw / 2.f, y, (u8 *) turn_text[i], &state->assets.turn_font, color);
         }
-    }
-    
-    if (won) {
+    } else if (won) {
         char *won_text[] = {"White Won", "Black Won", '\0'};
         
         s32 i = -1;
@@ -862,7 +859,7 @@ find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile 
 internal void
 othello_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
-    immediate_quad(min, max, make_color(0xffff00ff));
+    immediate_textured_quad(min, max, state->menu_art.othello);
     immediate_flush();
 }
 

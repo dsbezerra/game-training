@@ -122,6 +122,7 @@ load_menu_arts(App_State *state) {
     state->menu_art.tetris          = load_texture("./data/menu_arts/tetris.png");
     state->menu_art.katamari        = load_texture("./data/menu_arts/katamari.png");
     state->menu_art.sokoban         = load_texture("./data/menu_arts/sokoban.png");
+    state->menu_art.othello         = load_texture("./data/menu_arts/othello.png");
 }
 
 internal real32
@@ -140,6 +141,7 @@ free_menu_arts(App_State *state) {
         state->menu_art.tetris,
         state->menu_art.katamari,
         state->menu_art.sokoban,
+        state->menu_art.othello,
     };
     glDeleteTextures(array_count(arts), arts);
 }
@@ -153,6 +155,7 @@ free_menu_arts(App_State *state) {
 #include "games/katamari.cpp"
 #include "games/sokoban.cpp"
 #include "games/othello.cpp"
+#include "games/flood_it.cpp"
 
 //
 // Game titles
@@ -168,6 +171,7 @@ global_variable char* game_titles[] = {
     KATAMARI_DAMACY_TITLE,
     SOKOBAN_TITLE,
     OTHELLO_TITLE,
+    FLOOD_IT_TITLE,
 };
 
 //
@@ -185,6 +189,7 @@ void (*menu_table[])(App_State *state, Vector2 min, Vector2 max) = {
     katamari_menu_art,
     sokoban_menu_art,
     othello_menu_art,
+    flood_it_menu_art,
 };
 
 //
@@ -202,6 +207,7 @@ void (*game_free_table[])(Game_Memory *memory) = {
     katamari_game_free,
     sokoban_game_free,
     othello_game_free,
+    flood_it_game_free,
 };
 
 // 
@@ -219,6 +225,7 @@ void (*game_table[])(Game_Memory *memory, Game_Input *input) = {
     katamari_game_update_and_render,
     sokoban_game_update_and_render,
     othello_game_update_and_render,
+    flood_it_game_update_and_render,
 };
 
 internal void *
