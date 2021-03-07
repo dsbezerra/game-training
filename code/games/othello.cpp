@@ -271,10 +271,116 @@ internal void
 reset_board(Othello_Board *board) {
     clear_board(board);
     
-    set_tile(board, OthelloTileKind_White, 3, 3);
-    set_tile(board, OthelloTileKind_Black, 4, 3);
-    set_tile(board, OthelloTileKind_Black, 3, 4);
-    set_tile(board, OthelloTileKind_White, 4, 4);
+#define OTHELLO_TEST 1
+    
+#define OTHELLO_TEST_1 0
+#define OTHELLO_TEST_2 1
+#define OTHELLO_TEST_3 2
+    
+#if OTHELLO_TEST
+#define OTHELLO_TEST_ENABLED OTHELLO_TEST_3 // Change here to test.
+#endif
+    
+#define OTHELLO_TEST_1_ENABLED OTHELLO_TEST_ENABLED == OTHELLO_TEST_1
+#define OTHELLO_TEST_2_ENABLED OTHELLO_TEST_ENABLED == OTHELLO_TEST_2
+#define OTHELLO_TEST_3_ENABLED OTHELLO_TEST_ENABLED == OTHELLO_TEST_3
+    
+    // Default initial board
+#ifndef OTHELLO_TEST_ENABLED
+    set_tile(board, OthelloTileKind_White, "D4");
+    set_tile(board, OthelloTileKind_Black, "E4");
+    set_tile(board, OthelloTileKind_Black, "D5");
+    set_tile(board, OthelloTileKind_White, "E5");
+#elif OTHELLO_TEST_1_ENABLED
+    set_tile(board, OthelloTileKind_Black, "E4");
+    set_tile(board, OthelloTileKind_Black, "E5");
+    set_tile(board, OthelloTileKind_Black, "E6");
+    set_tile(board, OthelloTileKind_Black, "D5");
+    set_tile(board, OthelloTileKind_Black, "F5");
+    set_tile(board, OthelloTileKind_White, "D4");
+    set_tile(board, OthelloTileKind_White, "F6");
+    set_play_state(board->state, OthelloPlayState_WhiteTurn);
+#elif OTHELLO_TEST_2_ENABLED
+    set_tile(board, OthelloTileKind_White, "E2");
+    set_tile(board, OthelloTileKind_White, "D4");
+    set_tile(board, OthelloTileKind_White, "F4");
+    set_tile(board, OthelloTileKind_White, "C5");
+    set_tile(board, OthelloTileKind_White, "D5");
+    set_tile(board, OthelloTileKind_White, "E5");
+    set_tile(board, OthelloTileKind_White, "F5");
+    set_tile(board, OthelloTileKind_White, "G5");
+    set_tile(board, OthelloTileKind_White, "D6");
+    set_tile(board, OthelloTileKind_White, "E6");
+    set_tile(board, OthelloTileKind_White, "F6");
+    set_tile(board, OthelloTileKind_White, "D7");
+    
+    set_tile(board, OthelloTileKind_Black, "C3");
+    set_tile(board, OthelloTileKind_Black, "D3");
+    set_tile(board, OthelloTileKind_Black, "E3");
+    set_tile(board, OthelloTileKind_Black, "F3");
+    set_tile(board, OthelloTileKind_Black, "C4");
+    set_tile(board, OthelloTileKind_Black, "E4");
+    set_tile(board, OthelloTileKind_Black, "E3");
+    set_tile(board, OthelloTileKind_Black, "E7");
+    set_tile(board, OthelloTileKind_Black, "G6");
+#elif OTHELLO_TEST_3_ENABLED
+    set_tile(board, OthelloTileKind_White, "B1");
+    set_tile(board, OthelloTileKind_White, "C1");
+    set_tile(board, OthelloTileKind_White, "D1");
+    set_tile(board, OthelloTileKind_White, "E1");
+    set_tile(board, OthelloTileKind_White, "F1");
+    set_tile(board, OthelloTileKind_White, "G1");
+    set_tile(board, OthelloTileKind_White, "A2");
+    set_tile(board, OthelloTileKind_White, "B2");
+    set_tile(board, OthelloTileKind_White, "C2");
+    set_tile(board, OthelloTileKind_White, "D2");
+    set_tile(board, OthelloTileKind_White, "F2");
+    set_tile(board, OthelloTileKind_White, "H2");
+    set_tile(board, OthelloTileKind_White, "A3");
+    set_tile(board, OthelloTileKind_White, "B3");
+    set_tile(board, OthelloTileKind_White, "E3");
+    set_tile(board, OthelloTileKind_White, "G3");
+    set_tile(board, OthelloTileKind_White, "H3");
+    set_tile(board, OthelloTileKind_White, "A4");
+    set_tile(board, OthelloTileKind_White, "B4");
+    set_tile(board, OthelloTileKind_White, "C4");
+    set_tile(board, OthelloTileKind_White, "D4");
+    set_tile(board, OthelloTileKind_White, "F4");
+    set_tile(board, OthelloTileKind_White, "G4");
+    set_tile(board, OthelloTileKind_White, "H4");
+    set_tile(board, OthelloTileKind_White, "A5");
+    set_tile(board, OthelloTileKind_White, "B5");
+    set_tile(board, OthelloTileKind_White, "C5");
+    set_tile(board, OthelloTileKind_White, "F5");
+    set_tile(board, OthelloTileKind_White, "G5");
+    set_tile(board, OthelloTileKind_White, "H5");
+    set_tile(board, OthelloTileKind_White, "A6");
+    set_tile(board, OthelloTileKind_White, "B6");
+    set_tile(board, OthelloTileKind_White, "D6");
+    set_tile(board, OthelloTileKind_White, "E6");
+    set_tile(board, OthelloTileKind_White, "F6");
+    set_tile(board, OthelloTileKind_White, "G6");
+    set_tile(board, OthelloTileKind_White, "H6");
+    set_tile(board, OthelloTileKind_White, "A7");
+    set_tile(board, OthelloTileKind_White, "E7");
+    set_tile(board, OthelloTileKind_White, "F8");
+    
+    set_tile(board, OthelloTileKind_Black, "H1");
+    set_tile(board, OthelloTileKind_Black, "E2");
+    set_tile(board, OthelloTileKind_Black, "G2");
+    set_tile(board, OthelloTileKind_Black, "C3");
+    set_tile(board, OthelloTileKind_Black, "D3");
+    set_tile(board, OthelloTileKind_Black, "F3");
+    set_tile(board, OthelloTileKind_Black, "E4");
+    set_tile(board, OthelloTileKind_Black, "D5");
+    set_tile(board, OthelloTileKind_Black, "E5");
+    set_tile(board, OthelloTileKind_Black, "C6");
+    set_tile(board, OthelloTileKind_Black, "B7");
+    set_tile(board, OthelloTileKind_Black, "C7");
+    set_tile(board, OthelloTileKind_Black, "A8");
+    set_tile(board, OthelloTileKind_Black, "B8");
+    set_tile(board, OthelloTileKind_Black, "C8");
+#endif
     
     move_list_update(board->state);
 }
@@ -286,9 +392,130 @@ clear_board(Othello_Board *board) {
             Othello_Tile empty = {};
             empty.x = tile_x;
             empty.y = tile_y;
+            empty.letter = get_move_letter(tile_x);
+            empty.number = get_move_number(tile_y);
+            empty.coordinate[0] = empty.letter; 
+            empty.coordinate[1] = empty.number; 
+            empty.coordinate[2] = '\0'; 
+            
             board->tiles[tile_x][tile_y] = empty;
         }
     }
+}
+
+internal void
+eat_tiles_for_move(Othello_Board *board, Othello_Move *move) {
+    if (!move) return;
+    
+    // Check tiles in between
+    s32 diff_x = 0;
+    if (move->origin.x < move->x)      diff_x = -1;
+    else if (move->origin.x > move->x) diff_x =  1;
+    
+    s32 diff_y = 0;
+    if (move->origin.y < move->y)      diff_y = -1;
+    else if (move->origin.y > move->y) diff_y =  1;
+    
+    s32 set_x = move->x;
+    s32 set_y = move->y;
+    
+    while (1) {
+        set_tile(board, board->state->current_player, set_x, set_y);
+        set_x += diff_x;
+        set_y += diff_y;
+        
+        if (set_x == move->origin.x && set_y == move->origin.y) break;
+    }
+    
+    if (diff_x != 0) {
+        eat_tiles_to_side_of_move(board, move, OthelloSide_Up);
+        eat_tiles_to_side_of_move(board, move, OthelloSide_Down);
+    }
+    
+    if (diff_y != 0) {
+        eat_tiles_to_side_of_move(board, move, OthelloSide_Right);
+        eat_tiles_to_side_of_move(board, move, OthelloSide_Left);
+    }
+    
+    eat_tiles_to_side_of_move(board, move, OthelloSide_UpRight);
+    eat_tiles_to_side_of_move(board, move, OthelloSide_UpLeft);
+    eat_tiles_to_side_of_move(board, move, OthelloSide_DownRight);
+    eat_tiles_to_side_of_move(board, move, OthelloSide_DownLeft);
+}
+
+internal void
+eat_tiles_to_side_of_move(Othello_Board *board, Othello_Move *move, Othello_Side side) {
+    Othello_Tile *tile = find_tile_to_side_of_move(board, move, side);
+    if (!tile) return;
+    
+    s32 diff_x = 0;
+    if (side == OthelloSide_Left || side == OthelloSide_UpLeft || side == OthelloSide_DownLeft) {
+        diff_x = -1;
+    } else if (side == OthelloSide_Right || side == OthelloSide_UpRight || side == OthelloSide_DownRight) {
+        diff_x = 1;
+    }
+    
+    s32 diff_y = 0;
+    if (side == OthelloSide_Up || side == OthelloSide_UpLeft || side == OthelloSide_UpRight) {
+        diff_y = -1;
+    } else if (side == OthelloSide_Down || side == OthelloSide_DownLeft || side == OthelloSide_DownRight) {
+        diff_y = 1;
+    }
+    
+    s32 x = move->x;
+    s32 y = move->y;
+    
+    while (1) {
+        x += diff_x;
+        y += diff_y;
+        if (tile->x == x && tile->y == y) {
+            break;
+        }
+        set_tile(board, board->state->current_player, x, y);
+    }
+}
+
+internal Othello_Tile *
+find_tile_to_side_of_move(Othello_Board *board, Othello_Move *move, Othello_Side side) {
+    Othello_Tile * result = 0;
+    
+    s32 diff_x = 0;
+    s32 diff_y = 0;
+    
+    if (side == OthelloSide_Left || side == OthelloSide_UpLeft || side == OthelloSide_DownLeft)
+        diff_x = -1;
+    
+    if (side == OthelloSide_Right || side == OthelloSide_UpRight || side == OthelloSide_DownRight)
+        diff_x =  1;
+    
+    if (side == OthelloSide_Up || side == OthelloSide_UpLeft || side == OthelloSide_UpRight)
+        diff_y = -1;
+    
+    if (side == OthelloSide_Down || side == OthelloSide_DownLeft || side == OthelloSide_DownRight)
+        diff_y =  1;
+    
+    s32 x = move->x;
+    s32 y = move->y;
+    
+    while (1) {
+        x += diff_x;
+        y += diff_y;
+        if (x < 0 || y < 0 || x >= OTHELLO_BOARD_COUNT || y >= OTHELLO_BOARD_COUNT) {
+            break;
+        }
+        
+        Othello_Tile *tile = &board->tiles[x][y];
+        if (tile->kind == OthelloTileKind_None) {
+            break;
+        }
+        
+        if (tile->kind == move->origin.kind) {
+            result = tile;
+            break;
+        }
+    }
+    
+    return result;
 }
 
 internal void
@@ -414,25 +641,7 @@ make_move(Othello_State *state) {
     Othello_Move *move = move_list_valid(state, &state->hovering_tile);
     if (!move) return;
     
-    s32 diff_x = 0;
-    if (move->origin.x < move->x)      diff_x = -1;
-    else if (move->origin.x > move->x) diff_x =  1;
-    
-    s32 diff_y = 0;
-    if (move->origin.y < move->y)      diff_y = -1;
-    else if (move->origin.y > move->y) diff_y =  1;
-    
-    s32 set_x = move->x;
-    s32 set_y = move->y;
-    
-    // TODO(diego): Check sides for tiles matching the other player and eat all of in between.
-    while (1) {
-        set_tile(&state->board, state->current_player, set_x, set_y); 
-        set_x += diff_x;
-        set_y += diff_y;
-        
-        if (set_x == move->origin.x && set_y == move->origin.y) break;
-    }
+    eat_tiles_for_move(&state->board, move);
     
     switch_turns(state);
 }
@@ -465,6 +674,24 @@ get_move_number(u32 tile_y) {
     assert(tile_y >= 0 && tile_y < OTHELLO_BOARD_COUNT);
     
     char result = (char) ('1' + tile_y);
+    
+    return result;
+}
+
+internal Othello_Coordinate
+get_coordinate(char *coordinate) {
+    assert(string_length(coordinate) == 2);
+    
+    Othello_Coordinate result = {};
+    
+    char letter = coordinate[0];
+    char number = coordinate[1];
+    
+    result.x = (u32) (letter - 'A');
+    result.y = (u32) (number - '1');
+    
+    assert(result.x >= 0 && result.x < OTHELLO_BOARD_COUNT);
+    assert(result.y >= 0 && result.y < OTHELLO_BOARD_COUNT);
     
     return result;
 }
@@ -529,6 +756,12 @@ set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y) {
     tile->kind = kind;
     tile->x = tile_x;
     tile->y = tile_y;
+}
+
+internal void
+set_tile(Othello_Board *board, Othello_Tile_Kind kind, char *coordinate) {
+    Othello_Coordinate coord = get_coordinate(coordinate);
+    set_tile(board, kind, coord.x, coord.y);
 }
 
 internal Othello_Tile *

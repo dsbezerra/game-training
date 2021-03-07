@@ -25,6 +25,23 @@ enum Othello_Tile_Kind {
     OthelloTileKind_Count,
 };
 
+enum Othello_Side {
+    OthelloSide_None,
+    
+    OthelloSide_Right,
+    OthelloSide_Left,
+    OthelloSide_Up,
+    OthelloSide_Down,
+    
+    OthelloSide_UpRight,
+    OthelloSide_UpLeft,
+    
+    OthelloSide_DownRight,
+    OthelloSide_DownLeft,
+    
+    OthelloSide_Count,
+};
+
 enum Othello_Play_State {
     OthelloPlayState_None,
     
@@ -45,11 +62,21 @@ struct Othello_Tile {
     Othello_Tile_Kind kind;
     s32 x;
     s32 y;
+    
+    char letter;
+    char number;
+    
+    char coordinate[3];
 };
 
 struct Othello_Board {
     Othello_State *state;
     Othello_Tile tiles[OTHELLO_BOARD_COUNT][OTHELLO_BOARD_COUNT];
+};
+
+struct Othello_Coordinate {
+    u32 x;
+    u32 y;
 };
 
 struct Othello_Move {
@@ -98,6 +125,11 @@ internal void draw_hud(Othello_State *state);
 internal void reset_board(Othello_Board *board);
 internal void clear_board(Othello_Board *board);
 
+internal void eat_tiles_for_move(Othello_Board *board, Othello_Move *move);
+internal void eat_tiles_to_side_of_move(Othello_Board *board, Othello_Move *move, Othello_Side side);
+
+internal Othello_Tile * find_tile_to_side_of_move(Othello_Board *board, Othello_Move *move, Othello_Side side);
+
 internal void move_list_clear(Othello_State *state);
 internal Othello_Move * move_list_find(Othello_State *state, Othello_Move move);
 internal void move_list_add(Othello_State *state, Othello_Move move);
@@ -111,6 +143,7 @@ internal void make_move(Othello_State *state);
 internal b32 is_empty(Othello_Board *board, u32 tile_x, u32 tile_y);
 internal char get_move_letter(u32 tile_x);
 internal char get_move_number(u32 tile_y);
+internal Othello_Coordinate get_coordinate(char *coordinate);
 internal Vector2 get_start_xy(Othello_State *state);
 internal real32 get_tile_size(Othello_State *state);
 
@@ -118,6 +151,7 @@ internal void switch_turns(Othello_State *state);
 
 internal void set_play_state(Othello_State *state, Othello_Play_State new_state);
 internal void set_tile(Othello_Board *board, Othello_Tile_Kind kind, u32 tile_x, u32 tile_y);
+internal void set_tile(Othello_Board *board, Othello_Tile_Kind kind, char *coordinate);
 internal Othello_Tile * find_valid_move_for_tile(Othello_Board *board, Othello_Tile *tile, Othello_Tile tile_direction);
 
 internal void othello_menu_art(App_State *state, Vector2 min, Vector2 max);
