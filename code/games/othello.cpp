@@ -15,12 +15,17 @@ init_game(Othello_State *state) {
 
 internal void
 update_game(Othello_State *state, Game_Input *input) {
-    update_hovering_tile(state);
-    
     b32 is_turn = state->play_state == OthelloPlayState_BlackTurn || state->play_state == OthelloPlayState_WhiteTurn;
+    b32 won = state->play_state == OthelloPlayState_BlackWin || state->play_state == OthelloPlayState_WhiteWin;
     if (is_turn) {
+        update_hovering_tile(state);
         if (pressed(Button_Mouse1)) {
             make_move(state);
+        }
+    }
+    if (won) {
+        if (pressed(Button_Enter)) {
+            othello_game_restart(state);
         }
     }
 }
@@ -33,9 +38,6 @@ update_hovering_tile(Othello_State *state) {
     state->hovering_tile.kind = OthelloTileKind_Hover; // Useless for now.
     state->hovering_tile.x = -1;
     state->hovering_tile.y = -1;
-    
-    b32 is_turn = state->play_state == OthelloPlayState_BlackTurn || state->play_state == OthelloPlayState_WhiteTurn;
-    if (!is_turn) return;
     
     real32 tile_size = get_tile_size(state);
     Vector2 start = get_start_xy(state);
@@ -173,8 +175,9 @@ draw_board(Othello_State *state) {
     }
 #endif
     
+    b32 is_turn = state->play_state == OthelloPlayState_BlackTurn || state->play_state == OthelloPlayState_WhiteTurn;
     b32 hovering = state->hovering_tile.x != -1 && state->hovering_tile.y != -1;
-    if (hovering) {
+    if (hovering && is_turn) {
         u32 tile_x = (u32) state->hovering_tile.x;
         u32 tile_y = (u32) state->hovering_tile.y;
         
@@ -206,7 +209,7 @@ draw_board(Othello_State *state) {
         }
         
         // Draw hovering
-        if (hovering) {
+        if (hovering && is_turn) {
             u32 tile_x = (u32) state->hovering_tile.x;
             u32 tile_y = (u32) state->hovering_tile.y;
             
@@ -247,24 +250,52 @@ draw_game_view(Othello_State *state) {
 
 internal void
 draw_hud(Othello_State *state) {
-    char *turn_text[] = {"White's Turn", "Black's Turn", '\0'};
     
-    s32 i = -1;
-    if (state->play_state == OthelloPlayState_WhiteTurn) i = 0;
-    else if (state->play_state == OthelloPlayState_BlackTurn) i = 1;
+    b32 is_turn = state->play_state == OthelloPlayState_BlackTurn || state->play_state == OthelloPlayState_WhiteTurn;
     
-    if (i >= 0) {
-        Vector2i dim = state->dimensions;
+    b32 won = state->play_state == OthelloPlayState_BlackWin || state->play_state == OthelloPlayState_WhiteWin;
+    
+    Vector2i dim = state->dimensions;
+    
+    if (is_turn) {
+        char *turn_text[] = {"White's Turn", "Black's Turn", '\0'};
         
-        real32 x = dim.width  * .5f;
-        real32 y = dim.height * 0.99f;
+        s32 i = -1;
+        if (state->play_state == OthelloPlayState_WhiteTurn) i = 0;
+        else if (state->play_state == OthelloPlayState_BlackTurn) i = 1;
         
-        real32 tw = get_text_width(&state->assets.turn_font, turn_text[i]);
-        
-        Vector4 color = make_color(0xffffffff);
-        draw_text(x - tw / 2.f, y, (u8 *) turn_text[i], &state->assets.turn_font, color);
+        if (i >= 0) {
+            real32 x = dim.width  * .5f;
+            real32 y = dim.height * 0.99f;
+            
+            real32 tw = get_text_width(&state->assets.turn_font, turn_text[i]);
+            
+            Vector4 color = make_color(0xffffffff);
+            draw_text(x - tw / 2.f, y, (u8 *) turn_text[i], &state->assets.turn_font, color);
+        }
     }
     
+    if (won) {
+        char *won_text[] = {"White Won", "Black Won", '\0'};
+        
+        s32 i = -1;
+        if (state->play_state == OthelloPlayState_WhiteWin) i = 0;
+        else if (state->play_state == OthelloPlayState_BlackWin) i = 1;
+        
+        immediate_begin();
+        immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0x44000000));
+        immediate_flush();
+        
+        if (i >= 0) {
+            real32 x = dim.width  * .5f;
+            real32 y = dim.height * 0.99f;
+            
+            real32 tw = get_text_width(&state->assets.turn_font, won_text[i]);
+            
+            Vector4 color = make_color(0xffffffff);
+            draw_text(x - tw / 2.f, y, (u8 *) won_text[i], &state->assets.turn_font, color);
+        }
+    }
 }
 
 internal void
@@ -401,6 +432,31 @@ clear_board(Othello_Board *board) {
             board->tiles[tile_x][tile_y] = empty;
         }
     }
+}
+
+internal Othello_Tile_Kind
+check_for_win(Othello_State *state) {
+    assert(state->play_state == OthelloPlayState_WhiteTurn || state->play_state == OthelloPlayState_BlackTurn);
+    
+    Othello_Tile_Kind result = {};
+    
+    Othello_Board *board = &state->board;
+    if (state->move_list.size == 0) {
+        u32 black = 0;
+        u32 white = 0;
+        for (u32 tile_x = 0; tile_x < OTHELLO_BOARD_COUNT; ++tile_x) {
+            for (u32 tile_y = 0; tile_y < OTHELLO_BOARD_COUNT; ++tile_y) {
+                Othello_Tile tile = board->tiles[tile_x][tile_y];
+                if (tile.kind == OthelloTileKind_Black) black++;
+                if (tile.kind == OthelloTileKind_White) white++;
+            }
+        }
+        
+        if (black > white) result = OthelloTileKind_Black;
+        if (white > black) result = OthelloTileKind_White;
+    }
+    
+    return result;
 }
 
 internal void
@@ -644,6 +700,13 @@ make_move(Othello_State *state) {
     eat_tiles_for_move(&state->board, move);
     
     switch_turns(state);
+    
+    Othello_Tile_Kind won = check_for_win(state);
+    switch (won) {
+        case OthelloTileKind_Black: set_play_state(state, OthelloPlayState_BlackWin); break;
+        case OthelloTileKind_White: set_play_state(state, OthelloPlayState_WhiteWin); break;
+        default: break;
+    }
 }
 
 internal b32

@@ -48,6 +48,9 @@ enum Othello_Play_State {
     OthelloPlayState_BlackTurn,
     OthelloPlayState_WhiteTurn,
     
+    OthelloPlayState_BlackWin,
+    OthelloPlayState_WhiteWin,
+    
     OthelloPlayState_Count,
 };
 
@@ -124,6 +127,8 @@ internal void draw_hud(Othello_State *state);
 
 internal void reset_board(Othello_Board *board);
 internal void clear_board(Othello_Board *board);
+
+internal Othello_Tile_Kind check_for_win(Othello_State *state);
 
 internal void eat_tiles_for_move(Othello_Board *board, Othello_Move *move);
 internal void eat_tiles_to_side_of_move(Othello_Board *board, Othello_Move *move, Othello_Side side);
