@@ -1,7 +1,11 @@
+#define FLOOD_IT_MEDIUM_HEALTH 30
+
 internal void
 init_game(Flood_It_State *state) {
     state->game_mode = GameMode_Playing;
     state->filled = 0;
+    state->health = FLOOD_IT_MEDIUM_HEALTH;
+    state->max_health = state->health;
     
     generate_grid(state);
     
@@ -68,6 +72,7 @@ flood_fill(Flood_It_State *state) {
     flood_tile(state, state->hovered_color, 0, 0, first.kind, true);
     
     state->filled = 0;
+    state->health--;
     
     Flood_It_Grid *grid = &state->grid;
     for (u32 x = 0; x < FLOOD_IT_GRID_SIZE; ++x) {
@@ -177,7 +182,7 @@ is_mouse_over(Flood_It_State *state, Flood_It_Color *color) {
 internal b32
 check_finished(Flood_It_State *state) {
     u32 num_tiles = FLOOD_IT_GRID_SIZE * FLOOD_IT_GRID_SIZE;
-    return state->filled == num_tiles;
+    return state->filled == num_tiles || state->health == 0;
 }
 
 internal void
@@ -244,8 +249,6 @@ draw_game_view(Flood_It_State *state) {
     
     if (state->game_mode == GameMode_Playing) {
         Vector2i dim = state->dimensions;
-        
-        // TODO(diego): Replace background
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
         immediate_flush();
@@ -260,9 +263,47 @@ draw_game_view(Flood_It_State *state) {
 
 internal void
 draw_hud(Flood_It_State *state) {
-    // TODO(diego): Implement.
     
     Vector2i dim = state->dimensions;
+    
+    immediate_begin();
+    
+    real32 health_x_margin = 20.f;
+    real32 health_y_margin = 20.f;
+    
+    real32 health_pad = 4.f;
+    
+    real32 max_height = dim.height - health_y_margin * 2.f - state->max_health * health_pad;
+    
+    real32 health_height = max_height / state->max_health;
+    real32 health_width = health_height * 1.1f;
+    
+    Vector4 health_color = make_color(0xFFFF0000);
+    Vector4 backing_color = make_color(0xFFFFFFFF);
+    Vector4 background = make_color(0xff2f3242);
+    
+    Vector2 backing_min = make_vector2(health_x_margin - 2.f, health_y_margin);
+    Vector2 backing_max = make_vector2(backing_min.x + health_width + health_pad, backing_min.y + state->max_health * health_height + health_pad * state->max_health);
+    
+    immediate_quad(backing_min, backing_max, backing_color);
+    
+    real32 y_cursor = health_y_margin + health_pad * .5f;
+    
+    Vector4 color;
+    for (u32 h = state->max_health; h > 0; --h) {
+        Vector2 min = make_vector2(health_x_margin, y_cursor);
+        Vector2 max = make_vector2(min.x + health_width, min.y + health_height);
+        if (h > state->health) {
+            color = background;
+        } else {
+            color = health_color; 
+        }
+        immediate_quad(min, max, color);
+        
+        y_cursor += health_pad + health_height;
+    }
+    
+    immediate_flush();
     
 #if 0
     immediate_begin();

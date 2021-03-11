@@ -65,6 +65,9 @@ struct Flood_It_State {
     
     Flood_It_Color *hovered_color;
     
+    u32 health;
+    u32 max_health;
+    
     u32 filled;
     
     Vector2i mouse_position;
