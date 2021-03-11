@@ -55,6 +55,7 @@ update_colors(Flood_It_State *state) {
 internal void
 flood_fill(Flood_It_State *state) {
     Flood_It_Tile first = state->grid.tiles[0][0];
+    if (first.kind == state->hovered_color->kind) return;
     
     flood_tile(state, state->hovered_color, 0, 0, first.kind, true);
 }
@@ -64,21 +65,18 @@ flood_tile(Flood_It_State *state, Flood_It_Color *color, u32 x, u32 y, Flood_It_
     assert(color);
     assert(color->kind >= FloodItTileKind_Red && color->kind < FloodItTileKind_Count);
     
+    if (x < 0 || x >= FLOOD_IT_GRID_SIZE) return;
+    if (y < 0 || y >= FLOOD_IT_GRID_SIZE) return;
+    
     Flood_It_Tile *tile = &state->grid.tiles[x][y];
-    if (!first_tile && first != tile->kind) {
-        return;
-    }
+    if (!first_tile && first != tile->kind) return;
     
     set_color(color, tile);
     
-    if (x < FLOOD_IT_GRID_SIZE - 1)
-        flood_tile(state, color, x + 1, y,     first, false);
-    if (y < FLOOD_IT_GRID_SIZE - 1)
-        flood_tile(state, color, x    , y + 1, first, false);
-    if (x > 0)
-        flood_tile(state, color, x - 1, y, first, false);
-    if (y > 0)
-        flood_tile(state, color, x, y - 1, first, false);
+    flood_tile(state, color, x + 1, y,     first, false);
+    flood_tile(state, color, x    , y + 1, first, false);
+    flood_tile(state, color, x - 1, y, first, false);
+    flood_tile(state, color, x, y - 1, first, false);
 }
 
 internal void
