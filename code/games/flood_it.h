@@ -76,9 +76,12 @@ internal void init_game(Flood_It_State *state);
 internal void update_game(Flood_It_State *state, Game_Input *input);
 internal void update_colors(Flood_It_State *state);
 
+internal void flood_fill(Flood_It_State *state);
+internal void flood_tile(Flood_It_State *state, Flood_It_Color *color, u32 x, u32 y, Flood_It_Tile_Kind first, b32 first_tile);
 internal void generate_grid(Flood_It_State *state);
 internal Flood_It_Tile make_random_tile(u32 x, u32 y);
 internal Vector4 get_color_for_tile(Flood_It_Tile_Kind kind);
+internal void set_color(Flood_It_Color *color, Flood_It_Tile *tile);
 
 internal b32 is_mouse_over(Flood_It_State *state, Flood_It_Color *color);
 
