@@ -2,11 +2,53 @@ internal void
 init_game(Flood_It_State *state) {
     state->game_mode = GameMode_Playing;
     generate_grid(state);
+    
+    platform_show_cursor(true);
 }
 
 internal void
 update_game(Flood_It_State *state, Game_Input *input) {
-    // TODO(diego): Implement.
+    
+    Vector2i mouse_position;
+    platform_get_cursor_position(&mouse_position);
+    state->mouse_position = mouse_position;
+    
+    update_colors(state);
+    
+    if (pressed(Button_Mouse1)) {
+        // TODO(diego): Fill with color
+    }
+}
+
+internal void
+update_colors(Flood_It_State *state) {
+    Vector2i dim = state->dimensions;
+    
+    real32 tile_size = dim.height * .1f;
+    real32 center_x = dim.width * .5f;
+    
+    real32 colors_width = tile_size * FloodItTileKind_Count;
+    real32 sx = center_x - colors_width * .5f;
+    real32 pad = 5.f;
+    
+    real32 margin = tile_size * .2f;
+    real32 y = dim.height - tile_size - margin;
+    
+    Flood_It_Color *hovered_color = 0;
+    
+    for (u32 color_index = 0; color_index < (u32) FloodItTileKind_Count; ++color_index) {
+        Flood_It_Color *color = &state->colors[color_index];
+        color->kind = (Flood_It_Tile_Kind) (FloodItTileKind_Red + color_index);
+        color->color = get_color_for_tile(color->kind);
+        color->x = sx + color_index * tile_size + pad;
+        color->y = y + pad;
+        color->w = (sx + color_index * tile_size + tile_size - pad) - color->x;
+        color->h = (y + tile_size - pad) - color->y;
+        color->hover = is_mouse_over(state, color);
+        if (color->hover) hovered_color = color;
+    }
+    
+    state->hovered_color = hovered_color;
 }
 
 internal void
@@ -67,6 +109,37 @@ get_color_for_tile(Flood_It_Tile_Kind kind) {
     return result;
 }
 
+internal b32
+is_mouse_over(Flood_It_State *state, Flood_It_Color *color) {
+    Vector2i p = state->mouse_position;
+    if (p.x < color->x) return false;
+    if (p.y < color->y) return false;
+    if (p.x > (color->x + color->w)) return false;
+    if (p.y > (color->y + color->h)) return false;
+    
+    return true;
+}
+
+internal void
+draw_colors(Flood_It_State *state) {
+    
+    immediate_begin();
+    for (u32 color_index = 0; color_index < (u32) FloodItTileKind_Count; ++color_index) {
+        Flood_It_Color *color = &state->colors[color_index];
+        Vector2 min = make_vector2(color->x, color->y);
+        Vector2 max = make_vector2(color->x + color->w, color->y + color->h);
+        immediate_quad(min, max, color->color);
+    }
+    
+    if (state->hovered_color) {
+        Flood_It_Color *color = state->hovered_color;
+        Vector2 min = make_vector2(color->x, color->y);
+        Vector2 max = make_vector2(color->x + color->w, color->y + color->h);
+        immediate_quad(min, max, make_color(0xaaffffff));
+    }
+    
+    immediate_flush();
+}
 
 internal void
 draw_grid(Flood_It_State *state) {
@@ -76,11 +149,12 @@ draw_grid(Flood_It_State *state) {
     real32 height = dim.height * .7f;
     real32 tile_size = height / (real32) FLOOD_IT_GRID_SIZE;
     
-    real32 width  = tile_size * OTHELLO_BOARD_COUNT;
-    real32 remaining_wspace = dim.width - width;
+    real32 width  = tile_size * FLOOD_IT_GRID_SIZE;
+    
+    real32 remaining_wspace = dim.width  - width;
     real32 remaining_hspace = dim.height - height;
     
-    real32 start_x = remaining_wspace * .5f - width * .5f;
+    real32 start_x = remaining_wspace * .5f;
     real32 start_y = remaining_hspace * .5f;
     
     immediate_begin();
@@ -88,7 +162,7 @@ draw_grid(Flood_It_State *state) {
     for (u32 tile_x = 0; tile_x < FLOOD_IT_GRID_SIZE; ++tile_x) {
         for (u32 tile_y = 0; tile_y < FLOOD_IT_GRID_SIZE; ++tile_y) {
             Flood_It_Tile tile = state->grid.tiles[tile_x][tile_y];
-            if (tile.kind == FloodItTileKind_None) continue;
+            if (tile.kind == FloodItTileKind_Count) continue;
             
             real32 sx = start_x + tile_x * tile_size;
             real32 sy = start_y + tile_y * tile_size;
@@ -117,6 +191,7 @@ draw_game_view(Flood_It_State *state) {
         immediate_flush();
         
         draw_grid(state);
+        draw_colors(state);
         draw_hud(state);
     } else {
         draw_menu(FLOOD_IT_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
@@ -126,6 +201,67 @@ draw_game_view(Flood_It_State *state) {
 internal void
 draw_hud(Flood_It_State *state) {
     // TODO(diego): Implement.
+    
+    Vector2i dim = state->dimensions;
+    
+#if 0
+    immediate_begin();
+    
+    real32 line_thickness = 1.f / 2.f;
+    
+    Vector2 min = make_vector2(0.f, dim.height * .5f - line_thickness);
+    Vector2 max = make_vector2((real32) dim.width, dim.height * .5f + line_thickness);
+    immediate_quad(min, max, make_color(0xffff00ff));
+    
+    min = make_vector2(dim.width * .5f - line_thickness, 0.f);
+    max = make_vector2(dim.width * .5f + line_thickness, (real32) dim.height);
+    immediate_quad(min, max, make_color(0xffff00ff));
+    
+    immediate_flush();
+    
+#endif
+    
+#define DRAW_MOUSE_LINES 0
+#if DRAW_MOUSE_LINES
+    immediate_begin();
+    
+    real32 line_thickness = 1.f / 2.f;
+    
+    Vector2i mp = state->mouse_position;
+    
+    real32 mouse_x = (real32) mp.x;
+    real32 mouse_y = (real32) mp.y;
+    
+    // Horizontal
+    Vector2 min = make_vector2(0.f, mouse_y - line_thickness);
+    Vector2 max = make_vector2((real32) dim.width, mouse_y + line_thickness);
+    immediate_quad(make_vector2(0.f, 0.f), make_vector2((real32) dim.width, (real32) dim.height), make_color(0xaa000000));
+    
+    immediate_quad(min, max, make_color(0xffff00ff));
+    
+    // Vertical
+    min = make_vector2(mouse_x - line_thickness, 0.f);
+    max = make_vector2(mouse_x + line_thickness, (real32) dim.height);
+    immediate_quad(min, max, make_color(0xffff00ff));
+    immediate_flush();
+    
+    u32 width_from_left = mp.x;
+    u32 height_from_top = mp.y;
+    
+    u32 width_from_right = dim.width - width_from_left;
+    u32 height_from_bottom = dim.height - height_from_top;
+    
+    char buf[256];
+    sprintf(buf, "(%d, %d)", width_from_left, height_from_top);
+    
+    Vector4 white = make_color(0xffffffff);
+    draw_text(mouse_x, mouse_y, (u8 *) buf, &state->assets.debug, white);
+    
+    sprintf(buf, "(%d, %d)", width_from_right, height_from_bottom);
+    draw_text(mouse_x, mouse_y + 12.f, (u8 *) buf, &state->assets.debug, white);
+    
+#endif
+    
 }
 
 internal void
@@ -152,7 +288,10 @@ flood_it_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Memory_Index total_memory_size = kilobytes(16);
         state = (Flood_It_State *) game_alloc(memory, total_memory_size);
         
-        // TODO(diego): Implement.
+        Flood_It_Assets assets = {};
+        assets.debug = load_font("./data/fonts/Inconsolata-Regular.ttf", 16.f);
+        
+        state->assets = assets;
         
         init_game(state);
     }

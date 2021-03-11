@@ -14,8 +14,6 @@ Variants: Power ups gained when a certain tile is changed.
 #define FLOOD_IT_GRID_SIZE 17
 
 enum Flood_It_Tile_Kind {
-    FloodItTileKind_None,
-    
     FloodItTileKind_Red,
     FloodItTileKind_Green,
     FloodItTileKind_Blue,
@@ -27,6 +25,7 @@ enum Flood_It_Tile_Kind {
 };
 
 struct Flood_It_Assets {
+    Loaded_Font debug;
 };
 
 struct Flood_It_State;
@@ -40,6 +39,19 @@ struct Flood_It_Tile {
     Vector4 color;
 };
 
+struct Flood_It_Color {
+    Flood_It_Tile_Kind kind;
+    
+    real32 x;
+    real32 y;
+    real32 w;
+    real32 h;
+    
+    Vector4 color;
+    
+    b32 hover;
+};
+
 struct Flood_It_Grid {
     Flood_It_Tile tiles[FLOOD_IT_GRID_SIZE][FLOOD_IT_GRID_SIZE];
 };
@@ -49,7 +61,11 @@ struct Flood_It_State {
     
     Flood_It_Assets assets;
     Flood_It_Grid grid;
+    Flood_It_Color colors[FloodItTileKind_Count];
     
+    Flood_It_Color *hovered_color;
+    
+    Vector2i mouse_position;
     Vector2i dimensions;
     
     s8 menu_selected_item;
@@ -58,11 +74,15 @@ struct Flood_It_State {
 
 internal void init_game(Flood_It_State *state);
 internal void update_game(Flood_It_State *state, Game_Input *input);
+internal void update_colors(Flood_It_State *state);
 
 internal void generate_grid(Flood_It_State *state);
 internal Flood_It_Tile make_random_tile(u32 x, u32 y);
 internal Vector4 get_color_for_tile(Flood_It_Tile_Kind kind);
 
+internal b32 is_mouse_over(Flood_It_State *state, Flood_It_Color *color);
+
+internal void draw_colors(Flood_It_State *state);
 internal void draw_grid(Flood_It_State *state);
 internal void draw_game_view(Flood_It_State *state);
 internal void draw_hud(Flood_It_State *state);
