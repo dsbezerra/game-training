@@ -4,6 +4,8 @@ global_variable Mat4 projection_matrix;
 
 global_variable u32 draw_call_count = 0;
 
+global_variable u32 use_multisampling = true;
+
 #define DUMP_GL_ERRORS true
 
 internal void

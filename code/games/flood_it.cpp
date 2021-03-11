@@ -319,6 +319,7 @@ flood_it_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         assert(memory->permanent_storage_size == 0);
         assert(!memory->permanent_storage);
         memory->initialized = true;
+        use_multisampling = false;
         
         // NOTE(diego): Not used.
         Memory_Index total_memory_size = kilobytes(16);
@@ -399,5 +400,6 @@ flood_it_game_free(Game_Memory *memory) {
     Flood_It_State *state = (Flood_It_State *) memory->permanent_storage;
     if (!state) return;
     
+    use_multisampling = true;
     // TODO(diego): If necessary.
 }

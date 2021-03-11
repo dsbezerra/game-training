@@ -22,7 +22,10 @@ global_variable real32 global_press_t = .0f;
 internal void
 game_frame_begin(int width, int height) {
     ensure_framebuffer(width, height);
-    use_framebuffer(&immediate->multisampled_framebuffer);
+    
+    if (use_multisampling) {
+        use_framebuffer(&immediate->multisampled_framebuffer);
+    }
     
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
