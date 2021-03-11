@@ -65,6 +65,8 @@ struct Flood_It_State {
     
     Flood_It_Color *hovered_color;
     
+    u32 filled;
+    
     Vector2i mouse_position;
     Vector2i dimensions;
     
@@ -84,6 +86,7 @@ internal Vector4 get_color_for_tile(Flood_It_Tile_Kind kind);
 internal void set_color(Flood_It_Color *color, Flood_It_Tile *tile);
 
 internal b32 is_mouse_over(Flood_It_State *state, Flood_It_Color *color);
+internal b32 check_finished(Flood_It_State *state);
 
 internal void draw_colors(Flood_It_State *state);
 internal void draw_grid(Flood_It_State *state);

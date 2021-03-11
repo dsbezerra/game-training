@@ -1,6 +1,8 @@
 internal void
 init_game(Flood_It_State *state) {
     state->game_mode = GameMode_Playing;
+    state->filled = 0;
+    
     generate_grid(state);
     
     platform_show_cursor(true);
@@ -9,6 +11,11 @@ init_game(Flood_It_State *state) {
 internal void
 update_game(Flood_It_State *state, Game_Input *input) {
     
+    if (check_finished(state)) {
+        state->game_mode = GameMode_Menu;
+        return;
+    }
+    
     Vector2i mouse_position;
     platform_get_cursor_position(&mouse_position);
     state->mouse_position = mouse_position;
@@ -16,8 +23,9 @@ update_game(Flood_It_State *state, Game_Input *input) {
     update_colors(state);
     
     if (pressed(Button_Mouse1)) {
-        if (state->hovered_color)
+        if (state->hovered_color) {
             flood_fill(state);
+        }
     }
 }
 
@@ -58,6 +66,17 @@ flood_fill(Flood_It_State *state) {
     if (first.kind == state->hovered_color->kind) return;
     
     flood_tile(state, state->hovered_color, 0, 0, first.kind, true);
+    
+    state->filled = 0;
+    
+    Flood_It_Grid *grid = &state->grid;
+    for (u32 x = 0; x < FLOOD_IT_GRID_SIZE; ++x) {
+        for (u32 y = 0; y < FLOOD_IT_GRID_SIZE; ++y) {
+            Flood_It_Tile *tile = &state->grid.tiles[x][y];
+            if (tile->kind == state->hovered_color->kind)
+                state->filled++;
+        }
+    }
 }
 
 internal void
@@ -69,14 +88,15 @@ flood_tile(Flood_It_State *state, Flood_It_Color *color, u32 x, u32 y, Flood_It_
     if (y < 0 || y >= FLOOD_IT_GRID_SIZE) return;
     
     Flood_It_Tile *tile = &state->grid.tiles[x][y];
+    if (tile->kind == first || first_tile) state->filled++;
     if (!first_tile && first != tile->kind) return;
     
     set_color(color, tile);
     
     flood_tile(state, color, x + 1, y,     first, false);
     flood_tile(state, color, x    , y + 1, first, false);
-    flood_tile(state, color, x - 1, y, first, false);
-    flood_tile(state, color, x, y - 1, first, false);
+    flood_tile(state, color, x - 1, y,     first, false);
+    flood_tile(state, color, x    , y - 1, first, false);
 }
 
 internal void
@@ -152,6 +172,12 @@ is_mouse_over(Flood_It_State *state, Flood_It_Color *color) {
     if (p.y > (color->y + color->h)) return false;
     
     return true;
+}
+
+internal b32
+check_finished(Flood_It_State *state) {
+    u32 num_tiles = FLOOD_IT_GRID_SIZE * FLOOD_IT_GRID_SIZE;
+    return state->filled == num_tiles;
 }
 
 internal void
