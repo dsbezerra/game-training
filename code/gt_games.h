@@ -8,3 +8,4 @@
 #include "games/sokoban.h"
 #include "games/othello.h"
 #include "games/flood_it.h"
+#include "games/connect_four.h"

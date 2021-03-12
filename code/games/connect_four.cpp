@@ -86,7 +86,7 @@ connect_four_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         if (pressed(Button_Enter)) {
             switch (state->menu_selected_item) {
                 case 0: {
-                    flood_it_game_restart(state);
+                    connect_four_game_restart(state);
                 } break;
                 
                 case 1: {

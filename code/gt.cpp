@@ -159,6 +159,7 @@ free_menu_arts(App_State *state) {
 #include "games/sokoban.cpp"
 #include "games/othello.cpp"
 #include "games/flood_it.cpp"
+#include "games/connect_four.cpp"
 
 //
 // Game titles
@@ -175,6 +176,7 @@ global_variable char* game_titles[] = {
     SOKOBAN_TITLE,
     OTHELLO_TITLE,
     FLOOD_IT_TITLE,
+    CONNECT_FOUR_TITLE,
 };
 
 //
@@ -193,6 +195,7 @@ void (*menu_table[])(App_State *state, Vector2 min, Vector2 max) = {
     sokoban_menu_art,
     othello_menu_art,
     flood_it_menu_art,
+    connect_four_menu_art,
 };
 
 //
@@ -211,6 +214,7 @@ void (*game_free_table[])(Game_Memory *memory) = {
     sokoban_game_free,
     othello_game_free,
     flood_it_game_free,
+    connect_four_game_free,
 };
 
 // 
