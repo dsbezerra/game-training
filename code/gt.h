@@ -152,11 +152,16 @@ enum App_Mode {
 };
 
 struct Game_Memory {
+    Game_Mode game_mode;
+    
     Vector2i window_center;
     Vector2i window_dimensions;
     
     b32 initialized;
     b32 asked_to_quit;
+    b32 quit_was_selected;
+    
+    s8 menu_selected_item;
     
     u64 permanent_storage_size;
     void *permanent_storage;
@@ -195,12 +200,26 @@ struct App_State {
     Game_Memory *memory;
 };
 
+enum Simulate_Game_Op {
+    SimulateGameOp_None,
+    
+    SimulateGameOp_Update,
+    SimulateGameOp_Restart,
+    SimulateGameOp_Quit,
+    
+    SimulateGameOp_Count,
+};
+struct Simulate_Game {
+    Simulate_Game_Op operation;
+};
+
 #include "gt_camera.h" // TODO(diego): Refactor so this can be up there with other h files.
 #include "gt_games.h"
 
 internal void game_frame_begin(int width, int height);
 internal void game_output_sound(Game_Sound_Buffer *sound_buffer);
 internal void game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input);
+internal Simulate_Game game_simulate(Game_Memory *memory, Game_Input *input, Game_Mode &game_mode);
 
 internal void *game_alloc(Game_Memory *memory, u64 size);
 internal void game_free(Game_Memory *memory, game current_game);

@@ -58,6 +58,7 @@ struct Flood_It_Grid {
 
 struct Flood_It_State {
     Game_Mode game_mode;
+    Game_Memory *memory;
     
     Flood_It_Assets assets;
     Flood_It_Grid grid;
@@ -72,9 +73,6 @@ struct Flood_It_State {
     
     Vector2i mouse_position;
     Vector2i dimensions;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal void init_game(Flood_It_State *state);

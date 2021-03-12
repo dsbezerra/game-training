@@ -99,6 +99,7 @@ struct Othello_Move_List {
 
 struct Othello_State {
     Game_Mode game_mode;
+    Game_Memory *memory;
     
     Memory_Arena move_arena;
     
@@ -112,9 +113,6 @@ struct Othello_State {
     Othello_Play_State play_state;
     
     Vector2i dimensions;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal void init_game(Othello_State *state);

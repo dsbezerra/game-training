@@ -118,7 +118,7 @@ draw_game_view(Simon_State *state) {
     
     game_frame_begin(state->dimensions.width, state->dimensions.height);
     
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         //
         // Draw buttons
         //
@@ -210,7 +210,7 @@ draw_game_view(Simon_State *state) {
         
         immediate_flush();
     } else {
-        draw_menu(SIMON_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(SIMON_TITLE, state->memory);
     }
     
 } 
@@ -224,13 +224,9 @@ simon_menu_art(App_State *state, Vector2 min, Vector2 max) {
 
 internal void
 simon_game_restart(Simon_State *state) {
-    state->Game_Mode = GameMode_Playing;
-    state->quit_was_selected = false;
-    state->menu_selected_item = 0;
-    
-    //
-    // Re-init
-    //
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
+    state->memory->asked_to_quit = false;
     init_pattern(state);
 }
 
@@ -244,6 +240,7 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         state = (Simon_State *) game_alloc(memory, megabytes(12));
+        state->memory = memory;
         
         init_pattern(state);
         platform_show_cursor(true);
@@ -258,11 +255,9 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     platform_get_cursor_position(&new_mouse_position);
     state->mouse_position = new_mouse_position;
     
-    if (state->Game_Mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
-        } else {
-            
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             if (state->mode == SimonMode_Playing) {
                 update_hovering_button(state);
                 if (released(Button_Mouse1)) {
@@ -277,7 +272,7 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                     if (state->displaying_count < array_count(state->pattern) - 1) {
                         advance_pattern(state);
                     } else {
-                        state->Game_Mode = GameMode_Menu;
+                        state->game_mode = GameMode_Menu;
                     }
                 }
                 
@@ -299,49 +294,13 @@ simon_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                     }
                 }
             }
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
+        } break;
         
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    simon_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            simon_game_restart(state);
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        default: break;
     }
     
     //

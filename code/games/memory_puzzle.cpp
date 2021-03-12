@@ -7,10 +7,9 @@ init_level(Memory_Puzzle_State *state) {
 
 internal void
 memory_puzzle_game_restart(Memory_Puzzle_State *state) {
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->flip_count = 0;
-    state->quit_was_selected = false;
-    state->menu_selected_item = 0;
     
     //
     // Re-init
@@ -282,7 +281,7 @@ draw_game_view(Memory_Puzzle_State *state) {
     //
     // Draw field
     //
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         Memory_Puzzle_World world = state->world;
         
         real32 pad;
@@ -402,7 +401,7 @@ draw_game_view(Memory_Puzzle_State *state) {
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
     } else {
-        draw_menu(MEMORY_PUZZLE_TITLE, state->world.dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(MEMORY_PUZZLE_TITLE, state->memory);
     }
 }
 
@@ -415,11 +414,12 @@ memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         assert(!memory->permanent_storage);
         
         state = (Memory_Puzzle_State *) game_alloc(memory, megabytes(12));
+        state->memory = memory;
         
         Memory_Puzzle_Assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         
-        state->Game_Mode = GameMode_Playing;
+        state->game_mode = GameMode_Playing;
         state->assets = assets;
         state->checking_cards_target = 1.f;
         
@@ -431,19 +431,12 @@ memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
     state->world.dimensions = memory->window_dimensions;
     
-    //
-    // Update
-    //
-    
-    if (state->Game_Mode == GameMode_Playing) {
-        
-        if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
-        } else {
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             //
             // Update field
             //
-            
             if (pressed(Button_Left)) state->current_selected--;
             if (pressed(Button_Right)) state->current_selected++;
             if (pressed(Button_Up)) state->current_selected -= array_count(state->world.field);
@@ -467,7 +460,7 @@ memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                     } else {
                         state->current_level.tries++;
                         if (state->current_level.tries >= state->current_level.max_tries) {
-                            state->Game_Mode = GameMode_GameOver;
+                            state->game_mode = GameMode_GameOver;
                         }
                         
                         first->flipped = false;
@@ -494,55 +487,24 @@ memory_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                     }
                 }
             }
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
+        } break;
         
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    memory_puzzle_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            memory_puzzle_game_restart(state);
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        default: break;
     }
+    
     
     // Check for winning condition then restart.
     if (state->flip_count >= array_count(state->world.field) * array_count(state->world.field[0])) {
         memory_puzzle_game_restart(state);
     }
+    
+    //
+    // Draw
+    //
     
     draw_game_view(state);
 }

@@ -34,7 +34,8 @@ struct Dodger_Bad_Guy {
 };
 
 struct Dodger_State {
-    Game_Mode Game_Mode;
+    Game_Mode game_mode;
+    Game_Memory *memory;
     
     Dodger_Assets assets;
     
@@ -44,9 +45,6 @@ struct Dodger_State {
     
     u64 score;
     u64 top_score;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal void dodger_game_restart(Dodger_State *state);

@@ -28,7 +28,8 @@ init_board(Nibbles_State *state) {
 
 internal void
 init_game(Nibbles_State *state) {
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->step_t = .0f;
     state->step_t_target = 1.f;
     state->step_dt = 12.f;
@@ -103,7 +104,8 @@ advance_snake(Nibbles_State *state) {
     if (is_occupied(state, head->x, head->y) || 
         head->x > NIBBLES_WORLD_X_COUNT || head->x < 0 || 
         head->y > NIBBLES_WORLD_Y_COUNT || head->y < 0) {
-        state->Game_Mode = GameMode_GameOver;
+        state->game_mode = GameMode_GameOver;
+        state->memory->game_mode = GameMode_GameOver;
         return;
     }
     
@@ -182,10 +184,10 @@ draw_board(Nibbles_State *state) {
 internal void
 draw_game_view(Nibbles_State *state) {
     game_frame_begin(state->dimensions.width, state->dimensions.height);
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         draw_board(state);
     } else {
-        draw_menu(NIBBLES_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(NIBBLES_TITLE, state->memory);
     }
 } 
 
@@ -214,23 +216,17 @@ nibbles_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         state = (Nibbles_State *) game_alloc(memory, megabytes(12));
+        state->memory = memory;
         
         init_game(state);
     }
     
     state->dimensions = memory->window_dimensions;
     
-    //
-    // Update
-    //
-    
-    if (state->Game_Mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
-        } else {
-            
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             Nibbles_Snake_Direction direction = state->direction;
-            
             if (pressed(Button_Left) && state->direction != NibblesSnakeDirection_Right) {
                 state->direction = NibblesSnakeDirection_Left;
             } else if (pressed(Button_Right) && state->direction != NibblesSnakeDirection_Left) {
@@ -252,56 +248,18 @@ nibbles_game_update_and_render(Game_Memory *memory, Game_Input *input) {
                     }
                 }
             }
-            
             if (state->step_t >= state->step_t_target || direction != state->direction) {
                 state->step_t = .0f;
                 advance_snake(state);
             }
-            
             state->step_t += core.time_info.dt * state->step_dt;
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
+        } break;
         
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    nibbles_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            nibbles_game_restart(state);
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        default: break;
     }
     
     //

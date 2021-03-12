@@ -62,8 +62,8 @@ find_first_entity(Katamari_State *state, Katamari_Entity_Kind kind) {
 
 internal void
 spawn_squirrel(Katamari_State *state, u32 count) {
-    
-    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2i dim = state->memory->window_dimensions;
+    Vector2 center = make_vector2(dim.width * .5f, dim.height * .5f);
     
     u32 past_squirrel_index = KatamariEntity_Squirrel3 + 1;
     for (u32 i = 0; i < count; ++i) {
@@ -129,8 +129,8 @@ spawn_squirrel(Katamari_State *state, u32 count) {
 
 internal b32
 squirrel_collided(Katamari_State *state, Katamari_Entity *squirrel, u8 wall_number) {
-    
-    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2i dim = state->memory->window_dimensions;
+    Vector2 center = make_vector2(dim.width * .5f, dim.height * .5f);
     
     b32 result = false;
     
@@ -207,7 +207,7 @@ squirrel_handle_collision(Katamari_State *state, Katamari_Entity *player, Katama
         if (ls > lp) {
             state->health--;
             if (state->health < 1) {
-                state->Game_Mode = GameMode_GameOver;
+                state->game_mode = GameMode_GameOver;
                 return;
             }
         } else {
@@ -245,7 +245,8 @@ squirrel_handle_collision(Katamari_State *state, Katamari_Entity *player, Katama
 
 internal void
 init_game(Katamari_State *state) {
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->health = 3;
     
     Katamari_Entity player = make_entity(KatamariEntity_Player);
@@ -292,6 +293,7 @@ free_textures(Katamari_Assets *assets) {
 
 internal void
 update_game(Katamari_State *state, Game_Input *input) {
+    Vector2i dim = state->memory->window_dimensions;
     
     Katamari_Entity *player = find_first_entity(state, KatamariEntity_Player);
     assert(player);
@@ -370,9 +372,9 @@ update_game(Katamari_State *state, Game_Input *input) {
         squirrel_handle_collision(state, player, squirrel);
     }
     
-    if (player->half_size.x > state->dimensions.width &&
-        player->half_size.y > state->dimensions.height) {
-        state->Game_Mode = GameMode_GameOver;
+    if (player->half_size.x > dim.width &&
+        player->half_size.y > dim.height) {
+        state->game_mode = state->memory->game_mode = GameMode_GameOver;
     }
     
     if (state->spawn_t >= state->spawn_t_target) {
@@ -385,8 +387,8 @@ update_game(Katamari_State *state, Game_Input *input) {
 
 internal void
 draw_player(Katamari_State *state, Katamari_Entity *entity) {
-    
-    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2i dim = state->memory->window_dimensions;
+    Vector2 center = make_vector2(dim.width * .5f, dim.height * .5f);
     Vector2 min = make_vector2(center.x + entity->position.x - entity->half_size.x,
                                center.y + entity->position.y - entity->half_size.y);
     Vector2 max = make_vector2(min.x + entity->half_size.x, min.y + entity->half_size.y);
@@ -400,7 +402,8 @@ draw_player(Katamari_State *state, Katamari_Entity *entity) {
 
 internal void
 draw_squirrel(Katamari_State *state, Katamari_Entity *entity) {
-    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2i dim = state->memory->window_dimensions;
+    Vector2 center = make_vector2(dim.width * .5f, dim.height * .5f);
     Vector2 min = make_vector2(center.x + entity->position.x - entity->half_size.x,
                                center.y + entity->position.y - entity->half_size.y);
     Vector2 max = make_vector2(min.x + entity->half_size.x, min.y + entity->half_size.y);
@@ -419,7 +422,8 @@ draw_squirrel(Katamari_State *state, Katamari_Entity *entity) {
 
 internal void
 draw_grass(Katamari_State *state, Katamari_Entity *entity) {
-    Vector2 center = make_vector2(state->dimensions.width * .5f, state->dimensions.height * .5f);
+    Vector2i dim = state->memory->window_dimensions;
+    Vector2 center = make_vector2(dim.width * .5f, dim.height * .5f);
     Vector2 min = make_vector2(center.x + entity->position.x - entity->half_size.x,
                                center.y + entity->position.y - entity->half_size.y);
     Vector2 max = make_vector2(min.x + entity->half_size.x, min.y + entity->half_size.y);
@@ -490,12 +494,12 @@ draw_hud(Katamari_State *state) {
 
 internal void
 draw_game_view(Katamari_State *state) {
+    Vector2i dim = state->memory->window_dimensions;
+    game_frame_begin(dim.width, dim.height);
     
-    game_frame_begin(state->dimensions.width, state->dimensions.height);
-    
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         immediate_begin();
-        immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff14ce00));
+        immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff14ce00));
         immediate_flush();
         
         for (int entity_index = 0; entity_index < array_count(state->entities); ++entity_index) {
@@ -507,7 +511,7 @@ draw_game_view(Katamari_State *state) {
         
         draw_hud(state);
     } else {
-        draw_menu(KATAMARI_DAMACY_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(KATAMARI_DAMACY_TITLE, state->memory);
     }
 }
 
@@ -533,61 +537,22 @@ katamari_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         state = (Katamari_State *) game_alloc(memory, megabytes(12));
+        state->memory = memory;
         
         init_game(state);
     }
-    state->dimensions = memory->window_dimensions;
     
-    //
-    // Update
-    //
-    if (state->Game_Mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
-        } else {
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             update_game(state, input);
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    katamari_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            katamari_game_restart(state);
+        } break;
+        
+        default: break;
     }
     
     //

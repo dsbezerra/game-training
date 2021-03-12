@@ -56,8 +56,9 @@ struct Slide_Puzzle_Swap {
 };
 
 struct Slide_Puzzle_State {
-    Game_Mode Game_Mode;
-
+    Game_Mode game_mode;
+    Game_Memory *memory;
+    
     Slide_Puzzle_Mode mode;
     Slide_Puzzle_Assets assets;
     Slide_Puzzle_Board board;
@@ -69,9 +70,6 @@ struct Slide_Puzzle_State {
     real32 sliding_t;
     real32 sliding_target;
     real32 sliding_t_rate;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal void generate_puzzle(Slide_Puzzle_State *state);

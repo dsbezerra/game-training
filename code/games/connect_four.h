@@ -13,11 +13,9 @@ Variant: Different board sizes. Walls inside the board that appear when the spac
 
 struct Connect_Four_State {
     Game_Mode game_mode;
+    Game_Memory *memory;
     
     Vector2i dimensions;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal void init_game(Connect_Four_State *state);

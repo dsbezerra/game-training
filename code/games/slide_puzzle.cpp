@@ -65,13 +65,10 @@ init_puzzle(Slide_Puzzle_State *state, b32 animated) {
 
 internal void
 update_generating(Slide_Puzzle_State *state) {
-    
-    Slide_Puzzle_Gen *generation = &state->generation;
-    
+    real32 speed = 26.f;
     s8 len = SLIDE_PUZZLE_BOARD_COUNT*SLIDE_PUZZLE_BOARD_COUNT;
     
-    real32 speed = 26.f;
-    
+    Slide_Puzzle_Gen *generation = &state->generation;
     Slide_Puzzle_Tile *tiles = (Slide_Puzzle_Tile *) state->board.tiles;
     if (generation->fill_t >= generation->fill_target) {
         generation->fill_t -= generation->fill_target;
@@ -93,7 +90,6 @@ update_generating(Slide_Puzzle_State *state) {
     } else if (generation->tile_index < len) {
         generation->fill_t += core.time_info.dt * speed;
     } else {
-        
         if (generation->shuffle_t >= generation->shuffle_target) {
             generation->shuffle_t -= generation->shuffle_target;
             //
@@ -118,14 +114,11 @@ update_generating(Slide_Puzzle_State *state) {
             state->mode = SlidePuzzleMode_Ready;
         }
     }
-    
 }
 
 internal void
 draw_board(Slide_Puzzle_State *state) {
-    
     Vector2i dim = state->dimensions;
-    
     real32 pad;
     if (dim.width > dim.height) {
         pad = dim.height * .001f;
@@ -261,10 +254,10 @@ draw_board(Slide_Puzzle_State *state) {
 internal void
 draw_game_view(Slide_Puzzle_State *state) {
     game_frame_begin(state->dimensions.width, state->dimensions.height);
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         draw_board(state);
     } else {
-        draw_menu(SLIDE_PUZZLE_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(SLIDE_PUZZLE_TITLE, state->memory);
     }
 }
 
@@ -278,7 +271,8 @@ slide_puzzle_menu_art(App_State *state, Vector2 min, Vector2 max) {
 
 internal void
 slide_puzzle_game_restart(Slide_Puzzle_State *state) {
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     
     //
     // Re-init
@@ -305,13 +299,14 @@ slide_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         state = (Slide_Puzzle_State *) game_alloc(memory, megabytes(12));
+        state->memory = memory;
         
         Slide_Puzzle_Assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
         assets.generating_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 42.f);
         assets.tile_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 32.f);
         
-        state->Game_Mode = GameMode_Playing;
+        state->game_mode = GameMode_Playing;
         state->mode = SlidePuzzleMode_Generating;
         state->assets = assets;
         
@@ -326,121 +321,84 @@ slide_puzzle_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
     state->dimensions = memory->window_dimensions;
     
-    //
-    // Update
-    //
-    
-    if (state->Game_Mode == GameMode_Playing) {
-        if (state->mode == SlidePuzzleMode_Generating) {
-            update_generating(state);
-        } else if (state->mode == SlidePuzzleMode_Ready) {
-            if (pressed(Button_Escape)) {
-                state->Game_Mode = GameMode_Menu;
-            } else {
-                if (state->sliding_t == 0.f) {
-                    //
-                    // Check for winning condition
-                    //
-                    b32 solved = true;
-                    for (s8 solution_index = 0; solution_index < SLIDE_PUZZLE_BOARD_COUNT * SLIDE_PUZZLE_BOARD_COUNT; ++solution_index) {
-                        s8 board_x = solution_index % SLIDE_PUZZLE_BOARD_COUNT;
-                        s8 board_y = solution_index / SLIDE_PUZZLE_BOARD_COUNT;
-                        if (state->board.tiles[board_x][board_y].id != state->board.solution[solution_index]) {
-                            solved = false;
-                            break;
-                        }
-                    }
-                    
-                    if (!solved) {
-                        s8 old_board_x = state->board.empty_index % SLIDE_PUZZLE_BOARD_COUNT;
-                        s8 old_board_y = state->board.empty_index / SLIDE_PUZZLE_BOARD_COUNT;
-                        
-                        s8 new_board_x = old_board_x;
-                        s8 new_board_y = old_board_y;
-                        
-                        if (pressed(Button_Up))
-                            ++new_board_y;
-                        if (pressed(Button_Down))
-                            --new_board_y;
-                        
-                        if (pressed(Button_Right))
-                            --new_board_x;
-                        if (pressed(Button_Left))
-                            ++new_board_x;
-                        
-                        b32 valid = new_board_x >= 0 && new_board_x < SLIDE_PUZZLE_BOARD_COUNT && new_board_y >= 0 && new_board_y < SLIDE_PUZZLE_BOARD_COUNT;
-                        b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
-                        // Check if new_empty_index is valid
-                        if (valid && changed) {
-                            Slide_Puzzle_Tile old_tile = state->board.tiles[old_board_x][old_board_y];
-                            Slide_Puzzle_Tile new_tile = state->board.tiles[new_board_x][new_board_y];
-                            
-                            state->board.tiles[old_board_x][old_board_y] = new_tile;
-                            state->board.tiles[new_board_x][new_board_y] = old_tile;
-                            
-                            s8 new_empty_index = new_board_x + new_board_y * SLIDE_PUZZLE_BOARD_COUNT;
-                            
-                            state->swap.from_index = state->board.empty_index;
-                            state->swap.to_index = new_empty_index;
-                            state->board.empty_index = new_empty_index;
-                            state->sliding_t += core.time_info.dt;
-                        }
-                    } else {
-                        state->Game_Mode = GameMode_Menu;
-                    }
-                    
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
+            if (state->mode == SlidePuzzleMode_Generating) {
+                update_generating(state);
+            } else if (state->mode == SlidePuzzleMode_Ready) {
+                if (pressed(Button_Escape)) {
+                    state->game_mode = GameMode_Menu;
                 } else {
-                    state->sliding_t += core.time_info.dt * state->sliding_t_rate;
-                    if (state->sliding_t >= state->sliding_target) {
-                        state->sliding_t = .0f;
-                        state->swap.to_index = -1;
-                        state->swap.from_index = -1;
+                    if (state->sliding_t == 0.f) {
+                        //
+                        // Check for winning condition
+                        //
+                        b32 solved = true;
+                        for (s8 solution_index = 0; solution_index < SLIDE_PUZZLE_BOARD_COUNT * SLIDE_PUZZLE_BOARD_COUNT; ++solution_index) {
+                            s8 board_x = solution_index % SLIDE_PUZZLE_BOARD_COUNT;
+                            s8 board_y = solution_index / SLIDE_PUZZLE_BOARD_COUNT;
+                            if (state->board.tiles[board_x][board_y].id != state->board.solution[solution_index]) {
+                                solved = false;
+                                break;
+                            }
+                        }
+                        
+                        if (!solved) {
+                            s8 old_board_x = state->board.empty_index % SLIDE_PUZZLE_BOARD_COUNT;
+                            s8 old_board_y = state->board.empty_index / SLIDE_PUZZLE_BOARD_COUNT;
+                            
+                            s8 new_board_x = old_board_x;
+                            s8 new_board_y = old_board_y;
+                            
+                            if (pressed(Button_Up))
+                                ++new_board_y;
+                            if (pressed(Button_Down))
+                                --new_board_y;
+                            
+                            if (pressed(Button_Right))
+                                --new_board_x;
+                            if (pressed(Button_Left))
+                                ++new_board_x;
+                            
+                            b32 valid = new_board_x >= 0 && new_board_x < SLIDE_PUZZLE_BOARD_COUNT && new_board_y >= 0 && new_board_y < SLIDE_PUZZLE_BOARD_COUNT;
+                            b32 changed = old_board_x != new_board_x || old_board_y != new_board_y;
+                            // Check if new_empty_index is valid
+                            if (valid && changed) {
+                                Slide_Puzzle_Tile old_tile = state->board.tiles[old_board_x][old_board_y];
+                                Slide_Puzzle_Tile new_tile = state->board.tiles[new_board_x][new_board_y];
+                                
+                                state->board.tiles[old_board_x][old_board_y] = new_tile;
+                                state->board.tiles[new_board_x][new_board_y] = old_tile;
+                                
+                                s8 new_empty_index = new_board_x + new_board_y * SLIDE_PUZZLE_BOARD_COUNT;
+                                
+                                state->swap.from_index = state->board.empty_index;
+                                state->swap.to_index = new_empty_index;
+                                state->board.empty_index = new_empty_index;
+                                state->sliding_t += core.time_info.dt;
+                            }
+                        } else {
+                            state->game_mode = GameMode_Menu;
+                        }
+                        
+                    } else {
+                        state->sliding_t += core.time_info.dt * state->sliding_t_rate;
+                        if (state->sliding_t >= state->sliding_target) {
+                            state->sliding_t = .0f;
+                            state->swap.to_index = -1;
+                            state->swap.from_index = -1;
+                        }
                     }
                 }
             }
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
+        } break;
         
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    slide_puzzle_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            slide_puzzle_game_restart(state);
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        default: break;
     }
     
     //

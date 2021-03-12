@@ -1,10 +1,9 @@
 
 internal void
 dodger_game_restart(Dodger_State *state) {
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->score = 0;
-    state->quit_was_selected = false;
-    state->menu_selected_item = 0;
     
     //
     // Re-init
@@ -135,7 +134,7 @@ draw_game_view(Dodger_State *state) {
     
     game_frame_begin(state->world.dimensions.width, state->world.dimensions.height);
     
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         immediate_begin();
         draw_player(&state->player);
         for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
@@ -154,7 +153,7 @@ draw_game_view(Dodger_State *state) {
         
         draw_text(dim.width * 0.02f, dim.height * 0.05f, (u8 *) buffer, &state->assets.primary_font, make_color(0xffffffff));
     } else {
-        draw_menu(DODGER_TITLE, state->world.dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(DODGER_TITLE, state->memory);
     }
 }
 
@@ -215,6 +214,7 @@ dodger_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         // Init Dodger state
         state = (Dodger_State *) game_alloc(memory, megabytes(64));
+        state->memory = memory;
         
         Dodger_Assets assets = {};
         assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
@@ -222,7 +222,8 @@ dodger_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Dodger_World world = {};
         world.dimensions = memory->window_dimensions;
         
-        state->Game_Mode = GameMode_Playing;
+        state->memory = memory;
+        state->game_mode = GameMode_Playing;
         state->assets = assets;
         state->world = world;
         state->score = 0;
@@ -257,62 +258,25 @@ dodger_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     //
     // Update
     //
-    if (state->Game_Mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
-        } else {
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             update_player(state, input);
             for (u32 bad_guy_index = 0; bad_guy_index < array_count(state->bad_guys); ++bad_guy_index) {
                 Dodger_Bad_Guy *bad_guy = &state->bad_guys[bad_guy_index];
                 update_bad_guy(state, bad_guy);
                 if (check_for_collision(&state->player, bad_guy)) {
-                    state->Game_Mode = GameMode_GameOver;
+                    state->game_mode = GameMode_GameOver;
                     break;
                 }
             }
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
+        } break;
         
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    dodger_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            dodger_game_restart(state);
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        default: break;
     }
     
     //

@@ -38,6 +38,9 @@ struct Nibbles_Entity {
 };
 
 struct Nibbles_State {
+    Game_Mode game_mode;
+    Game_Memory *memory;
+    
     Vector2i dimensions;
     
     u8 snake_length;
@@ -51,10 +54,6 @@ struct Nibbles_State {
     real32 step_t;
     real32 step_t_target;
     real32 step_dt;
-    
-    Game_Mode Game_Mode;
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal Nibbles_Entity make_entity(Nibbles_Entity_Kind kind, u8 x, u8 y);

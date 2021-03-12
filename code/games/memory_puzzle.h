@@ -44,7 +44,8 @@ struct Memory_Puzzle_Level {
 };
 
 struct Memory_Puzzle_State {
-    Game_Mode Game_Mode;
+    Game_Mode game_mode;
+    Game_Memory *memory;
     
     Memory_Puzzle_Assets assets;
     Memory_Puzzle_World world;
@@ -58,9 +59,6 @@ struct Memory_Puzzle_State {
     real32 checking_cards_target;
     
     u64 flip_count;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal Memory_Puzzle_World init_world();

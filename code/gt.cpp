@@ -34,7 +34,9 @@ game_frame_begin(int width, int height) {
 }
 
 internal void
-draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item, b32 quit_was_selected) {
+draw_menu(char *game_title, Game_Memory *memory) {
+    
+    Vector2i dim = memory->window_dimensions;
     
     use_framebuffer(&immediate->menu_framebuffer);
     glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -46,7 +48,7 @@ draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item,
     Vector4 default_color  = make_color(0xffaaaaaa);
     Vector4 selected_color = make_color(0xffffff00);
     
-    char *menu_title = mode == GameMode_GameOver ? "Game Over" : game_title;
+    char *menu_title = memory->game_mode == GameMode_GameOver ? "Game Over" : game_title;
     real32 menu_title_width = get_text_width(&menu_title_font, menu_title);
     
     real32 y = dim.height * 0.2f;
@@ -60,7 +62,7 @@ draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item,
     
     draw_text((dim.width - menu_title_width) / 2.f, y, (u8 *) menu_title, &menu_title_font, white);
     
-    char* menu_items[] = {"Retry", quit_was_selected ? "Quit? Are you sure?" : "Quit"};
+    char* menu_items[] = {"Retry", memory->quit_was_selected ? "Quit? Are you sure?" : "Quit"};
     
     y += dim.height * 0.25f;
     for (int menu_item = 0; menu_item < array_count(menu_items); ++menu_item) {
@@ -68,7 +70,7 @@ draw_menu(char *game_title, Vector2i dim, Game_Mode mode, s8 menu_selected_item,
         char *text = menu_items[menu_item];
         real32 width = get_text_width(&menu_item_font, text);
         
-        if (menu_selected_item == menu_item) {
+        if (memory->menu_selected_item == menu_item) {
             Vector4 non_white = make_color(0xffffde00);
             
             real32 now = cosf(core.time_info.current_time);
@@ -259,6 +261,7 @@ game_free(Game_Memory *memory, game current_game) {
     memory->permanent_storage_size = 0;
     memory->initialized = false;
     memory->asked_to_quit = false;
+    memory->quit_was_selected = false;
 }
 
 internal void
@@ -551,6 +554,62 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         draw_framebuffer(state->window_dimensions);
         draw_debug_draw_mixer(state->window_dimensions);
     }
+}
+
+internal Simulate_Game
+game_simulate(Game_Memory *memory, Game_Input *input, Game_Mode &game_mode) {
+    Simulate_Game result = {};
+    
+    if (game_mode == GameMode_Playing) {
+        if (pressed(Button_Escape)) {
+            game_mode = GameMode_Menu;
+        } else {
+            result.operation = SimulateGameOp_Update;
+        }
+    } else if (game_mode == GameMode_Menu ||
+               game_mode == GameMode_GameOver) {
+        if (pressed(Button_Down)) {
+            advance_menu_choice(&memory->menu_selected_item, 1);
+        }
+        if (pressed(Button_Up)) {
+            advance_menu_choice(&memory->menu_selected_item, -1);
+        }
+        if (pressed(Button_Escape)) {
+            if (game_mode == GameMode_GameOver) {
+                memory->asked_to_quit = true;
+            } else {
+                game_mode = GameMode_Playing;
+            }
+        }
+        if (pressed(Button_Enter)) {
+            switch (memory->menu_selected_item) {
+                case 0: {
+                    result.operation = SimulateGameOp_Restart;
+                } break;
+                
+                case 1: {
+                    if (memory->quit_was_selected) {
+                        memory->asked_to_quit = true;
+                    } else {
+                        memory->quit_was_selected = true;
+                    }
+                } break;
+                
+                default: {
+                    assert(!"Should not happen!");
+                } break;
+            }
+        }
+        if (memory->menu_selected_item != 1) {
+            memory->quit_was_selected = false;
+        } else if (memory->quit_was_selected) {
+            if (pressed(Button_Escape)) {
+                memory->quit_was_selected = false;
+            }
+        }
+    }
+    
+    return result;
 }
 
 internal void

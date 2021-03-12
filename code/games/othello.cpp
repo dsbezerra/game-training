@@ -1,7 +1,7 @@
 internal void
 init_game(Othello_State *state) {
-    
     state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->board.state = state;
     
     set_play_state(state, OthelloPlayState_BlackTurn);
@@ -232,18 +232,18 @@ draw_board(Othello_State *state) {
 
 internal void
 draw_game_view(Othello_State *state) {
-    
-    game_frame_begin(state->dimensions.width, state->dimensions.height);
+    Vector2i dim = state->dimensions;
+    game_frame_begin(dim.width, dim.height);
     
     if (state->game_mode == GameMode_Playing) {
         immediate_begin();
-        immediate_quad(0.f, 0.f, (real32) state->dimensions.width, (real32) state->dimensions.height, make_color(0xff2f3242));
+        immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
         immediate_flush();
         
         draw_board(state);
         draw_hud(state);
     } else {
-        draw_menu(OTHELLO_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(OTHELLO_TITLE, state->memory);
     }
 }
 
@@ -883,6 +883,7 @@ othello_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Memory_Index total_available_size = total_memory_size - sizeof(Othello_State);
         
         state = (Othello_State *) game_alloc(memory, total_memory_size);
+        state->memory = memory;
         
         Othello_Assets assets = {};
         assets.board_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 32.f);
@@ -896,61 +897,23 @@ othello_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     
     state->dimensions = memory->window_dimensions;
     
-    //
-    // Update
-    //
-    if (state->game_mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
-        } else {
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             update_game(state, input);
-        }
-    } else if (state->game_mode == GameMode_Menu ||
-               state->game_mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->game_mode = GameMode_Playing;
-            }
-        }
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    othello_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        } break;
+        
+        case SimulateGameOp_Restart: {
+            othello_game_restart(state);
+        } break;
+        
+        default: break;
     }
     
     //
     // Draw
     //
+    
     draw_game_view(state);
 }
 

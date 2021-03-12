@@ -29,7 +29,8 @@ enum Simon_Button_Color {
 };
 
 struct Simon_State {
-    Game_Mode Game_Mode;
+    Game_Mode game_mode;
+    Game_Memory *memory;
     
     Simon_Mode mode;
     Simon_Button_Color pattern[6];
@@ -37,7 +38,7 @@ struct Simon_State {
     
     Vector2i dimensions;
     Vector2i mouse_position;
-
+    
     u8 displaying_index;
     u8 displaying_count;
     u8 player_index;
@@ -45,9 +46,6 @@ struct Simon_State {
     real32 flashing_t;
     real32 flashing_t_target;
     real32 flashing_dt;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal Simon_Button_Color random_button();

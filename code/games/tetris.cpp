@@ -152,7 +152,8 @@ spawn_piece(Tetris_State *state, b32 make_current) {
 
 internal void
 init_game(Tetris_State *state) {
-    state->Game_Mode = GameMode_Playing;
+    state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->move_t = .0f;
     state->move_t_target = 1.f;
     state->move_dt = 2.f;
@@ -480,7 +481,7 @@ move_piece(Tetris_State *state, Tetris_Move_Direction direction = TetrisMoveDire
     if (direction == TetrisMoveDirection_Down && current_will_land(state)) {
         b32 game_over = place_piece(state);
         if (game_over) {
-            state->Game_Mode = GameMode_GameOver;
+            state->game_mode = GameMode_GameOver;
         }
         return;
     }
@@ -635,14 +636,14 @@ draw_hud(Tetris_State *state) {
 internal void
 draw_game_view(Tetris_State *state) {
     game_frame_begin(state->dimensions.width, state->dimensions.height);
-    if (state->Game_Mode == GameMode_Playing) {
+    if (state->game_mode == GameMode_Playing) {
         immediate_begin();
         draw_current_piece(state);
         draw_grid(state);
         immediate_flush();
         draw_hud(state);
     } else {
-        draw_menu(TETRIS_TITLE, state->dimensions, state->Game_Mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(TETRIS_TITLE, state->memory);
     }
 }
 
@@ -670,18 +671,15 @@ tetris_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state = (Tetris_State *) game_alloc(memory, megabytes(12));
         state->assets.primary_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 12.f);
         state->assets.hud_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 24.f);
+        state->memory = memory;
         
         init_game(state);
     }
     state->dimensions = memory->window_dimensions;
     
-    //
-    // Update
-    //
-    if (state->Game_Mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->Game_Mode = GameMode_Menu;
-        } else {
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             if (pressed(Button_Left)) {
                 move_piece(state, TetrisMoveDirection_Left);
             }
@@ -705,49 +703,13 @@ tetris_game_update_and_render(Game_Memory *memory, Game_Input *input) {
             } else {
                 state->move_t += core.time_info.dt * state->move_dt;
             }
-        }
-    } else if (state->Game_Mode == GameMode_Menu || state->Game_Mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->Game_Mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->Game_Mode = GameMode_Playing;
-            }
-        }
+        } break;
         
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    tetris_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
+        case SimulateGameOp_Restart: {
+            tetris_game_restart(state);
+        } break;
         
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        default: break;
     }
     
     //

@@ -60,7 +60,8 @@ struct Tetris_Assets {
 };
 
 struct Tetris_State {
-    Game_Mode Game_Mode;
+    Game_Mode game_mode;
+    Game_Memory *memory;
     
     Tetris_Assets assets;
     Tetris_Piece current_piece;
@@ -73,7 +74,7 @@ struct Tetris_State {
     real32 move_t;
     real32 move_t_target;
     real32 move_dt;
-
+    
     Vector2i dimensions;
     s8 menu_selected_item;
     b32 quit_was_selected;

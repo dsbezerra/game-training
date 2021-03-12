@@ -62,9 +62,8 @@ struct Katamari_Assets {
 };
 
 struct Katamari_State {
-    Vector2i dimensions;
-    
-    Game_Mode Game_Mode;
+    Game_Mode game_mode;
+    Game_Memory *memory;
     
     Katamari_Assets assets;
     
@@ -75,9 +74,6 @@ struct Katamari_State {
     real32 spawn_t_target;
     
     u8 health;
-    
-    s8 menu_selected_item;
-    b32 quit_was_selected;
 };
 
 internal Katamari_Entity make_entity(Katamari_Entity_Kind kind);

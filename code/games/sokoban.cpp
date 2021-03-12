@@ -84,6 +84,7 @@ init_game(Sokoban_State *state) {
     set_volume(state->requiem, .1f);
     
     state->game_mode = GameMode_Playing;
+    state->memory->game_mode = GameMode_Playing;
     state->lock_pitch = -89.f;
     state->lock_yaw = -90.f;
     state->current_level = 0;
@@ -1203,8 +1204,9 @@ draw_game_view(Sokoban_State *state) {
 #endif
         draw_hud(state);
     } else {
-        game_frame_begin(state->dimensions.width, state->dimensions.height);
-        draw_menu(SOKOBAN_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        Vector2i dim = state->dimensions;
+        game_frame_begin(dim.width, dim.height);
+        draw_menu(SOKOBAN_TITLE, state->memory);
     }
 }
 
@@ -1239,6 +1241,7 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Memory_Index total_available_size = total_memory_size - sizeof(Sokoban_State);
         
         state = (Sokoban_State *) game_alloc(memory, total_memory_size);
+        state->memory = memory;
         
         init_arena(&state->world_arena, total_available_size - undo_redo_size, (u8 *) memory->permanent_storage + sizeof(Sokoban_State));
         
@@ -1281,56 +1284,17 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         }
     }
     
-    //
-    // Update
-    //
-    if (state->game_mode == GameMode_Playing) {
-        if (pressed(Button_Escape)) {
-            state->game_mode = GameMode_Menu;
-        } else {
+    Simulate_Game sim = game_simulate(memory, input, state->game_mode);
+    switch (sim.operation) {
+        case SimulateGameOp_Update: {
             update_game(state, input);
-        }
-    } else if (state->game_mode == GameMode_Menu ||
-               state->game_mode == GameMode_GameOver) {
-        if (pressed(Button_Down)) {
-            advance_menu_choice(&state->menu_selected_item, 1);
-        }
-        if (pressed(Button_Up)) {
-            advance_menu_choice(&state->menu_selected_item, -1);
-        }
-        if (pressed(Button_Escape)) {
-            if (state->game_mode == GameMode_GameOver) {
-                memory->asked_to_quit = true;
-            } else {
-                state->game_mode = GameMode_Playing;
-            }
-        }
-        if (pressed(Button_Enter)) {
-            switch (state->menu_selected_item) {
-                case 0: {
-                    sokoban_game_restart(state);
-                } break;
-                
-                case 1: {
-                    if (state->quit_was_selected) {
-                        memory->asked_to_quit = true;
-                    } else {
-                        state->quit_was_selected = true;
-                    }
-                } break;
-                
-                default: {
-                    assert(!"Should not happen!");
-                } break;
-            }
-        }
-        if (state->menu_selected_item != 1) {
-            state->quit_was_selected = false;
-        } else if (state->quit_was_selected) {
-            if (pressed(Button_Escape)) {
-                state->quit_was_selected = false;
-            }
-        }
+        } break;
+        
+        case SimulateGameOp_Restart: {
+            sokoban_game_restart(state);
+        } break;
+        
+        default: break;
     }
     
     //
