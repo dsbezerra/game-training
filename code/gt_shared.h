@@ -414,3 +414,24 @@ s32_from_c_string(char *at) {
     
     return result * sign;
 }
+
+internal real32
+center_hv(real32 width, real32 height, real32 size) {
+    real32 dimension = width == 0 ? height : width;
+    if (dimension <= 0) return 0;
+    real32 result = dimension * .5f;
+    if (size > 0) {
+        result -= size * .5f;
+    }
+    return result;
+}
+
+internal real32
+center_horizontally(real32 width, real32 size) {
+    return center_hv(width, 0, size);
+}
+
+internal real32
+center_vertically(real32 height, real32 size) {
+    return center_hv(0, height, size);
+}
