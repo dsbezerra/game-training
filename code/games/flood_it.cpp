@@ -41,7 +41,8 @@ update_colors(Flood_It_State *state) {
     real32 center_x = dim.width * .5f;
     
     real32 colors_width = tile_size * FloodItTileKind_Count;
-    real32 sx = center_x - colors_width * .5f;
+    real32 sx = center_horizontally((real32) dim.width, colors_width);
+    
     real32 pad = 5.f;
     
     real32 margin = tile_size * .2f;
