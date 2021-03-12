@@ -233,6 +233,7 @@ void (*game_table[])(Game_Memory *memory, Game_Input *input) = {
     sokoban_game_update_and_render,
     othello_game_update_and_render,
     flood_it_game_update_and_render,
+    connect_four_game_update_and_render,
 };
 
 internal void *
