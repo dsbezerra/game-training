@@ -246,10 +246,11 @@ draw_grid(Flood_It_State *state) {
 internal void
 draw_game_view(Flood_It_State *state) {
     
-    game_frame_begin(state->dimensions.width, state->dimensions.height);
+    Vector2i dim = state->dimensions;
+    
+    game_frame_begin(dim.width, dim.height);
     
     if (state->game_mode == GameMode_Playing) {
-        Vector2i dim = state->dimensions;
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
         immediate_flush();
@@ -258,7 +259,7 @@ draw_game_view(Flood_It_State *state) {
         draw_colors(state);
         draw_hud(state);
     } else {
-        draw_menu(FLOOD_IT_TITLE, state->dimensions, state->game_mode, state->menu_selected_item, state->quit_was_selected);
+        draw_menu(FLOOD_IT_TITLE, dim, state->game_mode, state->menu_selected_item, state->quit_was_selected);
     }
 }
 
