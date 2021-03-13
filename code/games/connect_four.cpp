@@ -18,8 +18,14 @@ update_game(Connect_Four_State *state, Game_Input *input) {
         }
     }
     
-    if (check_win(&state->board, ConnectFourTileKind_Red)) {
+    if (check_win(&state->board, ConnectFourTileKind_Red) || check_win(&state->board, ConnectFourTileKind_Black)) {
         clear_board(&state->board);
+    }
+    
+    if (pressed(Button_A)) {
+        state->player = ConnectFourTileKind_Red;
+    } else if (pressed(Button_D)) {
+        state->player = ConnectFourTileKind_Black;
     }
 }
 
@@ -136,15 +142,15 @@ get_tile_color(Connect_Four_Tile_Kind kind) {
 
 internal b32
 has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y) {
-    assert(start_x >= 0 && start_x < CONNECT_FOUR_X_COUNT);
-    assert(start_y >= 0 && start_y < CONNECT_FOUR_Y_COUNT);
-    
+    if (start_x < 0 && start_x >= CONNECT_FOUR_X_COUNT) return false;
+    if (start_y < 0 && start_y >= CONNECT_FOUR_Y_COUNT) return false;
     if (advance_x == 0 && advance_y == 0) return false;
     
     u32 x = start_x;
     u32 y = start_y;
     
     Connect_Four_Tile *start_tile = &board->tiles[x][y];
+    if (start_tile->kind == ConnectFourTileKind_None) return false;
     
     u32 connected = 1;
     while (1) {
@@ -167,7 +173,26 @@ has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 s
 
 internal b32
 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
-    return has_four_connected(board, ConnectFourTileKind_Red, 0, 0, 1, 0);
+    b32 result = false;
+    
+    for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
+        for (u32 y = 0; y < CONNECT_FOUR_X_COUNT; ++y) {
+            if (has_four_connected(board, kind, x, y, 1, 0)) {
+                result = true;
+                break;
+            }
+            if (has_four_connected(board, kind, x, y, 0, 1)) {
+                result = true;
+                break;
+            }
+            if (has_four_connected(board, kind, x, y, 1, 1)) {
+                result = true;
+                break;
+            }
+        }
+    }
+    
+    return result;
 }
 
 internal void
