@@ -233,6 +233,8 @@ internal GLint load_menu_arts(char *filename);
 
 internal real32 get_time();
 
+internal b32 is_mouse_over(Vector2i window_dimensions);
+
 #define pressed(b) (input->buttons[b].is_down && input->buttons[b].changed)
 #define released(b) (!input->buttons[b].is_down && input->buttons[b].changed)
 #define is_down(b) (input->buttons[b].is_down)

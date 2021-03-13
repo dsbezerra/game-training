@@ -135,6 +135,24 @@ get_time() {
     return platform_seconds_elapsed(core.time_info.start_counter);
 }
 
+internal b32
+is_mouse_over(Vector2 position, real32 width, real32 height) {
+    b32 result = false;
+    
+    Vector2i mouse_position;
+    platform_get_cursor_position(&mouse_position);
+    
+    real32 max_x = position.x + width;
+    real32 max_y = position.y + height;
+    
+    if (mouse_position.x < position.x || mouse_position.x > max_x) return result;
+    if (mouse_position.y < position.y || mouse_position.y > max_y) return result;
+    
+    result = true;
+    
+    return result;
+}
+
 internal void
 free_menu_arts(App_State *state) {
     const GLuint arts[] = {

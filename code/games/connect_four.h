@@ -23,11 +23,24 @@ enum Connect_Four_Tile_Kind {
 
 struct Connect_Four_Tile {
     Connect_Four_Tile_Kind kind;
-    u32 x;
-    u32 y;
+    s32 board_x;
+    s32 board_y;
+    
+    real32 radius;
+    
+    Vector2 min;
+    Vector2 max;
+    Vector2 center;
+    
+    Vector2 size;
+    
+    Vector4 color;
 };
 
+struct Connect_Four_State;
+
 struct Connect_Four_Board {
+    Connect_Four_State *state;
     Connect_Four_Tile tiles[CONNECT_FOUR_X_COUNT][CONNECT_FOUR_Y_COUNT];
 };
 
@@ -35,13 +48,24 @@ struct Connect_Four_State {
     Game_Mode game_mode;
     Game_Memory *memory;
     
+    Connect_Four_Tile_Kind player;
     Connect_Four_Board board;
+    
+    Connect_Four_Tile hovering_tile;
 };
 
 internal void init_game(Connect_Four_State *state);
 internal void update_game(Connect_Four_State *state, Game_Input *input);
+internal void update_hovering_tile(Connect_Four_State *state);
 
 internal void clear_board(Connect_Four_Board *board);
+internal void set_tile(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 tile_x, u32 tile_y);
+internal void set_tile(Connect_Four_Tile *tile, Connect_Four_Tile_Kind kind);
+
+internal real32 get_tile_size(Vector2i dimensions);
+internal Vector4 get_tile_color(Connect_Four_Tile_Kind kind);
+internal b32 has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y);
+internal b32 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind);
 
 internal void draw_game_view(Connect_Four_State *state);
 internal void draw_board(Connect_Four_State *state);
