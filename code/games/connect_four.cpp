@@ -12,14 +12,7 @@ internal void
 update_game(Connect_Four_State *state, Game_Input *input) {
     update_hovering_tile(state);
     if (pressed(Button_Mouse1)) {
-        Connect_Four_Tile tile = state->hovering_tile;
-        if (tile.kind != ConnectFourTileKind_None) {
-            set_tile(&state->board, tile.kind, tile.board_x, tile.board_y);
-        }
-    }
-    
-    if (check_win(&state->board, ConnectFourTileKind_Red) || check_win(&state->board, ConnectFourTileKind_Black)) {
-        clear_board(&state->board);
+        make_move(state);
     }
     
     if (pressed(Button_A)) {
@@ -108,6 +101,35 @@ internal void
 set_tile(Connect_Four_Tile *tile, Connect_Four_Tile_Kind kind) {
     tile->kind = kind;
     tile->color = get_tile_color(kind);
+}
+
+internal void
+switch_turns(Connect_Four_State *state) {
+    if (state->play_state == ConnectFourPlayState_RedTurn) {
+        state->play_state = ConnectFourPlayState_BlackTurn;
+        state->player = ConnectFourTileKind_Black;
+    } else if (state->play_state == ConnectFourPlayState_BlackTurn) {
+        state->play_state = ConnectFourPlayState_RedTurn;
+        state->player = ConnectFourTileKind_Red;
+    }
+}
+
+internal void
+make_move(Connect_Four_State *state) {
+    Connect_Four_Tile tile = state->hovering_tile;
+    if (tile.kind != ConnectFourTileKind_None) {
+        if (state->board.tiles[tile.board_x][tile.board_y].kind != ConnectFourTileKind_None) 
+            return;
+        
+        set_tile(&state->board, tile.kind, tile.board_x, tile.board_y);
+        if (check_win(&state->board, state->player)) {
+            // TODO(diego): Finish game.
+            clear_board(&state->board);
+            return;
+        }
+        
+        switch_turns(state);
+    }
 }
 
 internal real32
@@ -206,6 +228,7 @@ draw_game_view(Connect_Four_State *state) {
         immediate_flush();
         
         draw_board(state);
+        draw_hud(state);
     } else {
         draw_menu(CONNECT_FOUR_TITLE, state->memory);
     }
@@ -271,7 +294,23 @@ draw_board(Connect_Four_State *state) {
 
 internal void
 draw_hud(Connect_Four_State *state) {
-    // TODO(diego): Implement.
+    
+    Vector2i dim = state->memory->window_dimensions;
+    
+    immediate_begin();
+    
+    // Draw player
+    {
+        Vector4 color = get_tile_color(state->player);
+        Vector2 center = make_vector2(dim.width * 0.10f, dim.height * 0.9f);
+        
+        real32 tile_size = get_tile_size(dim);
+        real32 radius = tile_size * .44f;
+        
+        immediate_circle_filled(center, radius, color);
+    }
+    
+    immediate_flush();
 }
 
 internal void

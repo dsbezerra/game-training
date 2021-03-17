@@ -21,6 +21,12 @@ enum Connect_Four_Tile_Kind {
     ConnectFourTileKind_Count,
 };
 
+enum Connect_Four_Play_State {
+    ConnectFourPlayState_RedTurn,
+    ConnectFourPlayState_BlackTurn,
+    ConnectFourPlayState_Count,
+};
+
 struct Connect_Four_Tile {
     Connect_Four_Tile_Kind kind;
     s32 board_x;
@@ -48,6 +54,8 @@ struct Connect_Four_State {
     Game_Mode game_mode;
     Game_Memory *memory;
     
+    Connect_Four_Play_State play_state;
+    
     Connect_Four_Tile_Kind player;
     Connect_Four_Board board;
     
@@ -61,6 +69,8 @@ internal void update_hovering_tile(Connect_Four_State *state);
 internal void clear_board(Connect_Four_Board *board);
 internal void set_tile(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 tile_x, u32 tile_y);
 internal void set_tile(Connect_Four_Tile *tile, Connect_Four_Tile_Kind kind);
+internal void switch_turns(Connect_Four_State *state);
+internal void make_move(Connect_Four_State *state);
 
 internal real32 get_tile_size(Vector2i dimensions);
 internal Vector4 get_tile_color(Connect_Four_Tile_Kind kind);
