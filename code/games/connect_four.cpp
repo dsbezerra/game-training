@@ -199,15 +199,8 @@ check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
     
     for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
         for (u32 y = 0; y < CONNECT_FOUR_X_COUNT; ++y) {
-            if (has_four_connected(board, kind, x, y, 1, 0)) {
-                result = true;
-                break;
-            }
-            if (has_four_connected(board, kind, x, y, 0, 1)) {
-                result = true;
-                break;
-            }
-            if (has_four_connected(board, kind, x, y, 1, 1)) {
+            if (has_four_connected(board, kind, x, y, 1, 0) || has_four_connected(board, kind, x, y, 0, 1) ||
+                has_four_connected(board, kind, x, y, 1, 1)) {
                 result = true;
                 break;
             }
