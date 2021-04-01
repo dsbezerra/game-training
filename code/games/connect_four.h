@@ -27,6 +27,13 @@ enum Connect_Four_Play_State {
     ConnectFourPlayState_Count,
 };
 
+enum Connect_Four_Winner {
+    ConnectFourWinner_None,
+    ConnectFourWinner_Red,
+    ConnectFourWinner_Black,
+    ConnectFourWinner_Tie,
+};
+
 struct Connect_Four_Tile {
     Connect_Four_Tile_Kind kind;
     s32 board_x;
@@ -56,7 +63,10 @@ struct Connect_Four_State {
     
     Connect_Four_Play_State play_state;
     
+    Connect_Four_Tile_Kind ai_player;
     Connect_Four_Tile_Kind player;
+    Connect_Four_Tile_Kind current_player;
+    
     Connect_Four_Board board;
     
     Connect_Four_Tile hovering_tile;
@@ -72,10 +82,14 @@ internal void set_tile(Connect_Four_Tile *tile, Connect_Four_Tile_Kind kind);
 internal void switch_turns(Connect_Four_State *state);
 internal void make_move(Connect_Four_State *state);
 
+internal b32 is_tile_empty(Connect_Four_Board *board, u32 tile_x, u32 tile_y);
 internal real32 get_tile_size(Vector2i dimensions);
 internal Vector4 get_tile_color(Connect_Four_Tile_Kind kind);
 internal b32 has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y);
-internal b32 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind);
+internal Connect_Four_Winner check_win(Connect_Four_Board *board);
+
+internal void best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player);
+internal real32  minimax(Connect_Four_Board *board, u32 depth, b32 maximizing_player);
 
 internal void draw_game_view(Connect_Four_State *state);
 internal void draw_board(Connect_Four_State *state);

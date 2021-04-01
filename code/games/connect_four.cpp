@@ -3,6 +3,8 @@ init_game(Connect_Four_State *state) {
     state->game_mode = GameMode_Playing;
     state->memory->game_mode = GameMode_Playing;
     state->player = ConnectFourTileKind_Red;
+    state->ai_player = ConnectFourTileKind_Black;
+    state->current_player = ConnectFourTileKind_Red;
     
     platform_show_cursor(true);
     clear_board(&state->board);
@@ -11,14 +13,13 @@ init_game(Connect_Four_State *state) {
 internal void
 update_game(Connect_Four_State *state, Game_Input *input) {
     update_hovering_tile(state);
-    if (pressed(Button_Mouse1)) {
-        make_move(state);
-    }
     
-    if (pressed(Button_A)) {
-        state->player = ConnectFourTileKind_Red;
-    } else if (pressed(Button_D)) {
-        state->player = ConnectFourTileKind_Black;
+    if (state->current_player == state->player) {
+        if (pressed(Button_Mouse1)) {
+            make_move(state);
+        }
+    } else if (state->current_player == state->ai_player) {
+        best_move(&state->board, state->ai_player);
     }
 }
 
@@ -107,10 +108,10 @@ internal void
 switch_turns(Connect_Four_State *state) {
     if (state->play_state == ConnectFourPlayState_RedTurn) {
         state->play_state = ConnectFourPlayState_BlackTurn;
-        state->player = ConnectFourTileKind_Black;
+        state->current_player = ConnectFourTileKind_Black;
     } else if (state->play_state == ConnectFourPlayState_BlackTurn) {
         state->play_state = ConnectFourPlayState_RedTurn;
-        state->player = ConnectFourTileKind_Red;
+        state->current_player = ConnectFourTileKind_Red;
     }
 }
 
@@ -122,14 +123,26 @@ make_move(Connect_Four_State *state) {
             return;
         
         set_tile(&state->board, tile.kind, tile.board_x, tile.board_y);
-        if (check_win(&state->board, state->player)) {
-            // TODO(diego): Finish game.
-            clear_board(&state->board);
+        Connect_Four_Winner winner = check_win(&state->board);
+        if (winner != ConnectFourWinner_None) {
+            // TODO(diego): Finish game and show menu.
+            connect_four_game_restart(state);
             return;
         }
         
         switch_turns(state);
     }
+}
+
+internal b32
+is_tile_empty(Connect_Four_Board *board, u32 tile_x, u32 tile_y) {
+    assert(board);
+    
+    Connect_Four_Tile_Kind result;
+    
+    result = board->tiles[tile_x][tile_y].kind;
+    
+    return result == ConnectFourTileKind_None;
 }
 
 internal real32
@@ -193,18 +206,127 @@ has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 s
     return connected == 4;
 }
 
-internal b32
-check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
-    b32 result = false;
+internal Connect_Four_Winner
+check_win(Connect_Four_Board *board) {
     
+    u32 empty = CONNECT_FOUR_X_COUNT * CONNECT_FOUR_Y_COUNT;
+    
+    Connect_Four_Winner result = ConnectFourWinner_None;
     for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
-        for (u32 y = 0; y < CONNECT_FOUR_X_COUNT; ++y) {
-            if (has_four_connected(board, kind, x, y, 1, 0) || has_four_connected(board, kind, x, y, 0, 1) ||
-                has_four_connected(board, kind, x, y, 1, 1)) {
-                result = true;
+        for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
+            if (has_four_connected(board, ConnectFourTileKind_Red, x, y, 1, 0) || has_four_connected(board, ConnectFourTileKind_Red, x, y, 0, 1) ||
+                has_four_connected(board, ConnectFourTileKind_Red, x, y, 1, 1)) {
+                result = ConnectFourWinner_Red;
                 break;
             }
+            if (has_four_connected(board, ConnectFourTileKind_Black, x, y, 1, 0) || has_four_connected(board, ConnectFourTileKind_Black, x, y, 0, 1) ||
+                has_four_connected(board, ConnectFourTileKind_Black, x, y, 1, 1)) {
+                result = ConnectFourWinner_Black;
+                break;
+            }
+            if (board->tiles[x][y].kind != ConnectFourTileKind_None) {
+                empty--;
+            }
         }
+    }
+    
+    if (empty == 0) {
+        result = ConnectFourWinner_Tie;
+    }
+    
+    return result;
+}
+
+// NOTE(diego): Horrible. Slow. Stupid.
+internal void
+best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
+    real32 best_score = -INFINITY;
+    
+    s32 best_tile_x = -1;
+    s32 best_tile_y = -1;
+    
+    for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
+        for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
+            if (is_tile_empty(board, x, y)) {
+                set_tile(board, player, x, y);
+                
+                real32 score = minimax(board, 3, false);
+                if (score > best_score) {
+                    best_score = score;
+                    best_tile_x = x;
+                    best_tile_y = y;
+                }
+                set_tile(board, ConnectFourTileKind_None, x, y);
+            }
+        }
+    }
+    
+    if (best_tile_x != -1 && best_tile_y != -1) {
+        set_tile(board, player, best_tile_x, best_tile_y);
+        Connect_Four_Winner winner = check_win(board);
+        if (winner != ConnectFourWinner_None) {
+            // TODO(diego): Finish game and show menu.
+            connect_four_game_restart(board->state);
+            return;
+        }
+        switch_turns(board->state);
+    }
+}
+
+#define CONNECT_FOUR_TIE 0.f
+#define CONNECT_FOUR_RED 10.f
+#define CONNECT_FOUR_BLACK -10.f
+
+// NOTE(diego): Horrible. Slow. Stupid.
+internal real32
+minimax(Connect_Four_Board *board, u32 depth, b32 maximizing_player) {
+    if (depth == 0) {
+        return CONNECT_FOUR_TIE;
+    }
+    
+    real32 result = CONNECT_FOUR_TIE;
+    Connect_Four_Winner winner = check_win(board);
+    switch (winner) {
+        case ConnectFourWinner_Red: {
+            result = maximizing_player ? CONNECT_FOUR_BLACK : CONNECT_FOUR_RED;
+        } break;
+        case ConnectFourWinner_Black: {
+            result = maximizing_player ? CONNECT_FOUR_RED : CONNECT_FOUR_BLACK;
+        } break;
+        case ConnectFourWinner_Tie: {
+            result = CONNECT_FOUR_TIE;
+        } break;
+        
+        default: {
+            // AI
+            if (maximizing_player) {
+                real32 best_score = -INFINITY;
+                for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
+                    for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
+                        if (is_tile_empty(board, x, y)) {
+                            set_tile(board, board->state->ai_player, x, y);
+                            best_score = max(minimax(board, depth - 1, false), best_score);
+                            set_tile(board, ConnectFourTileKind_None, x, y);
+                        }
+                    }
+                }
+                result = best_score;
+            } else {
+                real32 best_score = INFINITY;
+                for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
+                    for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
+                        if (is_tile_empty(board, x, y)) {
+                            set_tile(board, board->state->player, x, y);
+                            best_score = min(minimax(board, depth - 1, true), best_score);
+                            set_tile(board, ConnectFourTileKind_None, x, y);
+                        }
+                    }
+                }
+                result = best_score;
+            }
+            
+        } break;
+        
     }
     
     return result;
