@@ -302,7 +302,7 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
             if (is_tile_empty(board, x, y)) {
                 set_tile(board, player, x, y);
                 
-                real32 score = minimax(board, 3, false);
+                real32 score = minimax(board, 2, false);
                 if (score > best_score) {
                     best_score = score;
                     best_tile_x = x;
@@ -326,24 +326,37 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
 }
 
 #define CONNECT_FOUR_TIE 0.f
-#define CONNECT_FOUR_RED 10.f
-#define CONNECT_FOUR_BLACK -10.f
+#define CONNECT_FOUR_1 1.f
+#define CONNECT_FOUR_2 4.f
+#define CONNECT_FOUR_3 8.f
+#define CONNECT_FOUR_4 10.f
+
+#define CONNECT_FOUR_RED_1 CONNECT_FOUR_1
+#define CONNECT_FOUR_RED_2 CONNECT_FOUR_2
+#define CONNECT_FOUR_RED_3 CONNECT_FOUR_3
+#define CONNECT_FOUR_RED_4 CONNECT_FOUR_4
+
+#define CONNECT_FOUR_BLACK_1 -1.f
+#define CONNECT_FOUR_BLACK_2 -4.f
+#define CONNECT_FOUR_BLACK_3 -8.f
+#define CONNECT_FOUR_BLACK_4 -10.f
 
 // NOTE(diego): Horrible. Slow. Stupid.
 internal real32
 minimax(Connect_Four_Board *board, u32 depth, b32 maximizing_player) {
-    if (depth == 0) {
-        return CONNECT_FOUR_TIE;
-    }
     
     real32 result = CONNECT_FOUR_TIE;
+    if (depth == 0) {
+        return result;
+    }
+    
     Connect_Four_Winner winner = check_win(board);
     switch (winner) {
         case ConnectFourWinner_Red: {
-            result = maximizing_player ? CONNECT_FOUR_BLACK : CONNECT_FOUR_RED;
+            result = maximizing_player ? CONNECT_FOUR_BLACK_4 : CONNECT_FOUR_RED_4;
         } break;
         case ConnectFourWinner_Black: {
-            result = maximizing_player ? CONNECT_FOUR_RED : CONNECT_FOUR_BLACK;
+            result = maximizing_player ? CONNECT_FOUR_RED_4 : CONNECT_FOUR_BLACK_4;
         } break;
         case ConnectFourWinner_Tie: {
             result = CONNECT_FOUR_TIE;
@@ -378,9 +391,7 @@ minimax(Connect_Four_Board *board, u32 depth, b32 maximizing_player) {
             }
             
         } break;
-        
     }
-    
     return result;
 }
 
