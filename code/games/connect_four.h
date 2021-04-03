@@ -87,6 +87,7 @@ internal real32 get_tile_size(Vector2i dimensions);
 internal Vector4 get_tile_color(Connect_Four_Tile_Kind kind);
 internal b32 has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y);
 internal Connect_Four_Winner check_win(Connect_Four_Board *board);
+internal b32 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind);
 
 internal void best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player);
 internal real32  minimax(Connect_Four_Board *board, u32 depth, b32 maximizing_player);

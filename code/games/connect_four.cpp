@@ -209,9 +209,10 @@ has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 s
 internal Connect_Four_Winner
 check_win(Connect_Four_Board *board) {
     
+    Connect_Four_Winner result = ConnectFourWinner_None;
+    
     u32 empty = CONNECT_FOUR_X_COUNT * CONNECT_FOUR_Y_COUNT;
     
-    Connect_Four_Winner result = ConnectFourWinner_None;
     for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
         for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
             if (has_four_connected(board, ConnectFourTileKind_Red, x, y, 1, 0) || has_four_connected(board, ConnectFourTileKind_Red, x, y, 0, 1) ||
@@ -235,6 +236,57 @@ check_win(Connect_Four_Board *board) {
     }
     
     return result;
+}
+
+internal b32
+check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
+    
+    // Check horizontal
+    for (u32 x = 0; x < CONNECT_FOUR_X_COUNT - 3; ++x) {
+        for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
+            if (board->tiles[  x  ][y].kind == kind &&
+                board->tiles[x + 1][y].kind == kind &&
+                board->tiles[x + 2][y].kind == kind &&
+                board->tiles[x + 3][y].kind == kind) {
+                return true;
+            }
+        }
+    }
+    // Check vertical
+    for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
+        for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT - 3; ++y) {
+            if (board->tiles[x][  y  ].kind == kind &&
+                board->tiles[x][y + 1].kind == kind &&
+                board->tiles[x][y + 2].kind == kind &&
+                board->tiles[x][y + 3].kind == kind) {
+                return true;
+            }
+        }
+    }
+    // Check / diagonal
+    for (u32 x = 0; x < CONNECT_FOUR_X_COUNT - 3; ++x) {
+        for (u32 y = 3; y < CONNECT_FOUR_Y_COUNT; ++y) {
+            if (board->tiles[  x  ][  y  ].kind == kind &&
+                board->tiles[x + 1][y - 1].kind == kind &&
+                board->tiles[x + 2][y - 2].kind == kind &&
+                board->tiles[x + 3][y - 3].kind == kind) {
+                return true;
+            }
+        }
+    }
+    // Check \ diagonal 
+    for (u32 x = 0; x < CONNECT_FOUR_X_COUNT - 3; ++x) {
+        for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT - 3; ++y) {
+            if (board->tiles[  x  ][  y  ].kind == kind &&
+                board->tiles[x + 1][y + 1].kind == kind &&
+                board->tiles[x + 2][y + 2].kind == kind &&
+                board->tiles[x + 3][y + 3].kind == kind) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
 }
 
 // NOTE(diego): Horrible. Slow. Stupid.
