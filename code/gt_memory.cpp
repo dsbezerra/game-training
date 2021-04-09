@@ -23,6 +23,7 @@ zero_size(Memory_Index size, void *pointer) {
 #define gigabytes(value) (megabytes(value) * 1024)
 
 #define zero_array(a) zero_size(sizeof(a), a)
+#define zero_array_n(a,n) zero_size(sizeof(a)*n, a)
 #define zero_struct(s) zero_size(sizeof(s), &(s))
 
 internal void
