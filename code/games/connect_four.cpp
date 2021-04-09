@@ -338,25 +338,18 @@ check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
     return false;
 }
 
-// NOTE(diego): Horrible. Slow. Stupid.
 internal void
 best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
-    
     s32 potential_moves[CONNECT_FOUR_X_COUNT] = {};
     minimax(board, 2, potential_moves);
-    
-    char buf[256];
     
     s32 best_move = -1;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
         if (potential_moves[move] > best_move && is_valid_move(board, move)) {
             best_move = potential_moves[move];
         }
-        
-        sprintf(buf, "Column[%d] = %d ", move, potential_moves[move]);
-        OutputDebugString(buf);
     }
-    OutputDebugString("\n");
+    
     u32 num_moves = 0;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
         if (potential_moves[move] == best_move && is_valid_move(board, move)) {
