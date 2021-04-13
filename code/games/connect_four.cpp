@@ -23,29 +23,36 @@ internal void
 update_dragging_tile(Connect_Four_State *state, Game_Input *input) {
     platform_get_cursor_position(&state->mouse_position);
     
-    if (state->dragging_tile.kind != ConnectFourTileKind_None) {
+    Connect_Four_Tile *tile = &state->dragging_tile;
+    if (tile->kind != ConnectFourTileKind_None) {
         b32 released = released(Button_Mouse1);
         if (released) {
-            set_tile(&state->dragging_tile, ConnectFourTileKind_None);
+            set_tile(tile, ConnectFourTileKind_None);
         }
         
         Vector2i dim = state->memory->window_dimensions;
         real32 tile_size = get_tile_size(dim);
         
         real32 x_width  = CONNECT_FOUR_X_COUNT * tile_size;
+        real32 y_height = CONNECT_FOUR_Y_COUNT * tile_size;
         
         real32 sx = center_horizontally((real32) dim.width, x_width);
+        real32 sy = center_vertically((real32) dim.height, y_height);
         
         real32 max_x = sx + x_width;
         
         Vector2i mp = state->mouse_position;
-        if (mp.x < sx || mp.x > max_x) return;
+        if (mp.x < sx || mp.x > max_x || mp.y > sy - tile_size*.5f) {
+            tile->board_x = -1;
+            tile->board_y = -1;
+            return;
+        }
         
         s32 x = (s32) ((mp.x - sx) / tile_size);
         assert(x >= 0 && x < CONNECT_FOUR_X_COUNT);
         
-        real32 y_height = CONNECT_FOUR_Y_COUNT * tile_size;
-        real32 sy = center_vertically((real32) dim.height, y_height);
+        tile->board_x = x;
+        tile->board_y = 0; // NOTE(diego): Always 0
         
         if (released) {
             if (is_valid_move(&state->board, x)) {
@@ -381,7 +388,6 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
 internal void
 minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
     if (depth == 0 || is_board_full(board)) {
-        zero_array_n(potential_moves, CONNECT_FOUR_X_COUNT);
         return;
     }
     
@@ -462,7 +468,8 @@ draw_board(Connect_Four_State *state) {
     Vector2i dim = state->memory->window_dimensions;
     
     u32 max_size = dim.width > dim.height ? dim.height : dim.width;
-    real32 tile_size = max_size * 0.1f;
+    real32 tile_size = get_tile_size(dim);
+    real32 radius = tile_size * .44f;
     
     real32 x_width  = CONNECT_FOUR_X_COUNT * tile_size;
     real32 y_height = CONNECT_FOUR_Y_COUNT * tile_size;
@@ -508,7 +515,40 @@ draw_board(Connect_Four_State *state) {
     //
     Connect_Four_Tile ht = state->dragging_tile;
     if (ht.kind != ConnectFourTileKind_None) {
-        immediate_circle_filled(ht.center, ht.radius, ht.color);
+        
+        Vector2 dragging = make_vector2((real32) state->mouse_position.x, (real32) state->mouse_position.y);
+        
+        // Draw row and place that it will land
+        if (ht.board_x >= 0 && ht.board_x < CONNECT_FOUR_X_COUNT) {
+            
+            Connect_Four_Move move = get_lowest_empty_move(&state->board, ht.board_x);
+            
+            Vector2 min = make_vector2(sx + ht.board_x * tile_size, dragging.y);
+            Vector2 max = make_vector2(min.x + tile_size, sy + move.y * tile_size + tile_size);
+            
+            Vector4 transparent = make_color(0x1afff931);
+            Vector4 non_white = make_color(0xaafff931);
+            
+            real32 sin = sinf(core.time_info.current_time);
+            real32 t = sin*sin;
+            t = .4f + .54f * t;
+            
+            Vector4 color = lerp_color(non_white, t, transparent);
+            immediate_quad(min, max, color);
+            immediate_circle_filled(dragging, radius*1.15f, color);
+            
+            // Draw move
+            {
+                Vector2 center = make_vector2(sx + move.x * tile_size + tile_size *.5f, sy + move.y * tile_size + tile_size *.5f);
+                
+                real32 expand_size = radius * .2f;
+                
+                Vector4 place_color = lerp_color(ht.color, t, set_color_alpha(ht.color, .5f));
+                immediate_circle_filled(center, radius + expand_size * (t * t), place_color);
+            }
+        }
+        
+        immediate_circle_filled(dragging, radius, ht.color);
     }
     
     immediate_flush();
@@ -530,12 +570,6 @@ draw_hud(Connect_Four_State *state) {
         real32 radius = tile_size * .44f;
         
         immediate_circle_filled(center, radius, color);
-        
-        if (state->dragging_tile.kind != ConnectFourTileKind_None) {
-            Vector2 dragging = make_vector2((real32) state->mouse_position.x, (real32) state->mouse_position.y);
-            immediate_circle_filled(dragging, radius, color);
-            
-        }
     }
     
     immediate_flush();
