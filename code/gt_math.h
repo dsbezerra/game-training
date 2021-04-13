@@ -899,6 +899,18 @@ make_color(u32 color) {
     return make_color(r, g, b, a);
 }
 
+internal inline Vector4 
+set_color_alpha(Vector4 color, real32 alpha) {
+    Vector4 result = {};
+    
+    result.a = clampf(0.f, alpha, 1.f);
+    result.r = color.r;
+    result.g = color.g;
+    result.b = color.b;
+    
+    return result;
+}
+
 internal inline Vector4
 invert_color(Vector4 color) {
     Vector4 result;
