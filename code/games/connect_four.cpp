@@ -396,6 +396,7 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
     }
 }
 
+// NOTE(diego): We could use alpha-beta pruning to make it faster.
 internal void
 minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
     if (depth == 0 || is_board_full(board)) return;
@@ -415,7 +416,6 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
         make_move(board_copy, tile_kind, first_move);
         if (check_win(board_copy, tile_kind)) {
             potential_moves[first_move] = 1;
-            if (board_copy) platform_free(board_copy);
             break;
         }
         
