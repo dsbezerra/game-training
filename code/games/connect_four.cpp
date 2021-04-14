@@ -104,6 +104,8 @@ clear_board(Connect_Four_Board *board) {
             tile->radius  = tile_size * .44f;
         }
     }
+    
+    board->filled = 0;
 }
 
 internal void
@@ -136,6 +138,7 @@ internal void
 make_move(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, s32 x) {
     Connect_Four_Move empty = get_lowest_empty_move(board, x);
     set_tile(board, kind, empty.x, empty.y);
+    board->filled++;
 }
 
 internal void
@@ -146,6 +149,7 @@ copy_board(Connect_Four_Board *dest, Connect_Four_Board *src) {
             dest->tiles[x][y] = src->tiles[x][y];
         }
     }
+    dest->filled = src->filled;
 }
 
 
@@ -193,6 +197,7 @@ is_inside_player(Connect_Four_State *state) {
 
 internal b32
 is_board_full(Connect_Four_Board *board) {
+#if 0
     for (u32 x = 0; x < CONNECT_FOUR_X_COUNT; ++x) {
         for (u32 y = 0; y < CONNECT_FOUR_Y_COUNT; ++y) {
             if (is_tile_empty(board, x, y)) {
@@ -200,8 +205,10 @@ is_board_full(Connect_Four_Board *board) {
             }
         }
     }
-    
     return true;
+#else
+    return board->filled >= CONNECT_FOUR_X_COUNT*CONNECT_FOUR_Y_COUNT;
+#endif
 }
 
 internal b32
@@ -345,10 +352,16 @@ check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
     return false;
 }
 
+#define CONNECT_FOUR_SEARCH_DEPTH 2
+
 internal void
 best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
+    Memory_Arena *arena = &board->state->moves_arena;
+    
+    reset_arena(arena);
+    
     s32 potential_moves[CONNECT_FOUR_X_COUNT] = {};
-    minimax(board, 2, potential_moves);
+    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves);
     
     s32 best_move = -1;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
@@ -364,7 +377,7 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
         }
     }
     
-    s32 *best_moves = (s32 *) platform_alloc(sizeof(s32) * num_moves);
+    s32 *best_moves = push_array(arena, num_moves, s32);
     s32 best_move_index = 0;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
         if (potential_moves[move] == best_move && is_valid_move(board, move)) {
@@ -381,15 +394,13 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
             switch_turns(board->state);
         }
     }
-    
-    platform_free(best_moves);
 }
 
 internal void
 minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
-    if (depth == 0 || is_board_full(board)) {
-        return;
-    }
+    if (depth == 0 || is_board_full(board)) return;
+    
+    Memory_Arena *arena = &board->state->moves_arena;
     
     Connect_Four_Tile_Kind tile_kind = ConnectFourTileKind_Black;
     Connect_Four_Tile_Kind enemy_tile_kind = ConnectFourTileKind_Red;
@@ -398,7 +409,7 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
             continue;
         }
         
-        Connect_Four_Board *board_copy = (Connect_Four_Board *) platform_alloc(sizeof(Connect_Four_Board));
+        Connect_Four_Board *board_copy = push_struct(arena, Connect_Four_Board);
         copy_board(board_copy, board);
         
         make_move(board_copy, tile_kind, first_move);
@@ -416,17 +427,15 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
                     continue;
                 }
                 
-                Connect_Four_Board *board_second_copy = (Connect_Four_Board *) platform_alloc(sizeof(Connect_Four_Board));
-                copy_board(board_second_copy, board_copy);
+                Connect_Four_Board *board_second_copy = push_struct(arena, Connect_Four_Board); copy_board(board_second_copy, board_copy);
                 
                 make_move(board_second_copy, enemy_tile_kind, counter_move);
                 if (check_win(board_second_copy, enemy_tile_kind)) {
                     potential_moves[first_move] = -1;
-                    if (board_second_copy) platform_free(board_second_copy);
                     break;
                 }
                 
-                s32 *moves = (s32 *) platform_alloc(CONNECT_FOUR_X_COUNT * sizeof(s32));
+                s32 *moves = push_array(arena, CONNECT_FOUR_X_COUNT, s32);
                 minimax(board_second_copy, depth - 1, moves);
                 
                 s32 sum = 0;
@@ -434,13 +443,8 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
                     sum += moves[s];
                 
                 potential_moves[first_move] += (sum / CONNECT_FOUR_X_COUNT) / CONNECT_FOUR_X_COUNT;
-                
-                if (moves) platform_free(moves);
-                if (board_second_copy) platform_free(board_second_copy);
             }
         }
-        
-        if (board_copy) platform_free(board_copy);
     }
     
 }
@@ -595,12 +599,15 @@ connect_four_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        // NOTE(diego): Not used.
-        Memory_Index total_memory_size = kilobytes(16);
+        Memory_Index moves_memory_size = megabytes(8);
+        Memory_Index total_memory_size = moves_memory_size;
+        Memory_Index total_available_size = total_memory_size - sizeof(Connect_Four_State);
+        
         state = (Connect_Four_State *) game_alloc(memory, total_memory_size);
         state->memory = memory;
         state->board.state = state;
         
+        init_arena(&state->moves_arena, total_available_size, (u8 *) memory->permanent_storage + sizeof(Connect_Four_State));
         init_game(state);
     }
     

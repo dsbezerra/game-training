@@ -66,11 +66,14 @@ struct Connect_Four_State;
 struct Connect_Four_Board {
     Connect_Four_State *state;
     Connect_Four_Tile tiles[CONNECT_FOUR_X_COUNT][CONNECT_FOUR_Y_COUNT];
+    s32 filled;
 };
 
 struct Connect_Four_State {
     Game_Mode game_mode;
     Game_Memory *memory;
+    
+    Memory_Arena moves_arena;
     
     Connect_Four_Play_State play_state;
     
