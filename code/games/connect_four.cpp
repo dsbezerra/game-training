@@ -12,11 +12,17 @@ init_game(Connect_Four_State *state) {
 
 internal void
 update_game(Connect_Four_State *state, Game_Input *input) {
+#if 1
     if (state->current_player == state->player) {
         update_dragging_tile(state, input);
     } else if (state->current_player == state->ai_player) {
         best_move(&state->board, state->ai_player);
     }
+#else
+    if (pressed(Button_Mouse1)) {
+        best_move(&state->board, state->current_player);
+    }
+#endif
 }
 
 internal void
@@ -361,7 +367,7 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
     reset_arena(arena);
     
     s32 potential_moves[CONNECT_FOUR_X_COUNT] = {};
-    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves);
+    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves, player == board->state->current_player);
     
     s32 best_move = -1;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
@@ -398,13 +404,14 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
 
 // NOTE(diego): We could use alpha-beta pruning to make it faster.
 internal void
-minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
+minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves, b32 maximizing_player) {
     if (depth == 0 || is_board_full(board)) return;
     
     Memory_Arena *arena = &board->state->moves_arena;
     
-    Connect_Four_Tile_Kind tile_kind = ConnectFourTileKind_Black;
-    Connect_Four_Tile_Kind enemy_tile_kind = ConnectFourTileKind_Red;
+    Connect_Four_Tile_Kind tile_kind = maximizing_player ? ConnectFourTileKind_Black : ConnectFourTileKind_Red;
+    Connect_Four_Tile_Kind enemy_tile_kind = maximizing_player ? ConnectFourTileKind_Red : ConnectFourTileKind_Black;
+    
     for (u32 first_move = 0; first_move < CONNECT_FOUR_X_COUNT; ++first_move) {
         if (!is_valid_move(board, first_move)) {
             continue;
@@ -415,7 +422,7 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
         
         make_move(board_copy, tile_kind, first_move);
         if (check_win(board_copy, tile_kind)) {
-            potential_moves[first_move] = 1;
+            potential_moves[first_move] = maximizing_player ? 1 : -1;
             break;
         }
         
@@ -431,12 +438,12 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
                 
                 make_move(board_second_copy, enemy_tile_kind, counter_move);
                 if (check_win(board_second_copy, enemy_tile_kind)) {
-                    potential_moves[first_move] = -1;
+                    potential_moves[first_move] = maximizing_player ? -1 : 1;
                     break;
                 }
                 
                 s32 *moves = push_array(arena, CONNECT_FOUR_X_COUNT, s32);
-                minimax(board_second_copy, depth - 1, moves);
+                minimax(board_second_copy, depth - 1, moves, !maximizing_player);
                 
                 s32 sum = 0;
                 for (u32 s = 0; s < CONNECT_FOUR_X_COUNT; ++s)
@@ -514,11 +521,31 @@ draw_board(Connect_Four_State *state) {
         }
     }
     
+    immediate_flush();
+    
     //
     // Hovering
     //
+    
+    
     Connect_Four_Tile ht = state->dragging_tile;
     if (ht.kind != ConnectFourTileKind_None) {
+        
+        //
+        // Draw text
+        //
+        
+        char *text = "Drag over the board to place";
+        real32 text_width = get_text_width(&state->assets.drag_over_font, text);
+        
+        real32 text_x = center_horizontally((real32) dim.width, text_width);
+        real32 text_y = center_vertically(sy, 0.f);
+        
+        Vector4 white = make_color(0xffffffff);
+        draw_text(text_x+1.f, text_y+2.f, (u8 *) text, &state->assets.drag_over_font, black);
+        draw_text(text_x, text_y, (u8 *) text, &state->assets.drag_over_font, white);
+        
+        immediate_begin();
         
         Vector2 dragging = make_vector2((real32) state->mouse_position.x, (real32) state->mouse_position.y);
         
@@ -553,9 +580,9 @@ draw_board(Connect_Four_State *state) {
         }
         
         immediate_circle_filled(dragging, radius, ht.color);
+        immediate_flush();
     }
     
-    immediate_flush();
 }
 
 internal void
@@ -603,9 +630,14 @@ connect_four_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Memory_Index total_memory_size = moves_memory_size;
         Memory_Index total_available_size = total_memory_size - sizeof(Connect_Four_State);
         
+        Connect_Four_Assets assets = {};
+        assets.drag_over_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);
+        assets.finish_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);
+        
         state = (Connect_Four_State *) game_alloc(memory, total_memory_size);
         state->memory = memory;
         state->board.state = state;
+        state->assets = assets;
         
         init_arena(&state->moves_arena, total_available_size, (u8 *) memory->permanent_storage + sizeof(Connect_Four_State));
         init_game(state);

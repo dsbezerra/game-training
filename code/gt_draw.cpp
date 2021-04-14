@@ -60,8 +60,8 @@ immediate_init() {
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
     
-    //glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-    //glEnable(GL_SAMPLE_ALPHA_TO_ONE);
+    glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    glEnable(GL_SAMPLE_ALPHA_TO_ONE);
     glEnable(GL_MULTISAMPLE);
     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

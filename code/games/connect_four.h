@@ -63,6 +63,11 @@ struct Connect_Four_Tile {
 
 struct Connect_Four_State;
 
+struct Connect_Four_Assets {
+    Loaded_Font drag_over_font;
+    Loaded_Font finish_font;
+};
+
 struct Connect_Four_Board {
     Connect_Four_State *state;
     Connect_Four_Tile tiles[CONNECT_FOUR_X_COUNT][CONNECT_FOUR_Y_COUNT];
@@ -81,6 +86,7 @@ struct Connect_Four_State {
     Connect_Four_Tile_Kind player;
     Connect_Four_Tile_Kind current_player;
     
+    Connect_Four_Assets assets;
     Connect_Four_Board board;
     
     Connect_Four_Tile dragging_tile;
@@ -113,7 +119,7 @@ internal Connect_Four_Winner check_win(Connect_Four_Board *board);
 internal b32 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind);
 
 internal void best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player);
-internal void minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves);
+internal void minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves, b32 maximizing_player);
 
 internal void draw_game_view(Connect_Four_State *state);
 internal void draw_board(Connect_Four_State *state);
