@@ -2,11 +2,13 @@ internal void
 init_game(Connect_Four_State *state) {
     state->game_mode = GameMode_Playing;
     state->memory->game_mode = GameMode_Playing;
-    state->player = ConnectFourTileKind_Red;
-    state->ai_player = ConnectFourTileKind_Black;
-    state->current_player = ConnectFourTileKind_Red;
+    state->player = ConnectFourTileKind_Black;
+    state->ai_player = ConnectFourTileKind_Red;
+    state->current_player = state->player;
     state->computer_move_t_target = 0.f;
     state->computer_move_t = 0.f;
+    state->move_t_target = 0.f;
+    state->move_t = 0.f;
     
     platform_show_cursor(true);
     clear_board(&state->board);
@@ -221,14 +223,12 @@ internal b32
 is_inside_player(Connect_Four_State *state) {
     Vector2i dim = state->memory->window_dimensions;
     
-    real32 center_x = dim.width  * .10f;
-    real32 center_y = dim.height * .9f;
-    
+    Vector2 center = get_hud_player_position(dim, state->player);
     real32 tile_size = get_tile_size(dim);
     real32 radius = tile_size * .44f;
     
-    real32 dx = state->mouse_position.x - center_x;
-    real32 dy = state->mouse_position.y - center_y; 
+    real32 dx = state->mouse_position.x - center.x;
+    real32 dy = state->mouse_position.y - center.y; 
     
     return dx*dx + dy*dy <= radius*radius;
 }
