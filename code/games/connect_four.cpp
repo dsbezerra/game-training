@@ -5,6 +5,8 @@ init_game(Connect_Four_State *state) {
     state->player = ConnectFourTileKind_Red;
     state->ai_player = ConnectFourTileKind_Black;
     state->current_player = ConnectFourTileKind_Red;
+    state->computer_move_t_target = 0.f;
+    state->computer_move_t = 0.f;
     
     platform_show_cursor(true);
     clear_board(&state->board);
@@ -13,10 +15,27 @@ init_game(Connect_Four_State *state) {
 internal void
 update_game(Connect_Four_State *state, Game_Input *input) {
 #if 1
-    if (state->current_player == state->player) {
-        update_dragging_tile(state, input);
-    } else if (state->current_player == state->ai_player) {
-        best_move(&state->board, state->ai_player);
+    if (state->computer_move_t_target > .0f) {
+        state->computer_move_t = move_towards(state->computer_move_t, state->computer_move_t_target, core.time_info.dt*2.f);
+        if (state->computer_move_t >= state->computer_move_t_target) {
+            state->computer_move_t = .0f;
+            state->computer_move_t_target = 0.f;
+            do_animated_move(&state->board, state->ai_player, state->move);
+        }
+        
+    } else if (state->move_t_target > 0.f) {
+        state->move_t = move_towards(state->move_t, state->move_t_target, core.time_info.dt * 3.f);
+        if (state->move_t >= state->move_t_target) {
+            state->move_t = .0f;
+            state->move_t_target = 0.f;
+            do_move(&state->board, state->current_player, state->move);
+        }
+    } else {
+        if (state->current_player == state->player) {
+            update_dragging_tile(state, input);
+        } else if (state->current_player == state->ai_player) {
+            best_move(&state->board, state->ai_player);
+        }
     }
 #else
     if (pressed(Button_Mouse1)) {
@@ -61,14 +80,8 @@ update_dragging_tile(Connect_Four_State *state, Game_Input *input) {
         tile->board_y = 0; // NOTE(diego): Always 0
         
         if (released) {
-            if (is_valid_move(&state->board, x)) {
-                make_move(&state->board, state->player, x);
-                if (check_win(&state->board, state->player)) {
-                    connect_four_game_restart(state);
-                } else {
-                    switch_turns(state);
-                }
-            }
+            
+            do_animated_move(&state->board, state->player, x);
         }
         
     } else {
@@ -158,6 +171,25 @@ copy_board(Connect_Four_Board *dest, Connect_Four_Board *src) {
     dest->filled = src->filled;
 }
 
+internal void
+do_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player, s32 move) {
+    if (is_valid_move(board, move)) {
+        make_move(board, player, move);
+        if (check_win(board, player)) {
+            connect_four_game_restart(board->state);
+        } else {
+            switch_turns(board->state);
+        }
+    }
+}
+
+internal void
+do_animated_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player, s32 move) {
+    Connect_Four_State *state = board->state;
+    state->move = move;
+    state->move_t = .0f;
+    state->move_t_target = 1.f;
+}
 
 internal Connect_Four_Move
 get_lowest_empty_move(Connect_Four_Board *board, s32 x) {
@@ -248,6 +280,25 @@ get_tile_color(Connect_Four_Tile_Kind kind) {
         } break;
         
         default: invalid_code_path; break;
+    }
+    
+    return result;
+}
+
+internal Vector2
+get_hud_player_position(Vector2i dimensions, Connect_Four_Tile_Kind kind) {
+    Vector2 result = {};
+    
+    switch (kind) {
+        case ConnectFourTileKind_Red: {
+            result = make_vector2(dimensions.width * 0.10f, dimensions.height * 0.9f);
+        } break;
+        
+        case ConnectFourTileKind_Black: {
+            result = make_vector2(dimensions.width * 0.90f, dimensions.height * 0.9f);
+        } break;
+        
+        default: invalid_code_path;
     }
     
     return result;
@@ -362,12 +413,13 @@ check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
 
 internal void
 best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
-    Memory_Arena *arena = &board->state->moves_arena;
+    Connect_Four_State *state = board->state;
     
+    Memory_Arena *arena = &state->moves_arena;
     reset_arena(arena);
     
     s32 potential_moves[CONNECT_FOUR_X_COUNT] = {};
-    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves, player == board->state->current_player);
+    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves, player == state->current_player);
     
     s32 best_move = -1;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
@@ -391,15 +443,8 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
         }
     }
     
-    best_move = best_moves[random_int_in_range(0, num_moves)];
-    if (is_valid_move(board, best_move)) {
-        make_move(board, player, best_move);
-        if (check_win(board, player)) {
-            connect_four_game_restart(board->state);
-        } else {
-            switch_turns(board->state);
-        }
-    }
+    state->move = best_moves[random_int_in_range(0, num_moves)];
+    state->computer_move_t_target = 1.f;
 }
 
 // NOTE(diego): We could use alpha-beta pruning to make it faster.
@@ -467,7 +512,7 @@ draw_game_view(Connect_Four_State *state) {
         immediate_flush();
         
         draw_board(state);
-        draw_hud(state);
+        
     } else {
         draw_menu(CONNECT_FOUR_TITLE, state->memory);
     }
@@ -521,12 +566,37 @@ draw_board(Connect_Four_State *state) {
         }
     }
     
+    Vector4 shadow = make_color(0x1a000000);
+    
+    // Draw side tokens
+    {
+        // Draw player
+        {
+            Vector4 color = get_tile_color(state->player);
+            Vector2 center = get_hud_player_position(dim, state->player);
+            
+            immediate_circle_filled(make_vector2(center.x + 2.f, center.y + 2.f), radius*1.05f, shadow);
+            immediate_circle_filled(center, radius, color);
+        }
+        
+        // Draw AI player
+        {
+            Vector4 color = get_tile_color(state->ai_player);
+            Vector2 center = get_hud_player_position(dim, state->ai_player);
+            
+            immediate_circle_filled(make_vector2(center.x + 2.f, center.y + 2.f), radius*1.05f, shadow);
+            immediate_circle_filled(center, radius, color);
+        }
+        
+    }
+    
     immediate_flush();
     
     //
     // Hovering
     //
     
+    immediate_begin();
     
     Connect_Four_Tile ht = state->dragging_tile;
     if (ht.kind != ConnectFourTileKind_None) {
@@ -544,8 +614,6 @@ draw_board(Connect_Four_State *state) {
         Vector4 white = make_color(0xffffffff);
         draw_text(text_x+1.f, text_y+2.f, (u8 *) text, &state->assets.drag_over_font, black);
         draw_text(text_x, text_y, (u8 *) text, &state->assets.drag_over_font, white);
-        
-        immediate_begin();
         
         Vector2 dragging = make_vector2((real32) state->mouse_position.x, (real32) state->mouse_position.y);
         
@@ -577,30 +645,53 @@ draw_board(Connect_Four_State *state) {
                 Vector4 place_color = lerp_color(ht.color, t, set_color_alpha(ht.color, .5f));
                 immediate_circle_filled(center, radius + expand_size * (t * t), place_color);
             }
+        } else {
+            immediate_circle_filled(make_vector2(dragging.x + 2.f, dragging.y + 2.f), radius*1.05f, shadow);
         }
         
         immediate_circle_filled(dragging, radius, ht.color);
-        immediate_flush();
     }
     
-}
-
-internal void
-draw_hud(Connect_Four_State *state) {
+    //
+    // Draw AI animated move
+    //
     
-    Vector2i dim = state->memory->window_dimensions;
-    
-    immediate_begin();
-    
-    // Draw player
-    {
-        Vector4 color = get_tile_color(state->player);
-        Vector2 center = make_vector2(dim.width * 0.10f, dim.height * 0.9f);
+    if (state->computer_move_t_target > 0.f) {
+        Vector4 color = get_tile_color(state->ai_player);
+        Vector2 start_center = get_hud_player_position(dim, state->ai_player);
+        Vector2 final_center = make_vector2(sx + tile_size * state->move + tile_size*.5f, sy * .5f);
         
-        real32 tile_size = get_tile_size(dim);
-        real32 radius = tile_size * .44f;
+        Vector2 distance = final_center - start_center;
+        Vector2 t_center = distance * state->computer_move_t;
         
-        immediate_circle_filled(center, radius, color);
+        immediate_circle_filled(start_center + t_center, radius, color);
+    }
+    
+    //
+    // Draw animated drop
+    //
+    
+    if (state->move_t_target > 0.f) {
+        Connect_Four_Move move = get_lowest_empty_move(&state->board, state->move);
+        
+        real32 half_tile_size = tile_size*.5f;
+        Vector4 color = get_tile_color(state->current_player);
+        
+        Vector2 start_center = {};
+        if (state->current_player == state->ai_player) {
+            start_center.x = sx + tile_size * move.x + half_tile_size;
+            start_center.y = sy * .5f;
+        } else {
+            start_center.x = (real32) state->mouse_position.x;
+            start_center.y = (real32) state->mouse_position.y;
+        }
+        
+        Vector2 final_center = make_vector2(sx + tile_size * move.x + half_tile_size, sy + tile_size * move.y + half_tile_size);
+        
+        Vector2 distance = final_center - start_center;
+        Vector2 t_center = distance * state->move_t;
+        
+        immediate_circle_filled(start_center + t_center, radius, color);
     }
     
     immediate_flush();

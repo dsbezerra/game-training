@@ -91,6 +91,14 @@ struct Connect_Four_State {
     
     Connect_Four_Tile dragging_tile;
     
+    s32 move;
+    
+    real32 computer_move_t_target;
+    real32 computer_move_t;
+    
+    real32 move_t;
+    real32 move_t_target;
+    
     Vector2i mouse_position;
 };
 
@@ -104,6 +112,8 @@ internal void set_tile(Connect_Four_Tile *tile, Connect_Four_Tile_Kind kind);
 internal void switch_turns(Connect_Four_State *state);
 internal void make_move(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, s32 x);
 internal void copy_board(Connect_Four_Board *dest, Connect_Four_Board *src);
+internal void do_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player, s32 move);
+internal void do_animated_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player, s32 move);
 
 internal Connect_Four_Move get_lowest_empty_move(Connect_Four_Board *board, s32 x);
 internal b32 is_tile_empty(Connect_Four_Board *board, u32 tile_x, u32 tile_y);
@@ -112,6 +122,7 @@ internal b32 is_board_full(Connect_Four_Board *board);
 internal b32 is_valid_move(Connect_Four_Board *board, s32 x);
 internal real32 get_tile_size(Vector2i dimensions);
 internal Vector4 get_tile_color(Connect_Four_Tile_Kind kind);
+internal Vector2 get_hud_player_position(Vector2i dimensions, Connect_Four_Tile_Kind kind);
 internal b32 has_n_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y, u32 n);
 internal b32 has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y);
 
@@ -123,7 +134,6 @@ internal void minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves
 
 internal void draw_game_view(Connect_Four_State *state);
 internal void draw_board(Connect_Four_State *state);
-internal void draw_hud(Connect_Four_State *state);
 
 internal void connect_four_menu_art(App_State *state, Vector2 min, Vector2 max);
 internal void connect_four_game_restart(Connect_Four_State *state);
