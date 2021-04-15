@@ -130,7 +130,7 @@ internal Connect_Four_Winner check_win(Connect_Four_Board *board);
 internal b32 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind);
 
 internal void best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player);
-internal void minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves, b32 maximizing_player);
+internal void minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves);
 
 internal void draw_game_view(Connect_Four_State *state);
 internal void draw_board(Connect_Four_State *state);

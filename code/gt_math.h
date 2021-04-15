@@ -877,6 +877,51 @@ lerp(real32 a, real32 t, real32 b) {
 }
 
 //
+// Tweening
+//
+inline real32
+smooth_start2(real32 t) {
+    return t*t;
+}
+
+inline real32
+smooth_start3(real32 t) {
+    return t*t*t;
+}
+
+inline real32
+smooth_start4(real32 t) {
+    return t*t*t*t;
+}
+
+inline real32
+smooth_start5(real32 t) {
+    return t*t*t*t*t;
+}
+
+inline real32
+smooth_stop2(real32 t) {
+    return t * (2.f - t);
+}
+
+inline real32
+smooth_stop3(real32 t) {
+    return 1.f + (--t) * t * t;
+}
+
+inline real32
+smooth_stop4(real32 t) {
+    t = (--t) * t;
+    return 1.f - t * t;
+}
+
+inline real32
+smooth_stop5(real32 t) {
+    real32 t2 = (--t) * t;
+    return 1.f + t * t2 * t2;
+}
+
+//
 // Color
 //
 

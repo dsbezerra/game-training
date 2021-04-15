@@ -2,8 +2,8 @@ internal void
 init_game(Connect_Four_State *state) {
     state->game_mode = GameMode_Playing;
     state->memory->game_mode = GameMode_Playing;
-    state->player = ConnectFourTileKind_Black;
-    state->ai_player = ConnectFourTileKind_Red;
+    state->player = ConnectFourTileKind_Red;
+    state->ai_player = ConnectFourTileKind_Black;
     state->current_player = state->player;
     state->computer_move_t_target = 0.f;
     state->computer_move_t = 0.f;
@@ -419,7 +419,7 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
     reset_arena(arena);
     
     s32 potential_moves[CONNECT_FOUR_X_COUNT] = {};
-    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves, player == state->current_player);
+    minimax(board, CONNECT_FOUR_SEARCH_DEPTH, potential_moves);
     
     s32 best_move = -1;
     for (u32 move = 0; move < CONNECT_FOUR_X_COUNT; ++move) {
@@ -449,13 +449,15 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
 
 // NOTE(diego): We could use alpha-beta pruning to make it faster.
 internal void
-minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves, b32 maximizing_player) {
+minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves) {
     if (depth == 0 || is_board_full(board)) return;
     
+    Connect_Four_State *state = board->state;
     Memory_Arena *arena = &board->state->moves_arena;
     
-    Connect_Four_Tile_Kind tile_kind = maximizing_player ? ConnectFourTileKind_Black : ConnectFourTileKind_Red;
-    Connect_Four_Tile_Kind enemy_tile_kind = maximizing_player ? ConnectFourTileKind_Red : ConnectFourTileKind_Black;
+    // NOTE(diego): This works only for AI player.
+    Connect_Four_Tile_Kind tile_kind = state->ai_player;
+    Connect_Four_Tile_Kind enemy_tile_kind = state->player;
     
     for (u32 first_move = 0; first_move < CONNECT_FOUR_X_COUNT; ++first_move) {
         if (!is_valid_move(board, first_move)) {
@@ -467,7 +469,7 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves, b32 maximizi
         
         make_move(board_copy, tile_kind, first_move);
         if (check_win(board_copy, tile_kind)) {
-            potential_moves[first_move] = maximizing_player ? 1 : -1;
+            potential_moves[first_move] = 1;
             break;
         }
         
@@ -483,12 +485,12 @@ minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves, b32 maximizi
                 
                 make_move(board_second_copy, enemy_tile_kind, counter_move);
                 if (check_win(board_second_copy, enemy_tile_kind)) {
-                    potential_moves[first_move] = maximizing_player ? -1 : 1;
+                    potential_moves[first_move] = -1;
                     break;
                 }
                 
                 s32 *moves = push_array(arena, CONNECT_FOUR_X_COUNT, s32);
-                minimax(board_second_copy, depth - 1, moves, !maximizing_player);
+                minimax(board_second_copy, depth - 1, moves);
                 
                 s32 sum = 0;
                 for (u32 s = 0; s < CONNECT_FOUR_X_COUNT; ++s)
@@ -662,7 +664,8 @@ draw_board(Connect_Four_State *state) {
         Vector2 final_center = make_vector2(sx + tile_size * state->move + tile_size*.5f, sy * .5f);
         
         Vector2 distance = final_center - start_center;
-        Vector2 t_center = distance * state->computer_move_t;
+        
+        Vector2 t_center = distance * smooth_stop2(state->computer_move_t);
         
         immediate_circle_filled(start_center + t_center, radius, color);
     }
@@ -689,7 +692,7 @@ draw_board(Connect_Four_State *state) {
         Vector2 final_center = make_vector2(sx + tile_size * move.x + half_tile_size, sy + tile_size * move.y + half_tile_size);
         
         Vector2 distance = final_center - start_center;
-        Vector2 t_center = distance * state->move_t;
+        Vector2 t_center = distance * smooth_stop5(state->move_t);
         
         immediate_circle_filled(start_center + t_center, radius, color);
     }
