@@ -710,10 +710,13 @@ draw_board(Connect_Four_State *state) {
         real32 height = 200.f;
         
         for (u32 x = 0; x < samples; x++) {
-            real32 t = (real32) x / (real32) samples;
-            t = smooth_stop2(t);
+            // How much we need to move Y for current X;
+            real32 t = smooth_stop2((real32) x / (real32) samples);
             
-            Vector2 min = make_vector2(offset + x, y - t * height);
+            real32 point_x = (real32) x;
+            real32 point_y = y - t * height;
+            
+            Vector2 min = make_vector2(offset + point_x, point_y);
             Vector2 max = make_vector2(min.x + size, min.y + size);
             immediate_quad(min, max, make_color(0xffff0000));
         }
