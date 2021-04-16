@@ -697,6 +697,76 @@ draw_board(Connect_Four_State *state) {
         immediate_circle_filled(start_center + t_center, radius, color);
     }
     
+#define TEST_SMOOTH_FUNCTIONS 1
+#if TEST_SMOOTH_FUNCTIONS
+    {
+        
+        real32 offset = 100.f;
+        
+        u32 samples = 200;
+        real32 size = samples * .01f;
+        
+        real32 y = dim.height * .5f;
+        real32 height = 200.f;
+        
+        for (u32 x = 0; x < samples; x++) {
+            real32 t = (real32) x / (real32) samples;
+            t = smooth_stop2(t);
+            
+            Vector2 min = make_vector2(offset + x, y - t * height);
+            Vector2 max = make_vector2(min.x + size, min.y + size);
+            immediate_quad(min, max, make_color(0xffff0000));
+        }
+        
+        real32 wh = height;
+        
+        // Bottom
+        {
+            Vector2 min = make_vector2(offset, y);
+            Vector2 max = make_vector2(min.x + wh, min.y + 1.f);
+            immediate_quad(min, max, make_color(0x1affffff));
+        }
+        
+        // Top
+        {
+            Vector2 min = make_vector2(offset, y - wh);
+            Vector2 max = make_vector2(min.x + wh, min.y + 1.f);
+            immediate_quad(min, max, make_color(0x1affffff));
+        }
+        
+        // Left
+        {
+            Vector2 min = make_vector2(offset, y - wh);
+            Vector2 max = make_vector2(min.x + 1.f, min.y + wh);
+            immediate_quad(min, max, make_color(0x1affffff));
+        }
+        
+        
+        // Right
+        {
+            Vector2 min = make_vector2(offset + wh, y - wh + 1.f);
+            Vector2 max = make_vector2(min.x + 1.f, min.y + wh);
+            immediate_quad(min, max, make_color(0x1affffff));
+        }
+        
+        // Circle
+        local_persist real32 curve_t = -0.2f;
+        {
+            real32 tt = clampf(0.f, curve_t, 1.f);
+            real32 xx = tt * height;
+            real32 yy = smooth_stop2(tt) * height;
+            
+            Vector2 center = make_vector2(offset + xx, y - yy);
+            radius = height * 0.04f;
+            immediate_circle_filled(center, radius, make_color(0xffffff00));
+        }
+        curve_t += core.time_info.dt;
+        if (curve_t > 1.2f) {
+            curve_t = -.2f;
+        }
+    }
+#endif
+    
     immediate_flush();
 }
 
