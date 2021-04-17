@@ -16,34 +16,31 @@ init_game(Connect_Four_State *state) {
 
 internal void
 update_game(Connect_Four_State *state, Game_Input *input) {
-#if 1
-    if (state->computer_move_t_target > .0f) {
-        state->computer_move_t = move_towards(state->computer_move_t, state->computer_move_t_target, core.time_info.dt*2.f);
-        if (state->computer_move_t >= state->computer_move_t_target) {
-            state->computer_move_t = .0f;
-            state->computer_move_t_target = 0.f;
-            do_animated_move(&state->board, state->ai_player, state->move);
-        }
-        
-    } else if (state->move_t_target > 0.f) {
-        state->move_t = move_towards(state->move_t, state->move_t_target, core.time_info.dt * 3.f);
-        if (state->move_t >= state->move_t_target) {
-            state->move_t = .0f;
-            state->move_t_target = 0.f;
-            do_move(&state->board, state->current_player, state->move);
-        }
-    } else {
-        if (state->current_player == state->player) {
-            update_dragging_tile(state, input);
-        } else if (state->current_player == state->ai_player) {
-            best_move(&state->board, state->ai_player);
+    b32 is_playing = state->play_state == ConnectFourPlayState_RedTurn || state->play_state == ConnectFourPlayState_YellowTurn;
+    if (is_playing) {
+        if (state->computer_move_t_target > .0f) {
+            state->computer_move_t = move_towards(state->computer_move_t, state->computer_move_t_target, core.time_info.dt*2.f);
+            if (state->computer_move_t >= state->computer_move_t_target) {
+                state->computer_move_t = .0f;
+                state->computer_move_t_target = 0.f;
+                do_animated_move(&state->board, state->ai_player, state->move);
+            }
+            
+        } else if (state->move_t_target > 0.f) {
+            state->move_t = move_towards(state->move_t, state->move_t_target, core.time_info.dt * 3.f);
+            if (state->move_t >= state->move_t_target) {
+                state->move_t = .0f;
+                state->move_t_target = 0.f;
+                do_move(&state->board, state->current_player, state->move);
+            }
+        } else {
+            if (state->current_player == state->player) {
+                update_dragging_tile(state, input);
+            } else if (state->current_player == state->ai_player) {
+                best_move(&state->board, state->ai_player);
+            }
         }
     }
-#else
-    if (pressed(Button_Mouse1)) {
-        best_move(&state->board, state->current_player);
-    }
-#endif
 }
 
 internal void
@@ -178,7 +175,15 @@ do_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player, s32 move) {
     if (is_valid_move(board, move)) {
         make_move(board, player, move);
         if (check_win(board, player)) {
-            connect_four_game_restart(board->state);
+            switch (player) {
+                case ConnectFourTileKind_Red: {
+                    board->state->play_state = ConnectFourPlayState_RedWin;
+                } break;
+                case ConnectFourTileKind_Yellow: {
+                    board->state->play_state = ConnectFourPlayState_YellowWin;
+                } break;
+                default: break;
+            }
         } else {
             switch_turns(board->state);
         }
@@ -344,17 +349,6 @@ has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 s
     return has_n_connected(board, kind, start_x, start_y, advance_x, advance_y, 4);
 }
 
-internal Connect_Four_Winner
-check_win(Connect_Four_Board *board) {
-    if (check_win(board, ConnectFourTileKind_Yellow)) {
-        return ConnectFourWinner_Black;
-    }
-    if (check_win(board, ConnectFourTileKind_Red)) {
-        return ConnectFourWinner_Red;
-    }
-    return ConnectFourWinner_None;
-}
-
 internal b32
 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind) {
     
@@ -509,12 +503,11 @@ draw_game_view(Connect_Four_State *state) {
     
     game_frame_begin(dim.width, dim.height);
     if (state->game_mode == GameMode_Playing) {
-        immediate_begin();
-        immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
-        immediate_flush();
-        
         draw_board(state);
-        
+        b32 winner_exists = state->play_state == ConnectFourPlayState_RedWin || state->play_state == ConnectFourPlayState_YellowWin;
+        if (winner_exists) {
+            draw_win(state);
+        }
     } else {
         draw_menu(CONNECT_FOUR_TITLE, state->memory);
     }
@@ -540,6 +533,11 @@ draw_board(Connect_Four_State *state) {
     Vector4 shadow = make_color(0x1a000000);
     
     immediate_begin();
+    
+    //
+    // Background
+    //
+    immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
     
     //
     // Board
@@ -698,7 +696,7 @@ draw_board(Connect_Four_State *state) {
         immediate_circle_filled(start_center + t_center, radius, color);
     }
     
-#define TEST_SMOOTH_FUNCTIONS 1
+#define TEST_SMOOTH_FUNCTIONS 0
 #if TEST_SMOOTH_FUNCTIONS
     {
         
@@ -775,6 +773,59 @@ draw_board(Connect_Four_State *state) {
 }
 
 internal void
+draw_win(Connect_Four_State *state) {
+    Vector2i dim = state->memory->window_dimensions;
+    
+    Vector4 text_color = make_color(0xffffffff);
+    Vector4 shadow_color = make_color(0xaa000000);
+    
+    real32 center_x = (dim.width / 2.f);
+    real32 center_y = (dim.height / 2.f);
+    
+    //
+    // Overlay
+    //
+    
+    immediate_begin();
+    immediate_quad(make_vector2(0.f, 0.f), make_vector2((real32) dim.width, (real32) dim.height), shadow_color);
+    immediate_flush();
+    
+    // WINNER
+    {
+        char *winners[2] = {"Red's Win", "Yellow's Win"};
+        
+        char *actual_text = 0;
+        switch (state->play_state) {
+            case ConnectFourPlayState_RedWin: actual_text = winners[0]; break;
+            case ConnectFourPlayState_YellowWin: actual_text = winners[1]; break;
+            default: break;
+        }
+        
+        if (actual_text) {
+            {
+                real32 text_width = get_text_width(&state->assets.finish_font, actual_text);
+                real32 text_x = center_x - text_width / 2.f;
+                real32 text_y = (dim.height * .4f) - state->assets.finish_font.line_height * .5f;
+                draw_text(text_x, text_y, (u8 *) actual_text, &state->assets.finish_font, text_color);
+            }
+            
+            // Press ESC to retry
+            {
+                int line_count;
+                char *text = "Press ESC to retry";
+                real32 text_width = get_text_width(&state->assets.esc_font, text, &line_count);
+                real32 text_x = center_x - text_width / 2.f;
+                real32 text_y = (dim.height * .6f) - state->assets.esc_font.line_height * .5f;
+                
+                draw_text(text_x, text_y, (u8 *) text, &state->assets.esc_font, text_color);
+            }
+        }
+    }
+    
+    
+}
+
+internal void
 connect_four_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
     immediate_quad(min, max, make_color(0xffff00ff));
@@ -801,6 +852,7 @@ connect_four_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         Connect_Four_Assets assets = {};
         assets.drag_over_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);
         assets.finish_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 42.f);
+        assets.esc_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 26.f);
         
         state = (Connect_Four_State *) game_alloc(memory, total_memory_size);
         state->memory = memory;

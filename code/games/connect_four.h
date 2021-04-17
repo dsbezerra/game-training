@@ -24,6 +24,8 @@ enum Connect_Four_Tile_Kind {
 enum Connect_Four_Play_State {
     ConnectFourPlayState_RedTurn,
     ConnectFourPlayState_YellowTurn,
+    ConnectFourPlayState_RedWin,
+    ConnectFourPlayState_YellowWin,
     ConnectFourPlayState_Count,
 };
 
@@ -32,12 +34,6 @@ enum Connect_Four_Winner {
     ConnectFourWinner_Red,
     ConnectFourWinner_Black,
     ConnectFourWinner_Tie,
-};
-
-struct Connect_Best_Move {
-    real32 score;
-    s32 x;
-    s32 y;
 };
 
 struct Connect_Four_Move {
@@ -65,6 +61,7 @@ struct Connect_Four_State;
 
 struct Connect_Four_Assets {
     Loaded_Font drag_over_font;
+    Loaded_Font esc_font;
     Loaded_Font finish_font;
 };
 
@@ -126,7 +123,6 @@ internal Vector2 get_hud_player_position(Vector2i dimensions, Connect_Four_Tile_
 internal b32 has_n_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y, u32 n);
 internal b32 has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 start_x, u32 start_y, u32 advance_x, u32 advance_y);
 
-internal Connect_Four_Winner check_win(Connect_Four_Board *board);
 internal b32 check_win(Connect_Four_Board *board, Connect_Four_Tile_Kind kind);
 
 internal void best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player);
@@ -134,6 +130,7 @@ internal void minimax(Connect_Four_Board *board, u32 depth, s32 *potential_moves
 
 internal void draw_game_view(Connect_Four_State *state);
 internal void draw_board(Connect_Four_State *state);
+internal void draw_win(Connect_Four_State *state);
 
 internal void connect_four_menu_art(App_State *state, Vector2 min, Vector2 max);
 internal void connect_four_game_restart(Connect_Four_State *state);
