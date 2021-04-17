@@ -5,6 +5,7 @@ init_game(Connect_Four_State *state) {
     state->player = ConnectFourTileKind_Red;
     state->ai_player = ConnectFourTileKind_Yellow;
     state->current_player = state->player;
+    state->play_state = ConnectFourPlayState_RedTurn;
     state->computer_move_t_target = 0.f;
     state->computer_move_t = 0.f;
     state->move_t_target = 0.f;
@@ -79,7 +80,6 @@ update_dragging_tile(Connect_Four_State *state, Game_Input *input) {
         tile->board_y = 0; // NOTE(diego): Always 0
         
         if (released) {
-            
             do_animated_move(&state->board, state->player, x);
         }
         
@@ -439,6 +439,7 @@ best_move(Connect_Four_Board *board, Connect_Four_Tile_Kind player) {
     
     state->move = best_moves[random_int_in_range(0, num_moves)];
     state->computer_move_t_target = 1.f;
+    state->move_t_target = 0.f;
 }
 
 // NOTE(diego): We could use alpha-beta pruning to make it faster.

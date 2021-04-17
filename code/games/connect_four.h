@@ -29,13 +29,6 @@ enum Connect_Four_Play_State {
     ConnectFourPlayState_Count,
 };
 
-enum Connect_Four_Winner {
-    ConnectFourWinner_None,
-    ConnectFourWinner_Red,
-    ConnectFourWinner_Black,
-    ConnectFourWinner_Tie,
-};
-
 struct Connect_Four_Move {
     s32 x;
     s32 y;
