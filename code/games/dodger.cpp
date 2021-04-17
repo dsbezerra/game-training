@@ -159,48 +159,8 @@ draw_game_view(Dodger_State *state) {
 
 internal void
 dodger_menu_art(App_State *state, Vector2 min, Vector2 max) {
-    
-    Vector4 background = make_color(0xff141414);
-    
     immediate_begin();
-    
-#if 0
-    immediate_quad(min, max, background, 1.f);
-    
-    {
-        Vector4 color = make_color(0xff66ff66);
-        Vector2 size = make_vector2(24.f, 24.f);
-        Dodger_Bad_Guy guys[] = {
-            Dodger_Bad_Guy{make_vector2(min.x + size.width * 5.f, max.y - max.y * .2f), size},
-            Dodger_Bad_Guy{make_vector2(max.x - size.width * 3.f, max.y - max.y * .5f), size},
-            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.2f, max.y - max.y * .6f), size},
-            Dodger_Bad_Guy{make_vector2(max.x - size.width * 1.2f, max.y - max.y * .6f), size},
-            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.4f, max.y - max.y * .33f), size},
-            Dodger_Bad_Guy{make_vector2(max.x - size.width * 1.4f, max.y - max.y * .33f), size},
-            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.2f, max.y - max.y * .5f), size},
-            Dodger_Bad_Guy{make_vector2(max.x - size.width * 2.9f, max.y - max.y * .8f), size},
-            Dodger_Bad_Guy{make_vector2(min.x + size.width * 1.9f, max.y - max.y * .8f), size},
-            Dodger_Bad_Guy{make_vector2(max.x - size.width * 1.55f, max.y - max.y * .12f), size},
-            Dodger_Bad_Guy{make_vector2(min.x + size.width * 8.55f, max.y - max.y * .12f), size},
-            Dodger_Bad_Guy{make_vector2(max.x - size.width * 4.11f, max.y - max.y * .2f), size},
-        };
-        for (int i = 0; i < array_count(guys); ++i) {
-            Dodger_Bad_Guy guy = guys[i];
-            immediate_quad(guy.position, add_v2(guy.position, guy.size), color, 1.f);
-        }
-    }
-    
-    {
-        // Player
-        Vector2 size = make_vector2(24.f, 24.f);
-        Vector2 position = make_vector2((min.x + max.x - size.width) / 2.f, (min.y + max.y - size.height) / 2.f);
-        Vector4 color = make_color(0xffffffff);
-        immediate_quad(position, add_v2(position, size), color);
-    }
-#endif
-    
     immediate_textured_quad(min, max, state->menu_art.dodger);
-    
     immediate_flush();
 }
 
