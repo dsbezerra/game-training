@@ -24,47 +24,18 @@ get_random_card_color() {
     real32 t = random_real32_in_range(0.f, 2.f);
     Vector4 result = {};
     
-    if (t >= 2.f) {
-        result = make_color(0xffc19c8e); 
-    } else if (t >= 1.9f) {
-        result = make_color(0xff829094);
-    } else if (t >= 1.8f) {
-        result = make_color(0xff92c379);
-    } else if (t >= 1.6f) {
-        result = make_color(0xff55a6dd);
-    } else if (t >= 1.5f) {
-        result = make_color(0xff9559f9);
-    } else if (t >= 1.4f) {
-        result = make_color(0xff00ba04);
-    } else if (t >= 1.3f) {
-        result = make_color(0xfff94836);
-    } else if (t >= 1.2f) {
-        result = make_color(0xff160fc7);
-    } else if (t >= 1.1f) {
-        result = make_color(0xff21d891);
-    } else if (t >= 1.0f) {
-        result = make_color(0xffbae87f);
-    } else if (t >= .9f) {
-        result = make_color(0xff41784d);
-    } else if (t >= .8f) {
-        result = make_color(0xff3f849f);
-    } else if (t >= .7f) {
-        result = make_color(0xffffc731);
-    } else if (t >= .6f) {
-        result = make_color(0xff463b43);
-    } else if (t >= .5f) {
-        result = make_color(0xffef8f2d);
-    } else if (t >= .4f) {
-        result = make_color(0xffaec6c7);
-    } else if (t >= .3f) {
-        result = make_color(0xff3f849f);
-    } else if (t >= .2f) {
-        result = make_color(0xff9559f9);
-    } else if (t >= .1f) {
-        result = make_color(0xff5d3c26);
-    } else if (t >= .0f) {
-        result = make_color(0xffffffff);
-    }
+    u32 colors[] = {
+        0xffc19c8e, 0xff829094, 0xff92c379, 0xff55a6dd,
+        0xff9559f9, 0xff00ba04, 0xfff94836, 0xff160fc7,
+        0xff21d891, 0xffbae87f, 0xff41784d, 0xff3f849f,
+        0xffffc731, 0xff463b43, 0xffef8f2d, 0xffaec6c7,
+        0xff3f849f, 0xff9559f9, 0xff5d3c26, 0xffffffff,
+    };
+    u32 random_index = random_int_in_range(0, array_count(colors) - 1);
+    u32 random_color = colors[random_index];
+    
+    result = make_color(random_color);
+    
     return result;
 }
 
@@ -72,30 +43,16 @@ internal Memory_Card
 get_random_card() {
     Memory_Card result = {};
     
-    while (result.kind == MemoryCard_None) {
-        if (random_choice(1)) {
-            result.kind = MemoryCard_Donut;
-        } 
-        if (random_choice(2)) {
-            result.kind = MemoryCard_Square;
-        } 
-        if (random_choice(3)) {
-            result.kind = MemoryCard_DoubleSquare;
-        }
-        if (random_choice(4)) {
-            result.kind = MemoryCard_Lines;
-        }
-        if (random_choice(5)) {
-            result.kind = MemoryCard_Oval;
-        }
-        if (random_choice(6)) {
-            result.kind = MemoryCard_Circle;
-        }
-        if (random_choice(7)) {
-            result.kind = MemoryCard_Diamond;
-        }
-    }
+    Memory_Card_Kind kinds[] = {
+        MemoryCard_Donut, MemoryCard_Square, MemoryCard_DoubleSquare,
+        MemoryCard_Lines, MemoryCard_Oval, MemoryCard_Circle,
+        MemoryCard_Diamond,
+    };
     
+    u32 random_index = random_int_in_range(0, array_count(kinds) - 1);
+    Memory_Card_Kind random_kind = kinds[random_index];
+    
+    result.kind = random_kind;
     result.color = get_random_card_color();
     
     return result;
