@@ -17,13 +17,13 @@ Variant: Different board sizes. Walls inside the board that appear when the spac
 enum Connect_Four_Tile_Kind {
     ConnectFourTileKind_None,
     ConnectFourTileKind_Red,
-    ConnectFourTileKind_Black,
+    ConnectFourTileKind_Yellow,
     ConnectFourTileKind_Count,
 };
 
 enum Connect_Four_Play_State {
     ConnectFourPlayState_RedTurn,
-    ConnectFourPlayState_BlackTurn,
+    ConnectFourPlayState_YellowTurn,
     ConnectFourPlayState_Count,
 };
 

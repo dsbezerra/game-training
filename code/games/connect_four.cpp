@@ -3,7 +3,7 @@ init_game(Connect_Four_State *state) {
     state->game_mode = GameMode_Playing;
     state->memory->game_mode = GameMode_Playing;
     state->player = ConnectFourTileKind_Red;
-    state->ai_player = ConnectFourTileKind_Black;
+    state->ai_player = ConnectFourTileKind_Yellow;
     state->current_player = state->player;
     state->computer_move_t_target = 0.f;
     state->computer_move_t = 0.f;
@@ -147,9 +147,9 @@ set_tile(Connect_Four_Tile *tile, Connect_Four_Tile_Kind kind) {
 internal void
 switch_turns(Connect_Four_State *state) {
     if (state->play_state == ConnectFourPlayState_RedTurn) {
-        state->play_state = ConnectFourPlayState_BlackTurn;
-        state->current_player = ConnectFourTileKind_Black;
-    } else if (state->play_state == ConnectFourPlayState_BlackTurn) {
+        state->play_state = ConnectFourPlayState_YellowTurn;
+        state->current_player = ConnectFourTileKind_Yellow;
+    } else if (state->play_state == ConnectFourPlayState_YellowTurn) {
         state->play_state = ConnectFourPlayState_RedTurn;
         state->current_player = ConnectFourTileKind_Red;
     }
@@ -268,11 +268,11 @@ get_tile_color(Connect_Four_Tile_Kind kind) {
     
     switch (kind) {
         case ConnectFourTileKind_Red: {
-            result = make_color(0xFFB01212);
+            result = make_color(0xFFC90000);
         } break;
         
-        case ConnectFourTileKind_Black: {
-            result = make_color(0xFF222323);
+        case ConnectFourTileKind_Yellow: {
+            result = make_color(0xFFFFE546);
         } break;
         
         case ConnectFourTileKind_None: {
@@ -294,7 +294,7 @@ get_hud_player_position(Vector2i dimensions, Connect_Four_Tile_Kind kind) {
             result = make_vector2(dimensions.width * 0.10f, dimensions.height * 0.9f);
         } break;
         
-        case ConnectFourTileKind_Black: {
+        case ConnectFourTileKind_Yellow: {
             result = make_vector2(dimensions.width * 0.90f, dimensions.height * 0.9f);
         } break;
         
@@ -346,7 +346,7 @@ has_four_connected(Connect_Four_Board *board, Connect_Four_Tile_Kind kind, u32 s
 
 internal Connect_Four_Winner
 check_win(Connect_Four_Board *board) {
-    if (check_win(board, ConnectFourTileKind_Black)) {
+    if (check_win(board, ConnectFourTileKind_Yellow)) {
         return ConnectFourWinner_Black;
     }
     if (check_win(board, ConnectFourTileKind_Red)) {
@@ -535,8 +535,9 @@ draw_board(Connect_Four_State *state) {
     real32 sx = center_horizontally((real32) dim.width, x_width);
     real32 sy = center_vertically((real32) dim.height, y_height);
     
-    Vector4 board_color = make_color(0xFF7985FF);
+    Vector4 board_color = make_color(0xFF2D86FA);
     Vector4 black = make_color(0xFF000000);
+    Vector4 shadow = make_color(0x1a000000);
     
     immediate_begin();
     
@@ -546,6 +547,8 @@ draw_board(Connect_Four_State *state) {
     {
         Vector2 min = make_vector2(sx, sy);
         Vector2 max = make_vector2(min.x + x_width, sy + y_height);
+        Vector2 offset = make_vector2(2.f, 10.f);
+        immediate_quad(min + offset, max + offset, shadow);
         immediate_quad(min, max, board_color);
     }
     
@@ -567,8 +570,6 @@ draw_board(Connect_Four_State *state) {
             immediate_quad(min, max, black);
         }
     }
-    
-    Vector4 shadow = make_color(0x1a000000);
     
     // Draw side tokens
     {
