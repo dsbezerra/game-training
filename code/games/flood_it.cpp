@@ -372,7 +372,7 @@ draw_hud(Flood_It_State *state) {
 internal void
 flood_it_menu_art(App_State *state, Vector2 min, Vector2 max) {
     immediate_begin();
-    immediate_quad(min, max, make_color(0xffff00ff));
+    immediate_textured_quad(min, max, state->menu_art.flood_it);
     immediate_flush();
 }
 

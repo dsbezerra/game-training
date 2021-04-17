@@ -58,6 +58,7 @@ struct Game_Menu_Art {
     GLuint katamari;
     GLuint sokoban;
     GLuint othello;
+    GLuint flood_it;
 };
 
 struct Game_Button_State {
