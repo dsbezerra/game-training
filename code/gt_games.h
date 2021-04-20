@@ -9,3 +9,4 @@
 #include "games/othello.h"
 #include "games/flood_it.h"
 #include "games/connect_four.h"
+#include "games/bejeweled.h"

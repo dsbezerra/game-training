@@ -182,6 +182,7 @@ free_menu_arts(App_State *state) {
 #include "games/othello.cpp"
 #include "games/flood_it.cpp"
 #include "games/connect_four.cpp"
+#include "games/bejeweled.cpp"
 
 //
 // Game titles
@@ -199,6 +200,7 @@ global_variable char* game_titles[] = {
     OTHELLO_TITLE,
     FLOOD_IT_TITLE,
     CONNECT_FOUR_TITLE,
+    BEJEWELED_TITLE,
 };
 
 //
@@ -218,6 +220,7 @@ void (*menu_table[])(App_State *state, Vector2 min, Vector2 max) = {
     othello_menu_art,
     flood_it_menu_art,
     connect_four_menu_art,
+    bejeweled_menu_art,
 };
 
 //
@@ -237,6 +240,7 @@ void (*game_free_table[])(Game_Memory *memory) = {
     othello_game_free,
     flood_it_game_free,
     connect_four_game_free,
+    bejeweled_game_free,
 };
 
 // 
@@ -256,6 +260,7 @@ void (*game_table[])(Game_Memory *memory, Game_Input *input) = {
     othello_game_update_and_render,
     flood_it_game_update_and_render,
     connect_four_game_update_and_render,
+    bejeweled_game_update_and_render,
 };
 
 internal void *

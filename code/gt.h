@@ -181,6 +181,7 @@ enum game {
     Game_Othello,
     Game_FloodIt,
     Game_ConnectFour,
+    Game_Bejeweled,
     
     Game_Count,
 };
