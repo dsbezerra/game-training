@@ -203,10 +203,10 @@ load_shader(char *filepath) {
     result.full_name    = copy_string(filepath);
     
     char *short_name = copy_string(filepath);
-    int t = find_character_from_right(short_name, '/');
+    int t = find_character_from_left(short_name, '/');
     while (t >= 0) {
         advance(&short_name, t + 1);
-        t = find_character_from_right(short_name, '/');
+        t = find_character_from_left(short_name, '/');
     }
     Break_String_Result r = break_by_tok(short_name, '.');
     result.short_name     = short_name;
