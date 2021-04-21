@@ -170,8 +170,12 @@ count_lines(u8 *buffer) {
     
     u8 *at = buffer;
     
-    while (*at) {
-        if (*at == '\n') result++;
+    while (1) {
+        b32 reached_end = *at == '\0';
+        if (*at == '\n' || *at == '\0') {
+            result++;
+        }
+        if (reached_end) break;
         at++;
     }
     
@@ -236,7 +240,7 @@ consume_next_line(u8 **buffer) {
     
     int count = 0;
     while (*at++) {
-        if (*at == '\n') {
+        if (*at == '\n' || *at == '\0') {
             line = (char*) *buffer;
             line[++count] = '\0';
             break;
@@ -254,11 +258,11 @@ consume_next_line(Text_File_Handler *handler) {
     if (!handler) return 0;
     
     while (handler->current_line < handler->num_lines) {
-        handler->current_line++;
         char *line = consume_next_line(&handler->data);
         if (!line) {
             continue;
         }
+        handler->current_line++;
         return line; 
     }
     
