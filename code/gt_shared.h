@@ -86,7 +86,7 @@ strings_are_equal(char *a, char *b) {
 }
 
 internal int
-find_character_from_right(char *a, char c) {
+find_character_from_left(char *a, char c) {
     int result = -1;
     int i = 0;
     while (*a) {
@@ -97,6 +97,27 @@ find_character_from_right(char *a, char c) {
         *a++; i++;
     }
     return result;
+}
+
+internal int
+find_character_from_right(char *a, char c, u32 length) {
+    int result = -1;
+    int i = length - 1;
+    
+    char *at = a + i;
+    while (*at) {
+        if (*at == c) {
+            result = i;
+            break;
+        }
+        *at--; i--;
+    }
+    return result;
+}
+
+internal int
+find_character_from_right(char *a, char c) {
+    return find_character_from_right(a, c, string_length(a));
 }
 
 internal b32
@@ -257,7 +278,7 @@ break_by_tok(char *a, char tok) {
         result.lhs = 0;
         result.rhs = 0;
     } else {
-        int pos = find_character_from_right(a, tok);
+        int pos = find_character_from_left(a, tok);
         if (pos >= 0) {
             char *lhs = a; lhs[pos++] = '\0';
             result.lhs = lhs;
@@ -266,20 +287,6 @@ break_by_tok(char *a, char tok) {
             result.lhs = a;
             result.rhs = 0;
         }
-#if 0
-        char *at = a;
-        int count = 0;
-        while (*at) {
-            if (*at == tok) {
-                char *lhs = a; lhs[count++] = '\0';
-                result.lhs = lhs;
-                result.rhs = a + count;
-                break;
-            }
-            count++;
-            at++;
-        }
-#endif
     }
     
     return result;
@@ -290,6 +297,24 @@ break_by_spaces(char *a) {
     Break_String_Result result = {};
     
     result = break_by_tok(a, ' ');
+    
+    return result;
+}
+
+internal Break_String_Result
+break_at_index(char *a, int index) {
+    Break_String_Result result = {};
+    
+    if (!a) {
+        result.lhs = 0;
+        result.rhs = 0;
+    } else {
+        if (index > 0) {
+            char *lhs = a; lhs[index++] = '\0';
+            result.lhs = lhs;
+            result.rhs = a + index;
+        }
+    }
     
     return result;
 }
@@ -386,7 +411,6 @@ get_filename(char *filepath, b32 with_extension = false) {
     int t = find_character_from_right(filename, '/');
     while (t >= 0) {
         advance(&filename, t + 1);
-        t = find_character_from_right(filename, '/');
     }
     if (with_extension) {
         return filename;
