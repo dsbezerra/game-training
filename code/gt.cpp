@@ -8,6 +8,7 @@
 #include "gt_audio.cpp"
 #include "gt_profiler.cpp"
 #include "gt_mesh.cpp"
+#include "gt_sprite.cpp"
 
 global_variable Game_Core core = {};
 global_variable Debug_Draw debug_draw = {};

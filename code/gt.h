@@ -13,6 +13,7 @@
 #include "gt_profiler.h"
 #include "gt_collision.h"
 #include "gt_mesh.h"
+#include "gt_sprite.h"
 #include "gt_draw.h"
 #include "gt_wav_loader.h"
 
