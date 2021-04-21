@@ -34,6 +34,7 @@ struct Spritesheet {
     s32 height;
 };
 
+internal void consume_sprite(Sprite *sprite, char *line);
 internal u32 consume_sprite(Spritesheet *spritesheet, char *line, u32 sprite_index);
 
 internal Sprite * load_sprite(char *filepath);

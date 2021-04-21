@@ -1,16 +1,11 @@
-internal u32
-consume_sprite(Spritesheet *spritesheet, char *line, u32 sprite_index) {
+internal void
+consume_sprite(Sprite *sprite, char *line) {
     Sprite_Sheet_Token current_token = SpriteSheetToken_Name;
-    
-    Sprite *sprite = &spritesheet->sprites[sprite_index];
-    sprite->index = -1;
-    
     Break_String_Result r = break_by_tok(line, ',');
     if (!r.lhs) {
-        return 0;
+        return;
     }
     
-    sprite->index = (s32) sprite_index;
     while (current_token < SpriteSheetToken_Count) {
         switch (current_token) {
             case SpriteSheetToken_Name: {
@@ -38,7 +33,16 @@ consume_sprite(Spritesheet *spritesheet, char *line, u32 sprite_index) {
         r = break_by_tok(r.rhs, ',');
         if (!r.lhs) break;
     }
-    return sprite_index + 1;
+    
+    sprite->index = -1;
+}
+
+internal u32
+consume_sprite(Spritesheet *spritesheet, char *line, u32 sprite_index) {
+    Sprite *sprite = &spritesheet->sprites[sprite_index];
+    consume_sprite(sprite, line);
+    
+    return sprite->index = sprite_index + 1;
 }
 
 
@@ -74,7 +78,7 @@ load_spritesheet(char *infopath) {
     result->sprites = (Sprite *) platform_alloc(result->num_sprites * sizeof(Sprite));
     
     u32 consumed = 0;
-    while (consumed < result->num_sprites) {
+    while (1) {
         char *line = consume_next_line(&handler);
         if (!line) break;
         
