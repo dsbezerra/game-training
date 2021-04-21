@@ -42,6 +42,29 @@ struct Bejeweled_Slot {
     u32 y;
 };
 
+struct Bejeweled_Tile {
+    s32 x;
+    s32 y;
+};
+
+struct Bejeweled_Gem_List {
+    u32 num_gems;
+    Bejeweled_Gem *gems;
+};
+
+enum Bejeweled_Swap_State {
+    BejeweledSwapState_Idle,
+    BejeweledSwapState_From,
+    BejeweledSwapState_To,
+    BejeweledSwapState_Swapping,
+};
+
+struct Bejeweled_Gem_Swap {
+    Bejeweled_Swap_State state;
+    Bejeweled_Tile from;
+    Bejeweled_Tile to;
+};
+
 struct Bejeweled_State;
 
 struct Bejeweled_Board {
@@ -53,23 +76,42 @@ struct Bejeweled_State {
     Game_Mode game_mode;
     Game_Memory *memory;
     
+    Memory_Arena board_arena;
+    
     Bejeweled_Gem_Sprite gems[BejeweledGem_Count-1];
     
     Bejeweled_Board board;
     
+    Bejeweled_Gem_Swap swap;
+    
     // Spritesheet
     Spritesheet *main_sheet;
+    
+    Vector2i mouse_position;
 };
 
 internal void clear_and_generate_board(Bejeweled_Board *board);
 internal void clear_board(Bejeweled_Board *board);
 internal void generate_board(Bejeweled_Board *board);
+internal Bejeweled_Gem_List possible_gems_for_slot(Bejeweled_Board *board, u32 x, u32 y);
+
+internal void do_swap(Bejeweled_State *state);
+internal void clear_swap(Bejeweled_Gem_Swap *swap);
+internal void swap_slots(Bejeweled_Gem_Swap *swap);
+internal b32 is_swap_valid(Bejeweled_Gem_Swap swap);
+internal b32 is_tile_valid(Bejeweled_Tile tile);
 
 internal Bejeweled_Gem get_random_gem(Bejeweled_State *state);
 internal Sprite * get_sprite(Bejeweled_State *state, Bejeweled_Gem gem);
+internal Bejeweled_Gem get_gem_at(Bejeweled_Board *board, s32 x, s32 y);
+internal Bejeweled_Slot * get_slot_at(Bejeweled_Board *board, s32 x, s32 y);
+internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
+internal Bejeweled_Tile get_tile_under_mouse(Bejeweled_State *state);
+internal Vector2 get_start_xy(Vector2i dim, real32 tile_size);
 
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);
+internal void handle_mouse_click(Bejeweled_State *state);
 
 internal void draw_game_view(Bejeweled_State *state);
 
