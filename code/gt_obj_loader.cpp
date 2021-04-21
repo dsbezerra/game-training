@@ -57,7 +57,6 @@ parse_mtl(Obj_Model *model) {
     
     u32 newmtl_count = 0;
     
-    u8 *at = obj_file.contents;
     while (1) {
         
         char *line = consume_next_line(&handler);
