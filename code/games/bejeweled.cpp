@@ -95,19 +95,7 @@ do_swap(Bejeweled_State *state) {
     Bejeweled_Slot *slot_b = get_slot_at(board, state->swap.to.x, state->swap.to.y);
     
     assert(slot_a && slot_b);
-    
-    Bejeweled_Slot aux = *slot_a;
-    
-    slot_a->x = slot_b->x;
-    slot_a->y = slot_b->y;
-    slot_a->type = slot_b->type;
-    slot_a->gem = slot_b->gem;
-    
-    slot_b->x = aux.x;
-    slot_b->y = aux.y;
-    slot_b->type = aux.type;
-    slot_b->gem = aux.gem;
-    
+    swap_slots(slot_a, slot_b);
     clear_swap(&state->swap);
 }
 
@@ -122,7 +110,17 @@ clear_swap(Bejeweled_Gem_Swap *swap) {
 
 internal void
 swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b) {
+    Bejeweled_Slot aux = *slot_a;
     
+    slot_a->x = slot_b->x;
+    slot_a->y = slot_b->y;
+    slot_a->type = slot_b->type;
+    slot_a->gem = slot_b->gem;
+    
+    slot_b->x = aux.x;
+    slot_b->y = aux.y;
+    slot_b->type = aux.type;
+    slot_b->gem = aux.gem;
 }
 
 internal b32

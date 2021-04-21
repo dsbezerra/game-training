@@ -97,7 +97,7 @@ internal Bejeweled_Gem_List possible_gems_for_slot(Bejeweled_Board *board, u32 x
 
 internal void do_swap(Bejeweled_State *state);
 internal void clear_swap(Bejeweled_Gem_Swap *swap);
-internal void swap_slots(Bejeweled_Gem_Swap *swap);
+internal void swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b);
 internal b32 is_swap_valid(Bejeweled_Gem_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Tile tile);
 
