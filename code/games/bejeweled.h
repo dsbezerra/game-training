@@ -11,12 +11,62 @@ Variant: Different power ups for matching a particular jewel. Be able to sometim
 
 #define BEJEWELED_TITLE "Bejeweled"
 
+#define BEJEWELED_GRID_COUNT 8
+
+enum Bejeweled_Gem {
+    BejeweledGem_None,
+    BejeweledGem_Purple,
+    BejeweledGem_Green,
+    BejeweledGem_Orange,
+    BejeweledGem_Yellow,
+    BejeweledGem_Pink,
+    BejeweledGem_Black,
+    BejeweledGem_White,
+    BejeweledGem_Count,
+};
+
+enum Bejeweled_Slot_Type {
+    BejeweledSlotType_Normal,
+};
+
+struct Bejeweled_Gem_Sprite {
+    Bejeweled_Gem gem;
+    Sprite *sprite;
+};
+
+struct Bejeweled_Slot {
+    Bejeweled_Slot_Type type;
+    Bejeweled_Gem gem;
+    
+    u32 x;
+    u32 y;
+};
+
+struct Bejeweled_State;
+
+struct Bejeweled_Board {
+    Bejeweled_State *state;
+    Bejeweled_Slot slots[BEJEWELED_GRID_COUNT][BEJEWELED_GRID_COUNT];
+};
+
 struct Bejeweled_State {
     Game_Mode game_mode;
     Game_Memory *memory;
     
-    // TODO(diego): Fill
+    Bejeweled_Gem_Sprite gems[BejeweledGem_Count-1];
+    
+    Bejeweled_Board board;
+    
+    // Spritesheet
+    Spritesheet *main_sheet;
 };
+
+internal void clear_and_generate_board(Bejeweled_Board *board);
+internal void clear_board(Bejeweled_Board *board);
+internal void generate_board(Bejeweled_Board *board);
+
+internal Bejeweled_Gem get_random_gem(Bejeweled_State *state);
+internal Sprite * get_sprite(Bejeweled_State *state, Bejeweled_Gem gem);
 
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);
