@@ -27,6 +27,8 @@ struct Spritesheet {
     char *filepath;
     char *infopath;
     
+    u32 texture_id;
+    
     u32 num_sprites;
     Sprite *sprites;
     

@@ -123,4 +123,5 @@ upload_spritesheet(Spritesheet *spritesheet) {
             sprite->texture_id = texture_id;
         }
     }
+    spritesheet->texture_id = texture_id;
 }
