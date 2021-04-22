@@ -284,7 +284,7 @@ get_tile_color(Connect_Four_Tile_Kind kind) {
             result = make_color(0xff2f3242);
         } break;
         
-        default: invalid_code_path; break;
+        invalid_default_case;
     }
     
     return result;

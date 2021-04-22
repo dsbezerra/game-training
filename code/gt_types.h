@@ -50,5 +50,5 @@ typedef real64 f64;
 
 #define array_count(array) (sizeof(array) / sizeof((array)[0]))
 
-#define invalid_default_case default: { assert(0); }
-#define invalid_code_path assert(0);
+#define invalid_code_path assert(0)
+#define invalid_default_case default: {invalid_code_path;} break
