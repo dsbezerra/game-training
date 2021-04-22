@@ -9,7 +9,6 @@ clear_and_generate_board(Bejeweled_Board *board) {
             random_gem_for_slot(board, slot);
         }
     }
-    reset_arena(&board->state->board_arena);
 }
 
 internal void
@@ -69,6 +68,9 @@ possible_gems_for_slot(Bejeweled_Board *board, u32 slot_x, u32 slot_y) {
             }
         }
     }
+    
+    Temporary_Memory gem_memory = begin_temporary_memory(arena);
+    
     result.gems = push_array(arena, num_possible_gems, Bejeweled_Gem);
     
     u32 index = 0;
@@ -84,6 +86,8 @@ possible_gems_for_slot(Bejeweled_Board *board, u32 slot_x, u32 slot_y) {
     }
     
     result.num_gems = num_possible_gems;
+    
+    end_temporary_memory(gem_memory);
     
     return result;
 }
@@ -126,12 +130,14 @@ swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b) {
 
 internal b32
 is_swap_valid(Bejeweled_Gem_Swap swap) {
-    b32 result = true;
+    b32 result = false;
     
-    u32 x_difference = abs(swap.from.x - swap.to.x);
-    u32 y_difference = abs(swap.from.y - swap.to.y);
+    u32 x_difference = abs(swap.to.x - swap.from.x);
+    u32 y_difference = abs(swap.to.y - swap.from.y);
     
-    result = x_difference != y_difference && (x_difference == 1 || y_difference == 1);
+    if (x_difference > 1 || y_difference > 1) return result;
+    
+    result = x_difference != y_difference;
     
     return result;
 }
@@ -371,7 +377,7 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         // possible_gems_for_slot routine.
         // Should be bigger enough to hold N_GEMS*GRID_COUNT*GRID_COUNT*sizeof(GEM)
         Memory_Index max_gems_memory = (((u32)(BejeweledGem_Count-1)) * BEJEWELED_GRID_COUNT*BEJEWELED_GRID_COUNT) * sizeof(Bejeweled_Gem);
-        Memory_Index board_memory_size = max_gems_memory + sizeof(Bejeweled_State); // Make sure we have enough memory indepentently of Bejeweled_State size.
+        Memory_Index board_memory_size = max_gems_memory + sizeof(Bejeweled_State); // Make sure we have enough memory independently of Bejeweled_State size.
         Memory_Index total_memory_size = board_memory_size;
         Memory_Index total_available_size = total_memory_size - sizeof(Bejeweled_State);
         
