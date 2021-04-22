@@ -9,6 +9,7 @@ clear_and_generate_board(Bejeweled_Board *board) {
             random_gem_for_slot(board, slot);
         }
     }
+    reset_arena(&board->state->board_arena);
 }
 
 internal void
@@ -366,7 +367,11 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         assert(!memory->permanent_storage);
         memory->initialized = true;
         
-        Memory_Index board_memory_size = megabytes(8);
+        // NOTE(diego): This is used to store dynamic possible_gems_for_slot in
+        // possible_gems_for_slot routine.
+        // Should be bigger enough to hold N_GEMS*GRID_COUNT*GRID_COUNT*sizeof(GEM)
+        Memory_Index max_gems_memory = (((u32)(BejeweledGem_Count-1)) * BEJEWELED_GRID_COUNT*BEJEWELED_GRID_COUNT) * sizeof(Bejeweled_Gem);
+        Memory_Index board_memory_size = max_gems_memory + sizeof(Bejeweled_State); // Make sure we have enough memory indepentently of Bejeweled_State size.
         Memory_Index total_memory_size = board_memory_size;
         Memory_Index total_available_size = total_memory_size - sizeof(Bejeweled_State);
         
