@@ -88,6 +88,10 @@ struct Bejeweled_State {
     Spritesheet *main_sheet;
     
     Vector2i mouse_position;
+    
+    // Swipe stuff
+    real32 pressed_t;
+    Vector2i pressed_position;
 };
 
 internal void clear_and_generate_board(Bejeweled_Board *board);
@@ -106,12 +110,12 @@ internal Sprite * get_sprite(Bejeweled_State *state, Bejeweled_Gem gem);
 internal Bejeweled_Gem get_gem_at(Bejeweled_Board *board, s32 x, s32 y);
 internal Bejeweled_Slot * get_slot_at(Bejeweled_Board *board, s32 x, s32 y);
 internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
-internal Bejeweled_Tile get_tile_under_mouse(Bejeweled_State *state);
+internal Bejeweled_Tile get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y);
 internal Vector2 get_start_xy(Vector2i dim, real32 tile_size);
 
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);
-internal void handle_mouse_click(Bejeweled_State *state);
+internal void handle_mouse(Bejeweled_State *state, Game_Input *input);
 
 internal void draw_game_view(Bejeweled_State *state);
 

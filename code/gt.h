@@ -212,6 +212,7 @@ enum Simulate_Game_Op {
     
     SimulateGameOp_Count,
 };
+
 struct Simulate_Game {
     Simulate_Game_Op operation;
 };

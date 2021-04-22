@@ -195,7 +195,7 @@ random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot) {
 }
 
 internal Bejeweled_Tile
-get_tile_under_mouse(Bejeweled_State *state) {
+get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y) {
     Bejeweled_Tile result = {-1, -1};
     
     // @Hardcoded
@@ -206,18 +206,17 @@ get_tile_under_mouse(Bejeweled_State *state) {
     real32 max_x = start.x + tile_size * BEJEWELED_GRID_COUNT;
     real32 max_y = start.y + tile_size * BEJEWELED_GRID_COUNT;
     
-    Vector2i mp = state->mouse_position;
-    if (mp.x < start.x || mp.x > max_x) return result;
-    if (mp.y < start.y || mp.y > max_y) return result;
+    if (x < start.x || x > max_x) return result;
+    if (y < start.y || y > max_y) return result;
     
-    s32 x = (s32) ((mp.x - start.x) / tile_size);
-    s32 y = (s32) ((mp.y - start.y) / tile_size);
+    s32 tile_x = (s32) ((x - start.x) / tile_size);
+    s32 tile_y = (s32) ((y - start.y) / tile_size);
     
-    assert(x >= 0 && x < BEJEWELED_GRID_COUNT);
-    assert(y >= 0 && y < BEJEWELED_GRID_COUNT);
+    assert(tile_x >= 0 && tile_x < BEJEWELED_GRID_COUNT);
+    assert(tile_y >= 0 && tile_y < BEJEWELED_GRID_COUNT);
     
-    result.x = x;
-    result.y = y;
+    result.x = tile_x;
+    result.y = tile_y;
     
     return result;
 }
@@ -271,27 +270,57 @@ init_game(Bejeweled_State *state) {
 
 internal void
 update_game(Bejeweled_State *state, Game_Input *input) {
-    platform_get_cursor_position(&state->mouse_position);
-    
-    if (pressed(Button_Mouse1)) {
-        handle_mouse_click(state);
-    }
+    handle_mouse(state, input);
 }
 
 internal void
-handle_mouse_click(Bejeweled_State *state) {
-    Bejeweled_Tile tile = get_tile_under_mouse(state);
-    if (is_tile_valid(tile)) {
-        if (state->swap.state == BejeweledSwapState_Idle) {
-            state->swap.from = tile;
-            state->swap.state = BejeweledSwapState_From;
-        } else if (state->swap.state == BejeweledSwapState_From) {
-            state->swap.to = tile;
-            state->swap.state = BejeweledSwapState_To;
-            if (!is_swap_valid(state->swap))
-                clear_swap(&state->swap);
-            else
-                do_swap(state);
+handle_mouse(Bejeweled_State *state, Game_Input *input) {
+    platform_get_cursor_position(&state->mouse_position);
+    
+    if (pressed(Button_Mouse1)) {
+        state->pressed_t = core.time_info.current_time;
+        state->pressed_position = state->mouse_position;
+    }
+    
+    if (released(Button_Mouse1)) {
+        
+        Vector2i press_pos = state->pressed_position;
+        Vector2i rel_pos = state->mouse_position;
+        
+        s32 dx = rel_pos.x - press_pos.x;
+        s32 dy = rel_pos.y - press_pos.y;
+        
+        real32 now = core.time_info.current_time;
+        real32 threshold = (real32) sqrt(dx*dx + dy*dy);
+#define SWIPE_SLOP 10.f
+        if (now - state->pressed_t > 1.f || threshold < SWIPE_SLOP) {
+            return;
+        }
+        state->pressed_t = .0f;
+        
+        Bejeweled_Tile tile = get_tile_under_xy(state, press_pos.x, press_pos.y);
+        if (!is_tile_valid(tile)) return;
+        
+        Bejeweled_Gem_Swap swap = {};
+        swap.from = tile;
+        swap.state = BejeweledSwapState_From;
+        
+        s32 adx = abs(dx);
+        s32 ady = abs(dy);
+        
+        if (adx > ady) {
+            // Process right/left swipe
+            s32 offset = dx > 0 ? 1 : -1;
+            swap.to = Bejeweled_Tile{tile.x+offset,tile.y};
+            swap.state = BejeweledSwapState_To;
+        } else if (adx < ady) {
+            s32 offset = dy > 0 ? 1 : -1;
+            swap.to = Bejeweled_Tile{tile.x,tile.y+offset};
+            swap.state = BejeweledSwapState_To;
+        }
+        if (is_swap_valid(swap)) {
+            state->swap = swap;
+            do_swap(state);
         }
     }
 }
