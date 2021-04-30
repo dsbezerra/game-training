@@ -190,6 +190,16 @@ operator+ (Vector2 a, Vector2 b) {
     return result;
 }
 
+inline Vector2
+operator+ (Vector2 a, real32 value) {
+    Vector2 result = {};
+    
+    result.x = a.x + value;
+    result.y = a.y + value;
+    
+    return result;
+}
+
 inline Vector2 &
 operator+= (Vector2 &a, Vector2 b) {
     a = a + b;
