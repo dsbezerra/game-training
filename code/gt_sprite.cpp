@@ -45,7 +45,6 @@ consume_sprite(Spritesheet *spritesheet, char *line, u32 sprite_index) {
     return sprite->index = sprite_index + 1;
 }
 
-
 internal Sprite *
 load_sprite(char *filepath) {
     Sprite *result = 0;
@@ -86,6 +85,19 @@ load_spritesheet(char *infopath) {
     }
     
     platform_free(handler.data);
+    
+    return result;
+}
+
+internal Sprite *
+get_sprite(Spritesheet *spritesheet, u32 sprite_index) {
+    assert(spritesheet);
+    
+    Sprite *result = 0;
+    
+    if (sprite_index >= 0 && sprite_index < spritesheet->num_sprites) {
+        result = &spritesheet->sprites[sprite_index];
+    }
     
     return result;
 }

@@ -36,11 +36,19 @@ struct Spritesheet {
     s32 height;
 };
 
+// 
+// sprites.txt Parser stuff
+//
 internal void consume_sprite(Sprite *sprite, char *line);
 internal u32 consume_sprite(Spritesheet *spritesheet, char *line, u32 sprite_index);
 
+//
+// API
+//
 internal Sprite * load_sprite(char *filepath);
 internal Spritesheet * load_spritesheet(char *filepath);
+
+internal Sprite * get_sprite(Spritesheet *spritesheet, u32 sprite_index);
 
 internal void init_spritesheet(Spritesheet *spritesheet, u32 flags = 0);
 internal void upload_spritesheet(Spritesheet *spritesheet);
