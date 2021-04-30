@@ -173,10 +173,8 @@ copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
     slot_dest->tile_size = slot_source.tile_size;
     slot_dest->half_tile_size = slot_source.half_tile_size;
     slot_dest->center = slot_source.center;
-    slot_dest->uv00 = slot_source.uv00;
-    slot_dest->uv10 = slot_source.uv10;
-    slot_dest->uv01 = slot_source.uv01;
-    slot_dest->uv11 = slot_source.uv11;
+    slot_dest->normal = slot_source.normal;
+    slot_dest->swapping = slot_source.swapping;
 }
 
 internal b32
@@ -261,10 +259,8 @@ random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot) {
     real32 v0 = 1.f - (spr->y / (real32) sheet->height);
     real32 v1 = 1.f - ((spr->y + spr->height) / (real32) sheet->height);
     
-    slot->uv00 = make_vector2(u0, v0);
-    slot->uv10 = make_vector2(u1, v0);
-    slot->uv01 = make_vector2(u0, v1);
-    slot->uv11 = make_vector2(u1, v1);
+    slot->normal = Bejeweled_Sprite_UV{make_vector2(u0, v0), make_vector2(u1, v0), make_vector2(u0, v1),
+        make_vector2(u1, v1)};
 }
 
 internal Bejeweled_Tile
@@ -458,7 +454,8 @@ draw_game_view(Bejeweled_State *state) {
                 Bejeweled_Slot *slot = &state->board.slots[x][y];
                 if (!slot) continue;
                 
-                immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, slot->uv00, slot->uv10, slot->uv01, slot->uv11);
+                Bejeweled_Sprite_UV uvs = slot->normal;
+                immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11);
             }
         }
         immediate_flush();

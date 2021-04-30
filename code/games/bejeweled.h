@@ -34,6 +34,18 @@ struct Bejeweled_Gem_Sprite {
     Sprite *sprite;
 };
 
+struct Bejeweled_Sprite_UV {
+    union {
+        struct {
+            Vector2 _00;
+            Vector2 _10;
+            Vector2 _01;
+            Vector2 _11;
+        };
+        Vector2 uvs[4];
+    };
+};
+
 struct Bejeweled_Slot {
     Bejeweled_Slot_Type type;
     Bejeweled_Gem gem;
@@ -46,10 +58,8 @@ struct Bejeweled_Slot {
     
     Vector2 center;
     
-    Vector2 uv00;
-    Vector2 uv10;
-    Vector2 uv01;
-    Vector2 uv11;
+    Bejeweled_Sprite_UV normal;
+    Bejeweled_Sprite_UV swapping; // NOTE(diego): Not used. 
 };
 
 struct Bejeweled_Tile {
