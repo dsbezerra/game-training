@@ -40,6 +40,15 @@ struct Bejeweled_Slot {
     
     u32 x;
     u32 y;
+    
+    Vector2 min;
+    Vector2 center;
+    Vector2 max;
+    
+    Vector2 uv00;
+    Vector2 uv10;
+    Vector2 uv01;
+    Vector2 uv11;
 };
 
 struct Bejeweled_Tile {
@@ -102,6 +111,7 @@ internal Bejeweled_Gem_List possible_gems_for_slot(Bejeweled_Board *board, u32 x
 internal void do_swap(Bejeweled_State *state);
 internal void clear_swap(Bejeweled_Gem_Swap *swap);
 internal void swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b);
+internal void copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source);
 internal b32 is_swap_valid(Bejeweled_Gem_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Tile tile);
 

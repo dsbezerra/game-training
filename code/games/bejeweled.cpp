@@ -1,11 +1,21 @@
 internal void
 clear_and_generate_board(Bejeweled_Board *board) {
+    Bejeweled_State *state = board->state;
+    
+    Vector2i dim = state->memory->window_dimensions;
+    
+    real32 tile_size = 64.f;
+    Vector2 start = get_start_xy(dim, tile_size);
+    
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
         for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
             Bejeweled_Slot *slot = &board->slots[x][y];
             slot->type = BejeweledSlotType_Normal;
             slot->x = x;
             slot->y = y;
+            slot->min = make_vector2(start.x + tile_size * x, start.y + tile_size * y);
+            slot->center = slot->min + tile_size*.5f;
+            slot->max = make_vector2(slot->min.x + tile_size, slot->min.y + tile_size);
             random_gem_for_slot(board, slot);
         }
     }
@@ -13,6 +23,13 @@ clear_and_generate_board(Bejeweled_Board *board) {
 
 internal void
 clear_board(Bejeweled_Board *board) {
+    Bejeweled_State *state = board->state;
+    
+    Vector2i dim = state->memory->window_dimensions;
+    
+    real32 tile_size = 64.f;
+    Vector2 start = get_start_xy(dim, tile_size);
+    
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
         for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
             Bejeweled_Slot *slot = &board->slots[x][y];
@@ -20,6 +37,9 @@ clear_board(Bejeweled_Board *board) {
             slot->gem = BejeweledGem_None;
             slot->x = x;
             slot->y = y;
+            slot->min = make_vector2(start.x + tile_size * x, start.y + tile_size * y);
+            slot->center = slot->min + tile_size*.5f;
+            slot->max = make_vector2(slot->min.x + tile_size, slot->min.y + tile_size);
         }
     }
 }
@@ -116,16 +136,19 @@ clear_swap(Bejeweled_Gem_Swap *swap) {
 internal void
 swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b) {
     Bejeweled_Slot aux = *slot_a;
-    
-    slot_a->x = slot_b->x;
-    slot_a->y = slot_b->y;
-    slot_a->type = slot_b->type;
-    slot_a->gem = slot_b->gem;
-    
-    slot_b->x = aux.x;
-    slot_b->y = aux.y;
-    slot_b->type = aux.type;
-    slot_b->gem = aux.gem;
+    copy_slot(slot_a, *slot_b);
+    copy_slot(slot_b, aux);
+}
+
+internal void
+copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
+    slot_dest->x = slot_source.x;
+    slot_dest->y = slot_source.y;
+    slot_dest->type = slot_source.type;
+    slot_dest->gem = slot_source.gem;
+    slot_dest->min = slot_source.min;
+    slot_dest->center = slot_source.center;
+    slot_dest->max = slot_source.max;
 }
 
 internal b32
@@ -192,6 +215,26 @@ random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot) {
     
     u32 random_choice = random_int_in_range(0, possible_gems.num_gems-1);
     slot->gem = possible_gems.gems[random_choice];
+    
+    // Fill UVs for Gem
+    Bejeweled_State *state = board->state;
+    
+    Sprite *spr = get_sprite(state, slot->gem);
+    assert(spr);
+    
+    Spritesheet *sheet = state->main_sheet;
+    
+    real32 u0 = spr->x / (real32) sheet->width;
+    real32 u1 = (spr->x + spr->width) / (real32) sheet->width;
+    
+    // Flip UVs
+    real32 v0 = 1.f - (spr->y / (real32) sheet->height);
+    real32 v1 = 1.f - ((spr->y + spr->height) / (real32) sheet->height);
+    
+    slot->uv00 = make_vector2(u0, v0);
+    slot->uv10 = make_vector2(u1, v0);
+    slot->uv01 = make_vector2(u0, v1);
+    slot->uv11 = make_vector2(u1, v1);
 }
 
 internal Bejeweled_Tile
@@ -335,20 +378,16 @@ draw_game_view(Bejeweled_State *state) {
     
     game_frame_begin(dim.width, dim.height);
     
-    real32 padding = 1.f;
-    real32 tile_size = 64.f;
-    
-    Vector2 start = get_start_xy(dim, tile_size);
-    
-    Spritesheet *sheet = state->main_sheet;
-    
     if (state->game_mode == GameMode_Playing) {
+        
         //
         // Background
         //
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
         immediate_flush();
+        
+        Spritesheet *sheet = state->main_sheet;
         
         immediate_begin();
         for (u32 x = 0;
@@ -357,25 +396,8 @@ draw_game_view(Bejeweled_State *state) {
             for (u32 y = 0;
                  y < BEJEWELED_GRID_COUNT;
                  ++y) {
-                
                 Bejeweled_Slot *slot = &state->board.slots[x][y];
-                Sprite *spr = get_sprite(state, slot->gem);
-                
-                real32 u0 = spr->x / (real32) sheet->width;
-                real32 u1 = (spr->x + spr->width) / (real32) sheet->width;
-                
-                // Flip UVs
-                real32 v0 = 1.f - (spr->y / (real32) sheet->height);
-                real32 v1 = 1.f - ((spr->y + spr->height) / (real32) sheet->height);
-                
-                Vector2 top_left     = make_vector2(u0, v0);
-                Vector2 top_right    = make_vector2(u1, v0);
-                Vector2 bottom_left  = make_vector2(u0, v1);
-                Vector2 bottom_right = make_vector2(u1, v1);
-                
-                Vector2 min = make_vector2(start.x + tile_size * x, start.y + tile_size * y);
-                Vector2 max = make_vector2(min.x + tile_size, min.y + tile_size);
-                immediate_textured_quad(min, max, sheet->texture_id, top_right, top_left, bottom_right, bottom_left);
+                immediate_textured_quad(slot->min, slot->max, sheet->texture_id, slot->uv00, slot->uv10, slot->uv01, slot->uv11);
             }
         }
         immediate_flush();
