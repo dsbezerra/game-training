@@ -253,8 +253,8 @@ init_game(Bejeweled_State *state) {
          sprite_index < sheet->num_sprites;
          ++sprite_index)
     {
-        Sprite *spr = &sheet->sprites[sprite_index];
-        if (spr->name) {
+        Sprite *spr = get_sprite(sheet, sprite_index);
+        if (spr && spr->name) {
             if (spr->name[0] == 'g' && spr->name[1] == 'e' && spr->name[2] == 'm') {
                 u32 gem_index = atoi(&spr->name[3]);
                 Bejeweled_Gem_Sprite *gem_s = &state->gems[gem_index-1];
