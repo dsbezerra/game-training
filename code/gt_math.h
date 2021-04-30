@@ -200,6 +200,16 @@ operator+ (Vector2 a, real32 value) {
     return result;
 }
 
+inline Vector2
+operator- (Vector2 a, real32 value) {
+    Vector2 result = {};
+    
+    result.x = a.x - value;
+    result.y = a.y - value;
+    
+    return result;
+}
+
 inline Vector2 &
 operator+= (Vector2 &a, Vector2 b) {
     a = a + b;
@@ -220,6 +230,16 @@ inline Vector2 &
 operator-= (Vector2 &a, Vector2 b) {
     a = a - b;
     return a;
+}
+
+inline b32
+operator==(Vector2 a, Vector2 b) {
+    b32 result = false;
+    
+    result = (a.x == b.x && 
+              a.y == b.y);
+    
+    return result;
 }
 
 inline real32

@@ -41,9 +41,10 @@ struct Bejeweled_Slot {
     u32 x;
     u32 y;
     
-    Vector2 min;
+    real32 tile_size;
+    real32 half_tile_size;
+    
     Vector2 center;
-    Vector2 max;
     
     Vector2 uv00;
     Vector2 uv10;
@@ -65,6 +66,7 @@ enum Bejeweled_Swap_State {
     BejeweledSwapState_Idle,
     BejeweledSwapState_From,
     BejeweledSwapState_To,
+    BejeweledSwapState_Prepared,
     BejeweledSwapState_Swapping,
 };
 
@@ -72,6 +74,12 @@ struct Bejeweled_Gem_Swap {
     Bejeweled_Swap_State state;
     Bejeweled_Tile from;
     Bejeweled_Tile to;
+    
+    Vector2 from_center;
+    Vector2 to_center;
+    
+    real32 t;
+    real32 duration;
 };
 
 struct Bejeweled_State;
@@ -126,6 +134,8 @@ internal Vector2 get_start_xy(Vector2i dim, real32 tile_size);
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);
 internal void handle_mouse(Bejeweled_State *state, Game_Input *input);
+
+internal void handle_swap(Bejeweled_State *state);
 
 internal void draw_game_view(Bejeweled_State *state);
 
