@@ -175,8 +175,22 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         {
             char buf[512];
             
+            s32 samples_per_channel = sound->sound->num_samples / sound->sound->num_channels;
+            s32 played_samples_per_channel = sound->position / sound->sound->num_channels;
+            
+            assert(sound->sound->samples_per_second == 44100);
+            
+            s32 seconds_elapsed = played_samples_per_channel / sound->sound->samples_per_second;
+            s32 total_sound_in_seconds = samples_per_channel / sound->sound->samples_per_second;
+            
+            s32 played_minutes = seconds_elapsed / 60;
+            s32 played_seconds = seconds_elapsed % 60;
+            
+            s32 total_minutes = total_sound_in_seconds / 60;
+            s32 total_seconds = total_sound_in_seconds % 60;
+            
             b32 looping = sound->flags & PLAYING_SOUND_LOOPING;
-            sprintf(buf, "%s - Looping: %s - Pan: %.2f - Volume: %.2f\n", sound->name ? sound->name : "Unnamed", looping ? "true" : "false", sound->pan, sound->volume);
+            sprintf(buf, "%s - Looping: %s - Pan: %.2f - Volume: %.2f - %02d:%02d %02d:%02d\n", sound->name ? sound->name : "Unnamed", looping ? "true" : "false", sound->pan, sound->volume, played_minutes, played_seconds, total_minutes, total_seconds);
             
             real32 cy = y - height * .5f + debug_draw_mixer.playing_sound_font.line_height * .4f;
             real32 tx = x + 2.f;

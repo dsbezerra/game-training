@@ -12,6 +12,7 @@ struct Debug_Draw_Mixer {
 struct Loaded_Sound {
     u32 num_channels;
     u32 num_samples;
+    u32 samples_per_second;
     s16 *samples;
 };
 

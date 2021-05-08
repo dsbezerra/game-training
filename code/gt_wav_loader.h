@@ -5,7 +5,8 @@
 enum {
     WAVE_CHUNK_ID_FMT = RIFF_CODE('f', 'm', 't', ' '),
     WAVE_CHUNK_ID_RIFF = RIFF_CODE('R', 'I', 'F', 'F'), 
-    WAVE_CHUNK_ID_WAVE = RIFF_CODE('W', 'A', 'V', 'E'),
+    WAVE_CHUNK_ID_WAVE = RIFF_CODE('W', 'A', 'V', 'E'), 
+    WAVE_CHUNK_ID_LIST = RIFF_CODE('L', 'I', 'S', 'T'),
     WAVE_CHUNK_ID_DATA = RIFF_CODE('d', 'a', 't', 'a'),
 };
 
@@ -107,6 +108,7 @@ load_wav_from_memory(u8 *data) {
                 assert(fmt->samples_per_second == 44100);
                 assert(fmt->bits_per_sample == 16);
                 
+                result.samples_per_second = fmt->samples_per_second;
                 result.num_channels = fmt->num_channels;
             } break;
             
@@ -115,13 +117,17 @@ load_wav_from_memory(u8 *data) {
                 sample_data_size = get_chunk_data_size(iter);
             } break;
             
+            case WAVE_CHUNK_ID_LIST: {
+                // NOTE(diego): Ignore
+            } break;
+            
             invalid_default_case;
         }
     }
     
     assert(result.num_channels && sample_data && sample_data_size);
     
-    u32 num_samples = sample_data_size / (result.num_channels * sizeof(s16));
+    u32 num_samples = sample_data_size / result.num_channels;
     if (result.num_channels == 1 || result.num_channels == 2) {
         result.samples = (s16 *) platform_alloc(sample_data_size);
         memcpy(result.samples, sample_data, sample_data_size);
