@@ -424,6 +424,11 @@ init_game(Bejeweled_State *state) {
     platform_show_cursor(true);
     
     clear_and_generate_board(&state->board);
+    
+    if (!state->background_music) {
+        state->background_music = play_sound("Moonlight", &state->music);
+    }
+    set_volume(state->background_music, .1f);
 }
 
 internal void
@@ -595,6 +600,7 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         state->swap_sound = load_sound("./data/sounds/bejeweled/swap.wav");
         state->invalid_swap_sound = load_sound("./data/sounds/bejeweled/error.wav");
+        state->music = load_sound("./data/sounds/bejeweled/Mining by Moonlight.wav");
         
         Spritesheet *s = load_spritesheet("./data/textures/bejeweled/sprites.txt");
         state->main_sheet = s;
@@ -629,5 +635,5 @@ bejeweled_game_free(Game_Memory *memory) {
     Bejeweled_State *state = (Bejeweled_State *) memory->permanent_storage;
     if (!state) return;
     
-    // TODO(diego): If necessary.
+    if (state->background_music) state->background_music->flags &= ~PLAYING_SOUND_ACTIVE;
 }

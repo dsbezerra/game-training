@@ -112,6 +112,9 @@ struct Bejeweled_State {
     
     Bejeweled_Board board;
     
+    Playing_Sound *background_music;
+    
+    Loaded_Sound music;
     Loaded_Sound swap_sound;
     Loaded_Sound invalid_swap_sound;
     
