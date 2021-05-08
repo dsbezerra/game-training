@@ -593,7 +593,7 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state = (Bejeweled_State *) game_alloc(memory, total_memory_size);
         state->memory = memory;
         
-        state->swap_sound = load_sound("./data/sounds/bejeweled/chomp.wav");
+        state->swap_sound = load_sound("./data/sounds/bejeweled/swap.wav");
         state->invalid_swap_sound = load_sound("./data/sounds/bejeweled/error.wav");
         
         Spritesheet *s = load_spritesheet("./data/textures/bejeweled/sprites.txt");
