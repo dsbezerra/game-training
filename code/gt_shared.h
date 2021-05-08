@@ -258,11 +258,11 @@ consume_next_line(Text_File_Handler *handler) {
     if (!handler) return 0;
     
     while (handler->current_line < handler->num_lines) {
+        handler->current_line++;
         char *line = consume_next_line(&handler->data);
         if (!line) {
             continue;
         }
-        handler->current_line++;
         return line; 
     }
     
@@ -413,7 +413,7 @@ get_filename(char *filepath, b32 with_extension = false) {
         at++;
     }
     int t = find_character_from_right(filename, '/');
-    while (t >= 0) {
+    if (t >= 0) {
         advance(&filename, t + 1);
     }
     if (with_extension) {
