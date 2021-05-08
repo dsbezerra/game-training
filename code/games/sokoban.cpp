@@ -909,7 +909,7 @@ draw_hud(Sokoban_State *state) {
                 real32 text_width = get_text_width(&state->assets.levelcomplete_font, text);
                 real32 text_x = center_x - text_width / 2.f;
                 real32 text_y = (dim.height * .4f) - state->assets.levelcomplete_font.line_height * .5f;
-                
+                // TODO(diego): Investiage.
                 draw_text(text_x, text_y, (u8 *) text, &state->assets.levelcomplete_font, text_color);
             }
             
