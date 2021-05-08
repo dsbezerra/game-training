@@ -129,7 +129,7 @@ load_wav_from_memory(u8 *data) {
     
     u32 num_samples = sample_data_size / result.num_channels;
     if (result.num_channels == 1 || result.num_channels == 2) {
-        result.samples = (s16 *) platform_alloc(sample_data_size);
+        result.samples = (s16 *) platform_alloc(num_samples * sizeof(s16));
         memcpy(result.samples, sample_data, sample_data_size);
     } else {
         assert(!"Invalid num channels in WAV file");
