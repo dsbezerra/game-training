@@ -126,7 +126,21 @@ prepare_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
     swap->to_center = make_vector2(start.x + tile_size * swap->to.x + half_tile_size, start.y + tile_size * swap->to.y + half_tile_size);
     swap->state = BejeweledSwapState_Prepared;
     
+    swap->valid = is_swap_valid(&state->board, *swap);
+    swap->reversing = false;
+    
     state->swap = *swap;
+}
+
+internal void
+reverse_swap(Bejeweled_Gem_Swap *swap) {
+    Vector2 old_from_center = swap->from_center;
+    swap->from_center = swap->to_center;
+    swap->to_center = old_from_center;
+    
+    swap->state = BejeweledSwapState_Prepared;
+    swap->valid = false;
+    swap->reversing = true;
 }
 
 internal void
@@ -178,7 +192,7 @@ copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
 }
 
 internal b32
-is_swap_valid(Bejeweled_Gem_Swap swap) {
+is_swap_possible(Bejeweled_Gem_Swap swap) {
     
     u32 x_difference = abs(swap.to.x - swap.from.x);
     if (x_difference > 1) return false;
@@ -192,6 +206,25 @@ is_swap_valid(Bejeweled_Gem_Swap swap) {
 }
 
 internal b32
+is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap) {
+    Bejeweled_Slot *from = get_slot_at(board, swap.from.x, swap.from.y);
+    Bejeweled_Slot *to = get_slot_at(board, swap.to.x, swap.to.y);
+    
+    Bejeweled_Gem old_from_gem = from->gem;
+    
+    // Fake swap just to check if there will be a chain.
+    from->gem = to->gem;
+    to->gem = old_from_gem;
+    
+    b32 result = has_chain(board, swap.to.x, swap.to.y);
+    
+    to->gem = from->gem;
+    from->gem = old_from_gem;
+    
+    return result;
+}
+
+internal b32
 is_tile_valid(Bejeweled_Tile tile) {
     b32 result = false;
     
@@ -199,6 +232,62 @@ is_tile_valid(Bejeweled_Tile tile) {
     
     return result;
 }
+
+internal b32
+has_chain(Bejeweled_Board *board, u32 x, u32 y) {
+    // Horizontal check
+    Bejeweled_Slot slot = board->slots[x][y];
+    
+    s32 horizontal_length = 1;
+    
+    // Left
+    s32 i = x - 1;
+    while (i >= 0 && board->slots[i][y].gem == slot.gem) {
+        Bejeweled_Slot *s = get_slot_at(board, i, y);
+        if (!s || s->gem != slot.gem) break;
+        
+        i--;
+        horizontal_length++;
+    }
+    
+    // Right
+    i = x + 1;
+    while (i < BEJEWELED_GRID_COUNT) {
+        Bejeweled_Slot *s = get_slot_at(board, i, y);
+        if (!s || s->gem != slot.gem) break;
+        
+        i++;
+        horizontal_length++;
+    }
+    
+    if (horizontal_length >= 3) return true;
+    
+    // Vertical check
+    s32 vertical_length = 1;
+    
+    // Top
+    i = y - 1;
+    while (i >= 0) {
+        Bejeweled_Slot *s = get_slot_at(board, x, i);
+        if (!s || s->gem != slot.gem) break;
+        
+        i--;
+        vertical_length++;
+    }
+    
+    // Bottom
+    i = y + 1;
+    while (i < BEJEWELED_GRID_COUNT) {
+        Bejeweled_Slot *s = get_slot_at(board, x, i);
+        if (!s || s->gem != slot.gem) break;
+        
+        i++;
+        vertical_length++;
+    }
+    
+    return vertical_length >= 3;
+}
+
 
 internal Bejeweled_Gem
 get_random_gem(Bejeweled_State *state) {
@@ -359,7 +448,13 @@ handle_swap(Bejeweled_State *state) {
         slot_a->center = lerp_vector2(s->from_center, t, s->to_center);
         slot_b->center = lerp_vector2(s->to_center  , t, s->from_center);
         if (t >= 1.f) {
-            do_swap(state, s);
+            if (s->valid) {
+                do_swap(state, s);
+            } else if (!s->reversing) {
+                reverse_swap(s);
+            } else {
+                clear_swap(s);
+            }
             return;
         }
         s->t += core.time_info.dt;
@@ -416,7 +511,7 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
             clear_swap(&swap);
         }
         
-        if (is_swap_valid(swap)) {
+        if (is_swap_possible(swap)) {
             prepare_swap(state, &swap);
         }
         

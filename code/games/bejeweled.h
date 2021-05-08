@@ -90,6 +90,9 @@ struct Bejeweled_Gem_Swap {
     
     real32 t;
     real32 duration;
+    
+    b32 valid;
+    b32 reversing;
 };
 
 struct Bejeweled_State;
@@ -126,12 +129,18 @@ internal void clear_board(Bejeweled_Board *board);
 internal void generate_board(Bejeweled_Board *board);
 internal Bejeweled_Gem_List possible_gems_for_slot(Bejeweled_Board *board, u32 x, u32 y);
 
+internal void prepare_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap);
+internal void reverse_swap(Bejeweled_Gem_Swap *swap);
+
 internal void do_swap(Bejeweled_State *state);
 internal void clear_swap(Bejeweled_Gem_Swap *swap);
 internal void swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b);
 internal void copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source);
-internal b32 is_swap_valid(Bejeweled_Gem_Swap swap);
+internal b32 is_swap_possible(Bejeweled_Gem_Swap swap);
+internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Tile tile);
+
+internal b32 has_chain(Bejeweled_Board *board, u32 x, u32 y);
 
 internal Bejeweled_Gem get_random_gem(Bejeweled_State *state);
 internal Sprite * get_sprite(Bejeweled_State *state, Bejeweled_Gem gem);
