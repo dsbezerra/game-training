@@ -53,8 +53,12 @@ is_riff_iterator_valid(Riff_Iterator iter) {
 inline Riff_Iterator
 next_chunk(Riff_Iterator iter) {
     Wav_Chunk *chunk = (Wav_Chunk*) iter.at;
+#if 0
     u32 size = (chunk->size+1) & ~1;
     iter.at += sizeof(Wav_Chunk) + size;
+#else
+    iter.at += sizeof(Wav_Chunk) + chunk->size;
+#endif
     return iter;
 }
 
