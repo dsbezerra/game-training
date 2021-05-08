@@ -80,7 +80,8 @@ internal void immediate_circle_filled(Vector3 center, real32 radius_x, real32 ra
 internal void immediate_circle_filled(Vector3 center, real32 radius, Vector4 color);
 internal void immediate_circle_filled(Vector3 center, Vector2 radius, Vector4 color);
 
-internal void immediate_textured_quad(Vector2 min, Vector2 max, u32 texture);
+internal void immediate_textured_quad(Vector2 min, Vector2 max, u32 texture, Vector2 top_right, Vector2 top_left, Vector2 bottom_right, Vector2 bottom_left, real32 z_index = 1.f);
+internal void immediate_textured_quad(Vector2 min, Vector2 max, u32 texture, real32 z_index = 1.f);
 
 
 internal void immediate_quad(Vector2 min, Vector2 max, real32 z, Vector4 color);

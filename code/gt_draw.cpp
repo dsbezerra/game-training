@@ -262,12 +262,11 @@ immediate_quad(real32 x0, real32 y0, real32 x1, real32 y1, Vector4 color) {
 }
 
 internal void
-immediate_textured_quad(Vector2 min, Vector2 max, u32 texture, Vector2 top_right, Vector2 top_left, Vector2 bottom_right, Vector2 bottom_left) {
+immediate_textured_quad(Vector2 min, Vector2 max, u32 texture, Vector2 top_right, Vector2 top_left, Vector2 bottom_right, Vector2 bottom_left, real32 z_index) {
     
     glBindTexture(GL_TEXTURE_2D, texture);
     open_gl->glActiveTexture(GL_TEXTURE0);
     
-    real32 z_index = 1.f;
     Vector4 color = make_color(0xffffffff);
     
     immediate_vertex(make_vector3(min.x, min.y, z_index), color, top_left);
@@ -280,13 +279,13 @@ immediate_textured_quad(Vector2 min, Vector2 max, u32 texture, Vector2 top_right
 }
 
 internal void
-immediate_textured_quad(Vector2 min, Vector2 max, u32 texture) {
+immediate_textured_quad(Vector2 min, Vector2 max, u32 texture, real32 z_index) {
     Vector2 top_right    = make_vector2(1.f, 1.f);
     Vector2 top_left     = make_vector2(.0f, 1.f);
     Vector2 bottom_right = make_vector2(1.f, .0f);
     Vector2 bottom_left  = make_vector2(.0f, .0f);
     
-    immediate_textured_quad(min, max, texture, top_right, top_left, bottom_right, bottom_left);
+    immediate_textured_quad(min, max, texture, top_right, top_left, bottom_right, bottom_left, z_index);
 }
 
 internal void
