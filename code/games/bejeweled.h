@@ -57,6 +57,7 @@ struct Bejeweled_Slot {
     real32 half_tile_size;
     
     Vector2 center;
+    Vector2 visual_center;
     
     Bejeweled_Sprite_UV normal;
     Bejeweled_Sprite_UV swapping; // NOTE(diego): Not used. 
@@ -102,6 +103,14 @@ struct Bejeweled_Board {
     Bejeweled_Slot slots[BEJEWELED_GRID_COUNT][BEJEWELED_GRID_COUNT];
 };
 
+struct Bejeweled_Assets {
+    // Spritesheet
+    Spritesheet *main_sheet;
+    
+    Sprite *tile_sprite;
+    Bejeweled_Sprite_UV tile_uv;
+};
+
 struct Bejeweled_State {
     Game_Mode game_mode;
     Game_Memory *memory;
@@ -110,6 +119,7 @@ struct Bejeweled_State {
     
     Bejeweled_Gem_Sprite gems[BejeweledGem_Count-1];
     
+    Bejeweled_Assets assets;
     Bejeweled_Board board;
     
     Playing_Sound *background_music;
@@ -119,9 +129,6 @@ struct Bejeweled_State {
     Loaded_Sound invalid_swap_sound;
     
     Bejeweled_Gem_Swap swap;
-    
-    // Spritesheet
-    Spritesheet *main_sheet;
     
     Vector2i mouse_position;
     
