@@ -133,6 +133,8 @@ struct Bejeweled_State {
     Loaded_Sound swap_sound;
     Loaded_Sound invalid_swap_sound;
     
+    Bejeweled_Tile highlighted_tile;
+    
     Bejeweled_Gem_Swap swap;
     
     Vector2i mouse_position;

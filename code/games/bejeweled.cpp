@@ -378,11 +378,11 @@ get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y) {
     s32 tile_x = (s32) ((x - start.x) / tile_size);
     s32 tile_y = (s32) ((y - start.y) / tile_size);
     
-    assert(tile_x >= 0 && tile_x < BEJEWELED_GRID_COUNT);
-    assert(tile_y >= 0 && tile_y < BEJEWELED_GRID_COUNT);
-    
-    result.x = tile_x;
-    result.y = tile_y;
+    if (tile_x >= 0 && tile_x < BEJEWELED_GRID_COUNT &&
+        tile_y >= 0 && tile_y < BEJEWELED_GRID_COUNT) {
+        result.x = tile_x;
+        result.y = tile_y;
+    }
     
     return result;
 }
@@ -502,7 +502,12 @@ internal void
 handle_mouse(Bejeweled_State *state, Game_Input *input) {
     platform_get_cursor_position(&state->mouse_position);
     
-    if (state->swap.state == BejeweledSwapState_Swapping || state->swap.state == BejeweledSwapState_Prepared) return;
+    state->highlighted_tile = Bejeweled_Tile{-1, -1};
+    if (state->swap.state == BejeweledSwapState_Swapping || state->swap.state == BejeweledSwapState_Prepared) {
+        return;
+    }
+    
+    state->highlighted_tile = get_tile_under_xy(state, state->mouse_position.x, state->mouse_position.y);
     
     if (pressed(Button_Mouse1)) {
         state->pressed_t = core.time_info.current_time;
@@ -578,10 +583,10 @@ draw_game_view(Bejeweled_State *state) {
         Spritesheet *sheet = assets.main_sheet;
         
         immediate_begin();
-        for (u32 x = 0;
+        for (s32 x = 0;
              x < BEJEWELED_GRID_COUNT;
              ++x) {
-            for (u32 y = 0;
+            for (s32 y = 0;
                  y < BEJEWELED_GRID_COUNT;
                  ++y) {
                 Bejeweled_Slot *slot = &state->board.slots[x][y];
@@ -589,14 +594,19 @@ draw_game_view(Bejeweled_State *state) {
                 
                 // Make sure our 'from' Gem is in front of the 'to' one
                 real32 z_index = 0.8f;
-                if (state->swap.state == BejeweledSwapState_Swapping &&
-                    (u32) state->swap.from.x == x && (u32) state->swap.from.y == y) {
+                if (state->swap.state == BejeweledSwapState_Swapping && 
+                    state->swap.from.x == x && state->swap.from.y == y) {
                     z_index -= 0.01f;
                 }
                 
-                u32 index = (u32) slot->gem;
-                Bejeweled_Sprite_UV uvs = state->assets.gem_uvs[index];
+                u32 index = ((u32) slot->gem) - 1;
                 
+                Bejeweled_Sprite_UV uvs = state->assets.gem_uvs[index];
+                if (state->highlighted_tile.x == x && state->highlighted_tile.y == y) {
+                    uvs = state->assets.highlighted_gem_uvs[index];
+                }
+                
+                // TODO(diego): Tile Y size *MUST* be different.
                 immediate_textured_quad(slot->visual_center - slot->half_tile_size, slot->visual_center + slot->half_tile_size, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, z_index);
                 
                 immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, assets.tile_uv._00, assets.tile_uv._10, assets.tile_uv._01, assets.tile_uv._11, 0.9f);
