@@ -439,6 +439,11 @@ handle_swap(Bejeweled_State *state) {
     
     if (s->state == BejeweledSwapState_Prepared) {
         start_swap(state, s);
+        if (s->valid) {
+            play_sound("Swap", &state->swap_sound, false);
+        } else if (s->reversing) {
+            play_sound("Error", &state->invalid_swap_sound, false);
+        }
     } else if (s->state == BejeweledSwapState_Swapping) {
         
         real32 t = clampf(0.f, s->t / s->duration, 1.f);
@@ -588,6 +593,8 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state = (Bejeweled_State *) game_alloc(memory, total_memory_size);
         state->memory = memory;
         
+        state->swap_sound = load_sound("./data/sounds/bejeweled/chomp.wav");
+        state->invalid_swap_sound = load_sound("./data/sounds/bejeweled/error.wav");
         
         Spritesheet *s = load_spritesheet("./data/textures/bejeweled/sprites.txt");
         state->main_sheet = s;

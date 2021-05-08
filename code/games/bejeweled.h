@@ -112,6 +112,9 @@ struct Bejeweled_State {
     
     Bejeweled_Board board;
     
+    Loaded_Sound swap_sound;
+    Loaded_Sound invalid_swap_sound;
+    
     Bejeweled_Gem_Swap swap;
     
     // Spritesheet
