@@ -559,8 +559,16 @@ draw_game_view(Bejeweled_State *state) {
                 Bejeweled_Slot *slot = &state->board.slots[x][y];
                 if (!slot) continue;
                 
+                // Make sure our 'from' Gem is in front of the 'to' one
+                real32 z_index = 1.f;
+                if (state->swap.state == BejeweledSwapState_Swapping &&
+                    (u32) state->swap.from.x == x && (u32) state->swap.from.y == y) {
+                    z_index -= 0.01f;
+                }
+                
+                
                 Bejeweled_Sprite_UV uvs = slot->normal;
-                immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11);
+                immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, z_index);
             }
         }
         immediate_flush();
