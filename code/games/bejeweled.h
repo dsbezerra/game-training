@@ -13,6 +13,9 @@ Variant: Different power ups for matching a particular jewel. Be able to sometim
 
 #define BEJEWELED_GRID_COUNT 8
 
+#define BEJEWELED_TILE_SIZE_X 64.f
+#define BEJEWELED_TILE_SIZE_Y 72.f
+
 enum Bejeweled_Gem {
     BejeweledGem_None,
     BejeweledGem_Purple,
@@ -21,7 +24,8 @@ enum Bejeweled_Gem {
     BejeweledGem_Yellow,
     BejeweledGem_Pink,
     BejeweledGem_Black,
-    BejeweledGem_White,
+    //BejeweledGem_White,
+    
     BejeweledGem_Count,
 };
 
@@ -58,9 +62,6 @@ struct Bejeweled_Slot {
     
     Vector2 center;
     Vector2 visual_center;
-    
-    Bejeweled_Sprite_UV normal;
-    Bejeweled_Sprite_UV swapping; // NOTE(diego): Not used. 
 };
 
 struct Bejeweled_Tile {
@@ -109,6 +110,9 @@ struct Bejeweled_Assets {
     
     Sprite *tile_sprite;
     Bejeweled_Sprite_UV tile_uv;
+    
+    Bejeweled_Sprite_UV gem_uvs[BejeweledGem_Count-1];
+    Bejeweled_Sprite_UV highlighted_gem_uvs[BejeweledGem_Count-1]; 
 };
 
 struct Bejeweled_State {
@@ -118,6 +122,7 @@ struct Bejeweled_State {
     Memory_Arena board_arena;
     
     Bejeweled_Gem_Sprite gems[BejeweledGem_Count-1];
+    Bejeweled_Gem_Sprite highlighted_gems[BejeweledGem_Count-1];
     
     Bejeweled_Assets assets;
     Bejeweled_Board board;
@@ -154,6 +159,8 @@ internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Tile tile);
 
 internal b32 has_chain(Bejeweled_Board *board, u32 x, u32 y);
+
+internal Bejeweled_Sprite_UV get_uvs_for_sprite(Spritesheet *sheet, Sprite *sprite);
 
 internal Bejeweled_Gem get_random_gem(Bejeweled_State *state);
 internal Sprite * get_sprite(Bejeweled_State *state, Bejeweled_Gem gem);

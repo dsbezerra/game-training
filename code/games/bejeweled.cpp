@@ -4,6 +4,8 @@ clear_and_generate_board(Bejeweled_Board *board) {
     
     Vector2i dim = state->memory->window_dimensions;
     
+    // NOTE(diego): We calculate slot positions here to avoid doing it every frame, keep in mind
+    // that if we resize the window the game *WILL NOT* be centered!
     real32 tile_size = 64.f;
     real32 half_tile_size = tile_size * .5f;
     Vector2 start = get_start_xy(dim, tile_size);
@@ -29,6 +31,8 @@ clear_board(Bejeweled_Board *board) {
     
     Vector2i dim = state->memory->window_dimensions;
     
+    // NOTE(diego): We calculate slot positions here to avoid doing it every frame, keep in mind
+    // that if we resize the window the game *WILL NOT* be centered!
     real32 tile_size = 64.f;
     real32 half_tile_size = tile_size * .5f;
     Vector2 start = get_start_xy(dim, tile_size);
@@ -64,13 +68,13 @@ possible_gems_for_slot(Bejeweled_Board *board, u32 slot_x, u32 slot_y) {
     Memory_Arena *arena = &board->state->board_arena;
     
     Bejeweled_Gem gems[] = {
-        BejeweledGem_Purple,
-        BejeweledGem_Green,
-        BejeweledGem_Orange,
-        BejeweledGem_Yellow,
-        BejeweledGem_Pink,
-        BejeweledGem_Black,
-        BejeweledGem_White,
+        BejeweledGem_Purple, // Donut
+        BejeweledGem_Green, // Macaroon
+        BejeweledGem_Orange, // SugarCookie
+        BejeweledGem_Yellow, // Croissant
+        BejeweledGem_Pink, // Cupcake
+        BejeweledGem_Black, // Danish
+        //BejeweledGem_White,
     };
     
     // Offset
@@ -190,8 +194,6 @@ copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
     slot_dest->half_tile_size = slot_source.half_tile_size;
     slot_dest->center = slot_source.center;
     slot_dest->visual_center = slot_source.visual_center;
-    slot_dest->normal = slot_source.normal;
-    slot_dest->swapping = slot_source.swapping;
 }
 
 internal b32
@@ -291,6 +293,26 @@ has_chain(Bejeweled_Board *board, u32 x, u32 y) {
     return vertical_length >= 3;
 }
 
+internal Bejeweled_Sprite_UV
+get_uvs_for_sprite(Spritesheet *sheet, Sprite *sprite) {
+    assert(sheet && sprite);
+    
+    Bejeweled_Sprite_UV result = {};
+    
+    real32 u0 = sprite->x / (real32) sheet->width;
+    real32 u1 = (sprite->x + sprite->width) / (real32) sheet->width;
+    
+    // Flip UVs
+    real32 v0 = 1.f - (sprite->y / (real32) sheet->height);
+    real32 v1 = 1.f - ((sprite->y + sprite->height) / (real32) sheet->height);
+    
+    result._00 = make_vector2(u0, v0);
+    result._10 = make_vector2(u1, v0);
+    result._01 = make_vector2(u0, v1);
+    result._11 = make_vector2(u1, v1);
+    
+    return result;
+}
 
 internal Bejeweled_Gem
 get_random_gem(Bejeweled_State *state) {
@@ -299,8 +321,9 @@ get_random_gem(Bejeweled_State *state) {
 }
 
 internal Sprite *
-get_sprite(Bejeweled_State *state, Bejeweled_Gem gem) {
-    Bejeweled_Gem_Sprite *g = &state->gems[(u32) gem - 1];
+get_sprite(Bejeweled_State *state, Bejeweled_Gem gem, b32 highlighted = false) {
+    Bejeweled_Gem_Sprite *sprites = highlighted ? state->highlighted_gems : state->gems;
+    Bejeweled_Gem_Sprite *g = &sprites[(u32) gem - 1];
     return g->sprite;
 }
 
@@ -335,24 +358,6 @@ random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot) {
     
     u32 random_choice = random_int_in_range(0, possible_gems.num_gems-1);
     slot->gem = possible_gems.gems[random_choice];
-    
-    // Fill UVs for Gem
-    Bejeweled_State *state = board->state;
-    
-    Sprite *spr = get_sprite(state, slot->gem);
-    assert(spr);
-    
-    Spritesheet *sheet = state->assets.main_sheet;
-    
-    real32 u0 = spr->x / (real32) sheet->width;
-    real32 u1 = (spr->x + spr->width) / (real32) sheet->width;
-    
-    // Flip UVs
-    real32 v0 = 1.f - (spr->y / (real32) sheet->height);
-    real32 v1 = 1.f - ((spr->y + spr->height) / (real32) sheet->height);
-    
-    slot->normal = Bejeweled_Sprite_UV{make_vector2(u0, v0), make_vector2(u1, v0), make_vector2(u0, v1),
-        make_vector2(u1, v1)};
 }
 
 internal Bejeweled_Tile
@@ -400,14 +405,16 @@ init_game(Bejeweled_State *state) {
     state->board.state = state;
     state->swap = {};
     
-#define BEJEWELED_GEM(GEM_TYPE) state->gems[GEM_TYPE-1].gem = GEM_TYPE
+#define BEJEWELED_GEM(GEM_TYPE) state->gems[GEM_TYPE-1].gem = GEM_TYPE; \
+state->highlighted_gems[GEM_TYPE-1].gem = GEM_TYPE
+    
     BEJEWELED_GEM(BejeweledGem_Purple);
     BEJEWELED_GEM(BejeweledGem_Green);
     BEJEWELED_GEM(BejeweledGem_Orange);
     BEJEWELED_GEM(BejeweledGem_Yellow);
     BEJEWELED_GEM(BejeweledGem_Pink);
     BEJEWELED_GEM(BejeweledGem_Black);
-    BEJEWELED_GEM(BejeweledGem_White);
+    //BEJEWELED_GEM(BejeweledGem_White);
     
     Spritesheet *sheet = state->assets.main_sheet;
     for (u32 sprite_index = 0;
@@ -416,12 +423,18 @@ init_game(Bejeweled_State *state) {
     {
         Sprite *spr = get_sprite(sheet, sprite_index);
         if (spr && spr->name) {
-            if (spr->name[0] == 'g' && spr->name[1] == 'e' && spr->name[2] == 'm') {
-                u32 gem_index = atoi(&spr->name[3]);
-                Bejeweled_Gem_Sprite *gem_s = &state->gems[gem_index-1];
+            if (string_starts_with("gem", spr->name)) {
+                u32 gem_index = atoi(&spr->name[3]) - 1;
+                Bejeweled_Gem_Sprite *gem_s = &state->gems[gem_index];
                 gem_s->sprite = spr;
-            }
-            if (strings_are_equal(spr->name, "tile")) {
+                
+                state->assets.gem_uvs[gem_index] = get_uvs_for_sprite(sheet, spr);
+            } else if (string_starts_with("h_gem", spr->name)) {
+                u32 gem_index = atoi(&spr->name[5]) - 1;
+                Bejeweled_Gem_Sprite *gem_s = &state->highlighted_gems[gem_index];
+                gem_s->sprite = spr;
+                state->assets.highlighted_gem_uvs[gem_index] = get_uvs_for_sprite(sheet, spr);
+            } else if (strings_are_equal("tile", spr->name)) {
                 state->assets.tile_sprite = spr;
                 // TODO(diego): Move to gt_sprite
                 real32 u0 = spr->x / (real32) sheet->width;
@@ -581,12 +594,12 @@ draw_game_view(Bejeweled_State *state) {
                     z_index -= 0.01f;
                 }
                 
-                Bejeweled_Sprite_UV uvs = slot->normal;
+                u32 index = (u32) slot->gem;
+                Bejeweled_Sprite_UV uvs = state->assets.gem_uvs[index];
                 
                 immediate_textured_quad(slot->visual_center - slot->half_tile_size, slot->visual_center + slot->half_tile_size, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, z_index);
                 
                 immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, assets.tile_uv._00, assets.tile_uv._10, assets.tile_uv._01, assets.tile_uv._11, 0.9f);
-                
             }
         }
         immediate_flush();
@@ -629,7 +642,7 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state->music = load_sound("./data/sounds/bejeweled/Mining by Moonlight.wav");
         
         Bejeweled_Assets assets = {};
-        Spritesheet *s = load_spritesheet("./data/textures/bejeweled/sprites.txt");
+        Spritesheet *s = load_spritesheet("./data/textures/bejeweled/cookie/sprites.txt");
         assets.main_sheet = s;
         state->assets = assets;
         
