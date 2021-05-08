@@ -32,53 +32,100 @@ struct Wav_Fmt {
 };
 #pragma pack(pop)
 
+struct Riff_Iterator {
+    u8* at;
+    u8* stop;
+};
+
+inline Riff_Iterator
+parse_chunk_at(void *at, void* stop) {
+    Riff_Iterator iter;
+    iter.at = (u8*) at;
+    iter.stop = (u8*) stop;
+    return iter;
+}
+
+inline b32
+is_riff_iterator_valid(Riff_Iterator iter) {
+    return iter.at < iter.stop;
+}
+
+inline Riff_Iterator
+next_chunk(Riff_Iterator iter) {
+    Wav_Chunk *chunk = (Wav_Chunk*) iter.at;
+    u32 size = (chunk->size+1) & ~1;
+    iter.at += sizeof(Wav_Chunk) + size;
+    return iter;
+}
+
+inline void *
+get_chunk_data(Riff_Iterator iter) {
+    return iter.at + sizeof(Wav_Chunk);
+}
+
+inline u32
+get_type(Riff_Iterator iter) {
+    Wav_Chunk *chunk = (Wav_Chunk*) iter.at;
+    return chunk->id;
+}
+
+inline u32
+get_chunk_data_size(Riff_Iterator iter) {
+    Wav_Chunk *chunk = (Wav_Chunk*) iter.at;
+    return chunk->size;
+}
+
 // NOTE(diego): This load_wav_from_memory routine gets a Loaded_Sound from
 // memory structured like a 16-bit PCM WAV files with 44.1KHz samples.
 internal Loaded_Sound
 load_wav_from_memory(u8 *data) {
     Loaded_Sound result = {};
     
-    Wav_Header *header = (Wav_Header *) data;
-    
     // NOTE(diego): Real production code need to handle error instead of assertions.
+    
+    Wav_Header *header = (Wav_Header *) data;
     assert(header->id == WAVE_CHUNK_ID_RIFF);
     assert(header->format == WAVE_CHUNK_ID_WAVE);
     assert(header->size > 0);
     
-    u8 *at = (u8*) (data + sizeof(Wav_Header));
-    Wav_Fmt *fmt = 0;
-    while (*at) {
-        Wav_Chunk *chunk = (Wav_Chunk *) at;
-        switch (chunk->id) {
+    u32 sample_data_size = 0;
+    s16* sample_data = 0;
+    
+    for (Riff_Iterator iter = parse_chunk_at(header + 1, (u8*) (header + 1) + header->size - 4); is_riff_iterator_valid(iter); iter = next_chunk(iter)) {
+        
+        switch (get_type(iter)) {
             case WAVE_CHUNK_ID_FMT: {
                 // Move to fmt chunk
-                at += sizeof(Wav_Chunk); 
-                fmt = (Wav_Fmt *) at;
+                Wav_Fmt *fmt = (Wav_Fmt*) get_chunk_data(iter);
+                
                 assert(fmt->format == WAVE_FORMAT_PCM);
                 assert(fmt->num_channels == 1 || fmt->num_channels == 2);
                 assert(fmt->samples_per_second == 44100);
                 assert(fmt->bits_per_sample == 16);
-                // Move by the chunk size
-                at += chunk->size; 
+                
+                result.num_channels = fmt->num_channels;
             } break;
             
             case WAVE_CHUNK_ID_DATA: {
-                assert(fmt && fmt->block_align == 4);
-                result.num_channels = fmt->num_channels;
-                result.num_samples = chunk->size / fmt->num_channels;
-                // Move to data
-                at += sizeof(Wav_Chunk);
-                result.samples = (s16 *) platform_alloc(result.num_samples * sizeof(s16));
-                memcpy(result.samples, at, result.num_samples * sizeof(s16));
-                break;
-                
+                sample_data = (s16*) get_chunk_data(iter);
+                sample_data_size = get_chunk_data_size(iter);
             } break;
             
-            default: {
-                invalid_code_path;
-            } break;
+            invalid_default_case;
         }
     }
+    
+    assert(result.num_channels && sample_data && sample_data_size);
+    
+    u32 num_samples = sample_data_size / (result.num_channels * sizeof(s16));
+    if (result.num_channels == 1 || result.num_channels == 2) {
+        result.samples = (s16 *) platform_alloc(sample_data_size);
+        memcpy(result.samples, sample_data, sample_data_size);
+    } else {
+        assert(!"Invalid num channels in WAV file");
+    }
+    
+    result.num_samples = num_samples;
     
     return result;
 }
