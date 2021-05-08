@@ -382,7 +382,6 @@ immediate_flush() {
     open_gl->glVertexAttribPointer(color_loc, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) sizeof(Vector3));
     open_gl->glEnableVertexAttribArray(color_loc);
     
-    
     open_gl->glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(Vector3) + sizeof(Vector4)));
     open_gl->glEnableVertexAttribArray(uv_loc);
     
@@ -398,6 +397,7 @@ immediate_flush() {
     open_gl->glDisableVertexAttribArray(position_loc);
     open_gl->glDisableVertexAttribArray(color_loc);
     open_gl->glDisableVertexAttribArray(uv_loc);
+    open_gl->glDisableVertexAttribArray(normal_loc);
     
     open_gl->glBindVertexArray(0);
     open_gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
