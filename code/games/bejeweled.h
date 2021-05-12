@@ -11,7 +11,7 @@ Variant: Different power ups for matching a particular jewel. Be able to sometim
 
 #define BEJEWELED_TITLE "Bejeweled"
 
-#define BEJEWELED_GRID_COUNT 8
+#define BEJEWELED_GRID_COUNT 9
 
 #define BEJEWELED_GEM_WIDTH 64.f
 #define BEJEWELED_GEM_HEIGHT 72.f
