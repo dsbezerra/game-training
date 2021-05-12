@@ -13,8 +13,8 @@ Variant: Different power ups for matching a particular jewel. Be able to sometim
 
 #define BEJEWELED_GRID_COUNT 8
 
-#define BEJEWELED_TILE_SIZE_X 64.f
-#define BEJEWELED_TILE_SIZE_Y 72.f
+#define BEJEWELED_GEM_WIDTH 64.f
+#define BEJEWELED_GEM_HEIGHT 72.f
 
 enum Bejeweled_Gem {
     BejeweledGem_None,
@@ -57,8 +57,8 @@ struct Bejeweled_Slot {
     u32 x;
     u32 y;
     
-    real32 tile_size;
-    real32 half_tile_size;
+    real32 width;
+    real32 height;
     
     Vector2 center;
     Vector2 visual_center;
@@ -170,7 +170,7 @@ internal Bejeweled_Gem get_gem_at(Bejeweled_Board *board, s32 x, s32 y);
 internal Bejeweled_Slot * get_slot_at(Bejeweled_Board *board, s32 x, s32 y);
 internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
 internal Bejeweled_Tile get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y);
-internal Vector2 get_start_xy(Vector2i dim, real32 tile_size);
+internal Vector2 get_start_xy(Vector2i dim, real32 width, real32 height);
 
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);

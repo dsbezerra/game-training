@@ -6,9 +6,7 @@ clear_and_generate_board(Bejeweled_Board *board) {
     
     // NOTE(diego): We calculate slot positions here to avoid doing it every frame, keep in mind
     // that if we resize the window the game *WILL NOT* be centered!
-    real32 tile_size = 64.f;
-    real32 half_tile_size = tile_size * .5f;
-    Vector2 start = get_start_xy(dim, tile_size);
+    Vector2 start = get_start_xy(dim, BEJEWELED_GEM_WIDTH, BEJEWELED_GEM_HEIGHT);
     
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
         for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
@@ -16,9 +14,9 @@ clear_and_generate_board(Bejeweled_Board *board) {
             slot->type = BejeweledSlotType_Normal;
             slot->x = x;
             slot->y = y;
-            slot->tile_size = tile_size;
-            slot->half_tile_size = half_tile_size;
-            slot->center = make_vector2(start.x + tile_size * x + half_tile_size, start.y + tile_size * y + half_tile_size);
+            slot->width = BEJEWELED_GEM_WIDTH;
+            slot->height = BEJEWELED_GEM_HEIGHT;
+            slot->center = make_vector2(start.x + slot->width  * x + slot->width / 2.f, start.y + slot->height * y + slot->height / 2.f);
             slot->visual_center = slot->center;;
             random_gem_for_slot(board, slot);
         }
@@ -33,9 +31,8 @@ clear_board(Bejeweled_Board *board) {
     
     // NOTE(diego): We calculate slot positions here to avoid doing it every frame, keep in mind
     // that if we resize the window the game *WILL NOT* be centered!
-    real32 tile_size = 64.f;
-    real32 half_tile_size = tile_size * .5f;
-    Vector2 start = get_start_xy(dim, tile_size);
+    
+    Vector2 start = get_start_xy(dim, BEJEWELED_GEM_WIDTH, BEJEWELED_GEM_HEIGHT);
     
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
         for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
@@ -44,9 +41,9 @@ clear_board(Bejeweled_Board *board) {
             slot->gem = BejeweledGem_None;
             slot->x = x;
             slot->y = y;
-            slot->tile_size = tile_size;
-            slot->half_tile_size = half_tile_size;
-            slot->center = make_vector2(start.x + tile_size * x + half_tile_size, start.y + tile_size * y + half_tile_size);
+            slot->width = BEJEWELED_GEM_WIDTH;
+            slot->height = BEJEWELED_GEM_HEIGHT;
+            slot->center = make_vector2(start.x + slot->width  * x + slot->width / 2.f, start.y + slot->height * y + slot->height / 2.f);
             slot->visual_center = slot->center;
         }
     }
@@ -124,12 +121,15 @@ internal void
 prepare_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
     Vector2i dim = state->memory->window_dimensions;
     
-    real32 tile_size = 64.f;
-    real32 half_tile_size = tile_size * .5f;
-    Vector2 start = get_start_xy(dim, tile_size);
+    real32 width  = BEJEWELED_GEM_WIDTH;
+    real32 height = BEJEWELED_GEM_HEIGHT;
+    real32 half_width  = width / 2.f;
+    real32 half_height = height / 2.f;
     
-    swap->from_center = make_vector2(start.x + tile_size * swap->from.x + half_tile_size, start.y + tile_size * swap->from.y + half_tile_size);
-    swap->to_center = make_vector2(start.x + tile_size * swap->to.x + half_tile_size, start.y + tile_size * swap->to.y + half_tile_size);
+    Vector2 start = get_start_xy(dim, width, height);
+    
+    swap->from_center = make_vector2(start.x + width * swap->from.x + half_width, start.y + height * swap->from.y + half_height);
+    swap->to_center = make_vector2(start.x + width * swap->to.x + half_width, start.y + height * swap->to.y + half_height);
     swap->state = BejeweledSwapState_Prepared;
     
     swap->valid = is_swap_valid(&state->board, *swap);
@@ -190,8 +190,8 @@ internal void
 copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
     slot_dest->type = slot_source.type;
     slot_dest->gem = slot_source.gem;
-    slot_dest->tile_size = slot_source.tile_size;
-    slot_dest->half_tile_size = slot_source.half_tile_size;
+    slot_dest->width = slot_source.width;
+    slot_dest->height = slot_source.height;
     slot_dest->center = slot_source.center;
     slot_dest->visual_center = slot_source.visual_center;
 }
@@ -364,19 +364,21 @@ internal Bejeweled_Tile
 get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y) {
     Bejeweled_Tile result = {-1, -1};
     
-    // @Hardcoded
-    real32 tile_size = 64.f;
+    Bejeweled_Slot *slot = get_slot_at(&state->board, 0, 0);
     
-    Vector2 start = get_start_xy(state->memory->window_dimensions, tile_size);
+    real32 slot_width = slot->width;
+    real32 slot_height = slot->height;
     
-    real32 max_x = start.x + tile_size * BEJEWELED_GRID_COUNT;
-    real32 max_y = start.y + tile_size * BEJEWELED_GRID_COUNT;
+    Vector2 start = get_start_xy(state->memory->window_dimensions, slot_width, slot_height);
+    
+    real32 max_x = start.x + slot_width  * BEJEWELED_GRID_COUNT;
+    real32 max_y = start.y + slot_height * BEJEWELED_GRID_COUNT;
     
     if (x < start.x || x > max_x) return result;
     if (y < start.y || y > max_y) return result;
     
-    s32 tile_x = (s32) ((x - start.x) / tile_size);
-    s32 tile_y = (s32) ((y - start.y) / tile_size);
+    s32 tile_x = (s32) ((x - start.x) / slot_width);
+    s32 tile_y = (s32) ((y - start.y) / slot_height);
     
     if (tile_x >= 0 && tile_x < BEJEWELED_GRID_COUNT &&
         tile_y >= 0 && tile_y < BEJEWELED_GRID_COUNT) {
@@ -388,9 +390,9 @@ get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y) {
 }
 
 internal Vector2
-get_start_xy(Vector2i dim, real32 tile_size) {
-    real32 width = tile_size*BEJEWELED_GRID_COUNT;
-    real32 height = tile_size*BEJEWELED_GRID_COUNT;
+get_start_xy(Vector2i dim, real32 width, real32 height) {
+    width  *=  BEJEWELED_GRID_COUNT;
+    height *= BEJEWELED_GRID_COUNT;
     
     real32 sx = center_horizontally((real32) dim.width, width);
     real32 sy = center_vertically((real32) dim.height, height);
@@ -606,10 +608,17 @@ draw_game_view(Bejeweled_State *state) {
                     uvs = state->assets.highlighted_gem_uvs[index];
                 }
                 
-                // TODO(diego): Tile Y size *MUST* be different.
-                immediate_textured_quad(slot->visual_center - slot->half_tile_size, slot->visual_center + slot->half_tile_size, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, z_index);
+                // @NOTE(diego): This can be hardcoded to BEJEWELED_GEM_WIDTH and BEJEWELED_GEM_HEIGHT
+                real32 hw = slot->width  / 2.f;
+                real32 hh = slot->height / 2.f;
                 
-                immediate_textured_quad(slot->center - slot->half_tile_size, slot->center + slot->half_tile_size, sheet->texture_id, assets.tile_uv._00, assets.tile_uv._10, assets.tile_uv._01, assets.tile_uv._11, 0.9f);
+                Vector2 gem_min = make_vector2(slot->visual_center.x - hw, slot->visual_center.y - hh);
+                Vector2 gem_max = make_vector2(slot->visual_center.x + hw, slot->visual_center.y + hh);
+                immediate_textured_quad(gem_min, gem_max, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, z_index);
+                
+                Vector2 tile_min = make_vector2(slot->center.x - hw, slot->center.y - hh);
+                Vector2 tile_max = make_vector2(slot->center.x + hw, slot->center.y + hh);
+                immediate_textured_quad(tile_min, tile_max, sheet->texture_id, assets.tile_uv._00, assets.tile_uv._10, assets.tile_uv._01, assets.tile_uv._11, 0.9f);
             }
         }
         immediate_flush();
