@@ -8,17 +8,23 @@ clear_and_generate_board(Bejeweled_Board *board) {
     // that if we resize the window the game *WILL NOT* be centered!
     Vector2 start = get_start_xy(dim, BEJEWELED_GEM_WIDTH, BEJEWELED_GEM_HEIGHT);
     
+    Bejeweled_Level level = state->current_level;
+    
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
         for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
             Bejeweled_Slot *slot = &board->slots[x][y];
-            slot->type = BejeweledSlotType_Normal;
-            slot->x = x;
-            slot->y = y;
-            slot->width = BEJEWELED_GEM_WIDTH;
-            slot->height = BEJEWELED_GEM_HEIGHT;
-            slot->center = make_vector2(start.x + slot->width  * x + slot->width / 2.f, start.y + slot->height * y + slot->height / 2.f);
-            slot->visual_center = slot->center;;
-            random_gem_for_slot(board, slot);
+            if (level.data[x][y] == 1) {
+                slot->type = BejeweledSlotType_Normal;
+                slot->x = x;
+                slot->y = y;
+                slot->width = BEJEWELED_GEM_WIDTH;
+                slot->height = BEJEWELED_GEM_HEIGHT;
+                slot->center = make_vector2(start.x + slot->width  * x + slot->width / 2.f, start.y + slot->height * y + slot->height / 2.f);
+                slot->visual_center = slot->center;;
+                random_gem_for_slot(board, slot);
+            } else {
+                slot->gem = BejeweledGem_None;
+            }
         }
     }
 }
@@ -197,7 +203,9 @@ copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
 }
 
 internal b32
-is_swap_possible(Bejeweled_Gem_Swap swap) {
+is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap) {
+    if (level->data[swap.from.x][swap.from.y] == 0) return false;
+    if (level->data[swap.to.x][swap.to.y]     == 0) return false;
     
     u32 x_difference = abs(swap.to.x - swap.from.x);
     if (x_difference > 1) return false;
@@ -230,12 +238,13 @@ is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap) {
 }
 
 internal b32
-is_tile_valid(Bejeweled_Tile tile) {
-    b32 result = false;
+is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile) {
+    if (tile.x < 0 || tile.x > BEJEWELED_GRID_COUNT) return false;
+    if (tile.y < 0 || tile.y > BEJEWELED_GRID_COUNT) return false;
     
-    result = tile.x >= 0 && tile.x < BEJEWELED_GRID_COUNT && tile.y >= 0 && tile.y < BEJEWELED_GRID_COUNT;
+    if (level->data[tile.x][tile.y] == 0) return false;
     
-    return result;
+    return true;
 }
 
 internal b32
@@ -346,7 +355,7 @@ get_slot_at(Bejeweled_Board *board, s32 x, s32 y) {
     if (y < 0 || y >= BEJEWELED_GRID_COUNT) return 0;
     
     Bejeweled_Slot *slot = &board->slots[x][y];
-    assert((s32)slot->x == x && (s32)slot->y == y);
+    if ((s32)slot->x != x && (s32)slot->y == y) return 0;
     
     return slot;
 }
@@ -364,10 +373,8 @@ internal Bejeweled_Tile
 get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y) {
     Bejeweled_Tile result = {-1, -1};
     
-    Bejeweled_Slot *slot = get_slot_at(&state->board, 0, 0);
-    
-    real32 slot_width = slot->width;
-    real32 slot_height = slot->height;
+    real32 slot_width = BEJEWELED_GEM_WIDTH;
+    real32 slot_height = BEJEWELED_GEM_HEIGHT;
     
     Vector2 start = get_start_xy(state->memory->window_dimensions, slot_width, slot_height);
     
@@ -400,12 +407,59 @@ get_start_xy(Vector2i dim, real32 width, real32 height) {
     return make_vector2(sx, sy);
 }
 
+internal Bejeweled_Level 
+load_level(char *levelname) {
+    Bejeweled_Level result = {};
+    
+    char *folder = "./data/levels/bejeweled/";
+    char *lvl = ".lvl";
+    
+    char *filename = concat(levelname, lvl, string_length(levelname), string_length(lvl));
+    char *filepath = concat(folder, filename, string_length(folder), string_length(filename));
+    
+    assert(string_length(filepath) != 0);
+    assert(string_ends_with(filepath, ".lvl"));
+    
+    File_Contents level_file = platform_read_entire_file(filepath);
+    assert(level_file.file_size > 0);
+    
+    Text_File_Handler handler = {};
+    init_handler(&handler, level_file.contents);
+    
+    assert(handler.num_lines > 0);
+    
+    u32 row = 0;
+    while (row < handler.num_lines) {
+        char *line = consume_next_line(&handler);
+        if (!line) break;
+        
+        u32 length = string_length(line);
+        assert(length == BEJEWELED_GRID_COUNT); // @NOTE(diego): We only support levels with this size.
+        for (u32 char_index = 0; char_index < length; ++char_index) {
+            u32 value = 0;
+            if (line[char_index] == '1') {
+                value = 1;
+            }
+            result.data[char_index][row] = value;
+        }
+        ++row;
+    }
+    
+    platform_free(handler.data);
+    platform_free(filepath);
+    platform_free(filename);
+    
+    return result;
+}
+
 internal void
 init_game(Bejeweled_State *state) {
     state->game_mode = GameMode_Playing;
     state->memory->game_mode = GameMode_Playing;
     state->board.state = state;
     state->swap = {};
+    
+    state->current_level = load_level("bejeweled_02");
     
 #define BEJEWELED_GEM(GEM_TYPE) state->gems[GEM_TYPE-1].gem = GEM_TYPE; \
 state->highlighted_gems[GEM_TYPE-1].gem = GEM_TYPE
@@ -533,7 +587,7 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
         state->pressed_t = .0f;
         
         Bejeweled_Tile tile = get_tile_under_xy(state, press_pos.x, press_pos.y);
-        if (!is_tile_valid(tile)) return;
+        if (!is_tile_valid(&state->current_level, tile)) return;
         
         Bejeweled_Gem_Swap swap = {};
         swap.from = tile;
@@ -555,7 +609,7 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
             clear_swap(&swap);
         }
         
-        if (is_swap_possible(swap)) {
+        if (is_swap_possible(&state->current_level, swap)) {
             prepare_swap(state, &swap);
         }
         
@@ -592,7 +646,7 @@ draw_game_view(Bejeweled_State *state) {
                  y < BEJEWELED_GRID_COUNT;
                  ++y) {
                 Bejeweled_Slot *slot = &state->board.slots[x][y];
-                if (!slot) continue;
+                if (!slot || slot->gem == BejeweledGem_None) continue;
                 
                 // Make sure our 'from' Gem is in front of the 'to' one
                 real32 z_index = 0.8f;

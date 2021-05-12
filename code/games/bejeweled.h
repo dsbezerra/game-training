@@ -104,6 +104,10 @@ struct Bejeweled_Board {
     Bejeweled_Slot slots[BEJEWELED_GRID_COUNT][BEJEWELED_GRID_COUNT];
 };
 
+struct Bejeweled_Level {
+    u32 data[BEJEWELED_GRID_COUNT][BEJEWELED_GRID_COUNT];
+};
+
 struct Bejeweled_Assets {
     // Spritesheet
     Spritesheet *main_sheet;
@@ -126,6 +130,7 @@ struct Bejeweled_State {
     
     Bejeweled_Assets assets;
     Bejeweled_Board board;
+    Bejeweled_Level current_level;
     
     Playing_Sound *background_music;
     
@@ -156,9 +161,9 @@ internal void do_swap(Bejeweled_State *state);
 internal void clear_swap(Bejeweled_Gem_Swap *swap);
 internal void swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b);
 internal void copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source);
-internal b32 is_swap_possible(Bejeweled_Gem_Swap swap);
+internal b32 is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap);
 internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap);
-internal b32 is_tile_valid(Bejeweled_Tile tile);
+internal b32 is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile);
 
 internal b32 has_chain(Bejeweled_Board *board, u32 x, u32 y);
 
@@ -171,6 +176,8 @@ internal Bejeweled_Slot * get_slot_at(Bejeweled_Board *board, s32 x, s32 y);
 internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
 internal Bejeweled_Tile get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y);
 internal Vector2 get_start_xy(Vector2i dim, real32 width, real32 height);
+
+internal Bejeweled_Level load_level(char *levelname);
 
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);
