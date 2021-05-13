@@ -30,7 +30,8 @@ enum Bejeweled_Gem {
 };
 
 enum Bejeweled_Slot_Type {
-    BejeweledSlotType_Normal,
+    BejeweledSlotType_None,
+    BejeweledSlotType_Gem,
 };
 
 struct Bejeweled_Gem_Sprite {
@@ -104,6 +105,26 @@ struct Bejeweled_Board {
     Bejeweled_Slot slots[BEJEWELED_GRID_COUNT][BEJEWELED_GRID_COUNT];
 };
 
+enum Bejeweled_Chain_Type {
+    BejeweledChainType_None,
+    BejeweledChainType_Horizontal,
+    BejeweledChainType_Vertical,
+};
+
+struct Bejeweled_Chain {
+    Bejeweled_Chain_Type type;
+    
+    u32 x;
+    u32 y;
+    
+    u32 length;
+};
+
+struct Bejeweled_Chain_List {
+    Bejeweled_Chain *chains;
+    u32 count;
+};
+
 struct Bejeweled_Level {
     u32 data[BEJEWELED_GRID_COUNT][BEJEWELED_GRID_COUNT];
 };
@@ -165,6 +186,10 @@ internal b32 is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap);
 internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile);
 
+internal Bejeweled_Chain_List detect_horizontal_matches(Bejeweled_Board *board);
+internal Bejeweled_Chain_List detect_vertical_matches(Bejeweled_Board *board);
+
+internal void eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain);
 internal b32 has_chain(Bejeweled_Board *board, u32 x, u32 y);
 
 internal Bejeweled_Sprite_UV get_uvs_for_sprite(Spritesheet *sheet, Sprite *sprite);
@@ -184,6 +209,7 @@ internal void update_game(Bejeweled_State *state, Game_Input *input);
 internal void handle_mouse(Bejeweled_State *state, Game_Input *input);
 
 internal void handle_swap(Bejeweled_State *state);
+internal void handle_matches(Bejeweled_State *state);
 
 internal void draw_game_view(Bejeweled_State *state);
 
