@@ -61,9 +61,6 @@ struct Bejeweled_Slot {
     real32 width;
     real32 height;
     
-    Vector2 center;
-    Vector2 visual_center;
-    
     s32 chain_index;
 };
 
