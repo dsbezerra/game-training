@@ -63,6 +63,8 @@ struct Bejeweled_Slot {
     
     Vector2 center;
     Vector2 visual_center;
+    
+    s32 chain_index;
 };
 
 struct Bejeweled_Tile {
@@ -112,12 +114,16 @@ enum Bejeweled_Chain_Type {
 };
 
 struct Bejeweled_Chain {
+    s32 index;
     Bejeweled_Chain_Type type;
     
     u32 x;
     u32 y;
     
     u32 length;
+    
+    real32 eating_t;
+    real32 eating_duration;
 };
 
 struct Bejeweled_Chain_List {
@@ -162,6 +168,7 @@ struct Bejeweled_State {
     Bejeweled_Tile highlighted_tile;
     
     Bejeweled_Gem_Swap swap;
+    Bejeweled_Chain_List matched_chains;
     
     Vector2i mouse_position;
     
@@ -180,15 +187,23 @@ internal void reverse_swap(Bejeweled_Gem_Swap *swap);
 
 internal void do_swap(Bejeweled_State *state);
 internal void clear_swap(Bejeweled_Gem_Swap *swap);
-internal void swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b);
-internal void copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source);
+internal void swap_slots(Bejeweled_Board *board, Bejeweled_Slot slot_a, Bejeweled_Slot slot_b);
+internal void swap_slots(Bejeweled_Board *board, s32 ax, s32 ay, s32 bx, s32 by);
+
+internal Bejeweled_Slot copy_slot(Bejeweled_Slot slot_source);
 internal b32 is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap);
 internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile);
 
+internal Bejeweled_Chain make_chain(Bejeweled_Chain_Type type, s32 x, s32 y, s32 length);
 internal Bejeweled_Chain_List detect_horizontal_matches(Bejeweled_Board *board);
 internal Bejeweled_Chain_List detect_vertical_matches(Bejeweled_Board *board);
 
+internal Bejeweled_Chain * get_chain(Bejeweled_Chain_List *list, u32 index);
+internal Bejeweled_Chain * get_eating_chain(Bejeweled_State *state, Bejeweled_Slot *slot);
+
+internal void prepare_chain_for_eating(Bejeweled_Board *board, Bejeweled_Chain *chain);
+internal void eat_chains(Bejeweled_Board *board);
 internal void eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain);
 internal b32 has_chain(Bejeweled_Board *board, u32 x, u32 y);
 
@@ -202,12 +217,17 @@ internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
 internal Bejeweled_Tile get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y);
 internal Vector2 get_start_xy(Vector2i dim, real32 width, real32 height);
 
+internal Bejeweled_Tile * get_dropping_tiles(Bejeweled_State *state);
+
 internal Bejeweled_Level load_level(char *levelname);
 
 internal void init_game(Bejeweled_State *state);
 internal void update_game(Bejeweled_State *state, Game_Input *input);
 internal void handle_mouse(Bejeweled_State *state, Game_Input *input);
 
+internal Bejeweled_Chain_List combine_chain_lists(Bejeweled_Chain_List first, Bejeweled_Chain_List second);
+internal b32 handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *list);
+internal void handle_chains(Bejeweled_State *state);
 internal void handle_swap(Bejeweled_State *state);
 internal void handle_matches(Bejeweled_State *state);
 

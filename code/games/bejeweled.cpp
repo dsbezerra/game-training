@@ -13,14 +13,15 @@ clear_and_generate_board(Bejeweled_Board *board) {
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
         for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
             Bejeweled_Slot *slot = &board->slots[x][y];
+            slot->chain_index = -1;
+            slot->x = x;
+            slot->y = y;
             if (level.data[x][y] == 1) {
                 slot->type = BejeweledSlotType_Gem;
-                slot->x = x;
-                slot->y = y;
                 slot->width = BEJEWELED_GEM_WIDTH;
                 slot->height = BEJEWELED_GEM_HEIGHT;
                 slot->center = make_vector2(start.x + slot->width  * x + slot->width / 2.f, start.y + slot->height * y + slot->height / 2.f);
-                slot->visual_center = slot->center;;
+                slot->visual_center = slot->center;
                 random_gem_for_slot(board, slot);
             } else {
                 slot->type = BejeweledSlotType_None;
@@ -52,6 +53,7 @@ clear_board(Bejeweled_Board *board) {
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->center = make_vector2(start.x + slot->width  * x + slot->width / 2.f, start.y + slot->height * y + slot->height / 2.f);
             slot->visual_center = slot->center;
+            slot->chain_index = -1;
         }
     }
 }
@@ -171,7 +173,7 @@ do_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
     Bejeweled_Slot *slot_b = get_slot_at(board, swap->to.x, swap->to.y);
     
     assert(slot_a && slot_b);
-    swap_slots(slot_a, slot_b);
+    swap_slots(board, *slot_a, *slot_b);
     clear_swap(&state->swap);
     
     handle_matches(state);
@@ -189,20 +191,24 @@ clear_swap(Bejeweled_Gem_Swap *swap) {
 }
 
 internal void
-swap_slots(Bejeweled_Slot *slot_a, Bejeweled_Slot *slot_b) {
-    Bejeweled_Slot aux = *slot_a;
-    copy_slot(slot_a, *slot_b);
-    copy_slot(slot_b, aux);
-}
-
-internal void
-copy_slot(Bejeweled_Slot *slot_dest, Bejeweled_Slot slot_source) {
-    slot_dest->type = slot_source.type;
-    slot_dest->gem = slot_source.gem;
-    slot_dest->width = slot_source.width;
-    slot_dest->height = slot_source.height;
-    slot_dest->center = slot_source.center;
-    slot_dest->visual_center = slot_source.visual_center;
+swap_slots(Bejeweled_Board *board, Bejeweled_Slot slot_a, Bejeweled_Slot slot_b) {
+    Bejeweled_Slot a_copy = slot_a;
+    Bejeweled_Slot b_copy = slot_b;
+    
+    s32 ax = a_copy.x;
+    s32 ay = a_copy.y;
+    
+    s32 bx = b_copy.x;
+    s32 by = b_copy.y;
+    
+    // Swap X's and Y's
+    a_copy.x = bx;
+    a_copy.y = by;
+    b_copy.x = ax;
+    b_copy.y = ay;
+    
+    board->slots[a_copy.x][a_copy.y] = a_copy;
+    board->slots[b_copy.x][b_copy.y] = b_copy; 
 }
 
 internal b32
@@ -250,6 +256,22 @@ is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile) {
     return true;
 }
 
+internal Bejeweled_Chain
+make_chain(Bejeweled_Chain_Type type, s32 x, s32 y, s32 length) {
+    assert(type > BejeweledChainType_None && type <= BejeweledChainType_Vertical);
+    assert(x >= 0 && x < BEJEWELED_GRID_COUNT);
+    assert(y >= 0 && y < BEJEWELED_GRID_COUNT);
+    assert(length > 0 && length <= BEJEWELED_GRID_COUNT);
+    
+    Bejeweled_Chain result = {};
+    result.type = type;
+    result.x = x;
+    result.y = y;
+    result.length = length;
+    
+    return result;
+}
+
 internal Bejeweled_Chain_List
 detect_horizontal_matches(Bejeweled_Board *board) {
     
@@ -269,18 +291,18 @@ detect_horizontal_matches(Bejeweled_Board *board) {
                 if (second && third &&
                     second->gem == match_gem && third->gem == match_gem) {
                     
-                    Bejeweled_Chain chain = {};
-                    chain.type = BejeweledChainType_Horizontal;
-                    chain.x = x;
-                    chain.y = y;
-                    chain.length = 0;
+                    s32 start_x = x;
+                    s32 start_y = y;
+                    s32 length = 0;
                     
                     Bejeweled_Slot *next;
                     do {
-                        chain.length++; x++;
+                        length++; x++;
                         next = get_slot_at(board, x, y);
                     } while (x < BEJEWELED_GRID_COUNT && next && next->gem == match_gem);
                     
+                    Bejeweled_Chain chain = make_chain(BejeweledChainType_Horizontal, start_x, start_y, length);
+                    chain.index = sb_count(result.chains);
                     sb_push(result.chains, chain);
                     result.count++;
                 }
@@ -308,18 +330,20 @@ detect_vertical_matches(Bejeweled_Board *board) {
                 if (second && third &&
                     second->gem == match_gem && third->gem == match_gem) {
                     
-                    Bejeweled_Chain chain = {};
-                    chain.type = BejeweledChainType_Vertical;
-                    chain.x = x;
-                    chain.y = y;
-                    chain.length = 0;
+                    s32 start_x = x;
+                    s32 start_y = y;
+                    s32 length = 0;
                     
                     Bejeweled_Slot *next;
                     do {
-                        chain.length++; y++;
+                        length++; y++;
                         next = get_slot_at(board, x, y);
                     } while (y < BEJEWELED_GRID_COUNT && next && next->gem == match_gem);
+                    
+                    Bejeweled_Chain chain = make_chain(BejeweledChainType_Vertical, start_x, start_y, length);
+                    chain.index = sb_count(result.chains);
                     sb_push(result.chains, chain);
+                    
                     result.count++;
                 }
             }
@@ -327,6 +351,69 @@ detect_vertical_matches(Bejeweled_Board *board) {
         }
     }
     return result;
+}
+
+internal Bejeweled_Chain *
+get_chain(Bejeweled_Chain_List *list, u32 index) {
+    if (!list || !list->count) {
+        int c = 0;
+    }
+    
+    return &list->chains[index];
+}
+
+internal Bejeweled_Chain *
+get_eating_chain(Bejeweled_State *state, Bejeweled_Slot *slot) {
+    Bejeweled_Chain *result = 0;
+    
+    if (slot->chain_index >= 0) {
+        result = get_chain(&state->matched_chains, slot->chain_index);
+    }
+    
+    return result;
+}
+
+
+internal void
+prepare_chain_for_eating(Bejeweled_Board *board, Bejeweled_Chain_List *list) {
+    if (!list || !list->count) return;
+    
+    for (u32 chain_index = 0; chain_index < list->count; ++chain_index) {
+        
+        Bejeweled_Chain *chain = &list->chains[chain_index];
+        chain->eating_t = 0.f;
+        chain->eating_duration = .2f;
+        
+        switch (chain->type) {
+            case BejeweledChainType_Vertical: {
+                for (u32 y = 0; y < chain->length; ++y) {
+                    Bejeweled_Slot *slot = get_slot_at(board, chain->x, chain->y + y);
+                    slot->chain_index = chain->index;
+                }
+            } break;
+            
+            case BejeweledChainType_Horizontal: {
+                for (u32 x = 0; x < chain->length; ++x) {
+                    Bejeweled_Slot *slot = get_slot_at(board, chain->x + x, chain->y);
+                    slot->chain_index = chain->index;
+                }
+            } break;
+            
+            invalid_default_case;
+        }
+    }
+    
+}
+
+internal void
+eat_chains(Bejeweled_State *state) {
+    
+    for (u32 chain_index = 0; chain_index < state->matched_chains.count; ++chain_index) {
+        eat_chain(&state->board, &state->matched_chains.chains[chain_index]);
+    }
+    
+    if (state->matched_chains.chains)
+        sb_free(state->matched_chains.chains);
 }
 
 internal void
@@ -339,12 +426,18 @@ eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain) {
         for (u32 y = 0; y < chain->length; ++y) {
             Bejeweled_Slot *slot = get_slot_at(board, chain->x, chain->y + y);
             slot->gem = BejeweledGem_None;
+            slot->width = BEJEWELED_GEM_WIDTH;
+            slot->height = BEJEWELED_GEM_HEIGHT;
+            slot->chain_index = -1; 
         }
         
     } else if (chain->type == BejeweledChainType_Horizontal) {
         for (u32 x = 0; x < chain->length; ++x) {
             Bejeweled_Slot *slot = get_slot_at(board, chain->x + x, chain->y);
             slot->gem = BejeweledGem_None;
+            slot->width = BEJEWELED_GEM_WIDTH;
+            slot->height = BEJEWELED_GEM_HEIGHT;
+            slot->chain_index = -1;
         }
     }
 }
@@ -457,7 +550,11 @@ get_slot_at(Bejeweled_Board *board, s32 x, s32 y) {
     if (y < 0 || y >= BEJEWELED_GRID_COUNT) return 0;
     
     Bejeweled_Slot *slot = &board->slots[x][y];
-    if ((s32)slot->x != x && (s32)slot->y == y) return 0;
+    if ((s32)slot->x == x && (s32)slot->y == y) {
+        
+    } else {
+        int c = 0;
+    }
     
     return slot;
 }
@@ -507,6 +604,34 @@ get_start_xy(Vector2i dim, real32 width, real32 height) {
     real32 sy = center_vertically((real32) dim.height, height);
     
     return make_vector2(sx, sy);
+}
+
+internal Bejeweled_Tile *
+get_dropping_tiles(Bejeweled_State *state) {
+    
+    Bejeweled_Tile *result = 0;
+    
+    for (u32 y = BEJEWELED_GRID_COUNT - 1;
+         y >= 0;
+         y--)
+    {
+        for (u32 x = 0;
+             x < BEJEWELED_GRID_COUNT;
+             x++)
+        {
+            Bejeweled_Slot *slot = get_slot_at(&state->board, x, y);
+            if (slot->type == BejeweledSlotType_Gem && slot->gem == BejeweledGem_None)
+            {
+                Bejeweled_Tile tile = {};
+                tile.x = x;
+                tile.y = y;
+                sb_push(result, tile);
+            }
+        }
+        if (sb_count(result) > 0) break;
+    }
+    
+    return result;
 }
 
 internal Bejeweled_Level 
@@ -620,6 +745,7 @@ internal void
 update_game(Bejeweled_State *state, Game_Input *input) {
     handle_mouse(state, input);
     handle_swap(state);
+    handle_chains(state);
 }
 
 internal void
@@ -684,37 +810,103 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
     }
 }
 
+internal Bejeweled_Chain_List
+combine_chain_lists(Bejeweled_Chain_List first, Bejeweled_Chain_List second) {
+    Bejeweled_Chain_List combined = {};
+    
+    for (u32 chain_index = 0; chain_index < first.count; ++chain_index) {
+        sb_push(combined.chains, first.chains[chain_index]);
+    }
+    for (u32 chain_index = 0; chain_index < second.count; ++chain_index) {
+        sb_push(combined.chains, second.chains[chain_index]);
+    }
+    combined.count = first.count + second.count;
+    
+    sb_free(first.chains);
+    sb_free(second.chains);
+    
+    return combined;
+}
+
+internal b32
+handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *list) {
+    if (!list || !list->count) return false;
+    
+    for (u32 chain_index = 0; chain_index < list->count; ++chain_index) {
+        Bejeweled_Chain *chain = &list->chains[chain_index];
+        if (chain->eating_t >= chain->eating_duration) {
+            eat_chain(&state->board, chain);
+            list->count--;
+        }
+        chain->eating_t += core.time_info.dt;
+    }
+    // NOTE(diego): All chains will get to eat_chain at the same time!
+    b32 handled = list->count == 0;
+    
+    if (handled) sb_free(state->matched_chains.chains);
+    
+    return handled;
+}
+
+internal void
+handle_chains(Bejeweled_State *state) {
+    if (handle_chain_list(state, &state->matched_chains)) {
+        
+        for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
+            for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
+                
+                Bejeweled_Slot *slot = get_slot_at(&state->board, x, y);
+                if (slot && slot->type == BejeweledSlotType_Gem &&
+                    slot->gem == BejeweledGem_None) {
+                    for (u32 row = y + 1; row < BEJEWELED_GRID_COUNT; ++row) {
+                        Bejeweled_Slot *next = get_slot_at(&state->board, x, row);
+                        swap_slots(&state->board, *slot, *next);
+                    }
+                }
+            }
+        }
+    }
+}
+
 internal void
 handle_swap(Bejeweled_State *state) {
     
     Bejeweled_Gem_Swap *s = &state->swap;
     
-    if (s->state == BejeweledSwapState_Prepared) {
-        start_swap(state, s);
-        if (s->valid) {
-            play_sound("Swap", &state->swap_sound, false);
-        } else if (s->reversing) {
-            play_sound("Error", &state->invalid_swap_sound, false);
-        }
-    } else if (s->state == BejeweledSwapState_Swapping) {
-        
-        real32 t = clampf(0.f, s->t / s->duration, 1.f);
-        
-        Bejeweled_Slot *slot_a = get_slot_at(&state->board, s->from.x, s->from.y);
-        Bejeweled_Slot *slot_b = get_slot_at(&state->board, s->to.x, s->to.y);
-        slot_a->visual_center = lerp_vector2(s->from_center, t, s->to_center);
-        slot_b->visual_center = lerp_vector2(s->to_center  , t, s->from_center);
-        if (t >= 1.f) {
+    switch (s->state) {
+        case BejeweledSwapState_Prepared: {
+            start_swap(state, s);
             if (s->valid) {
-                do_swap(state, s);
-            } else if (!s->reversing) {
-                reverse_swap(s);
-            } else {
-                clear_swap(s);
+                play_sound("Swap", &state->swap_sound, false);
+            } else if (s->reversing) {
+                play_sound("Error", &state->invalid_swap_sound, false);
             }
-            return;
-        }
-        s->t += core.time_info.dt;
+        } break;
+        
+        case BejeweledSwapState_Swapping: {
+            Bejeweled_Slot *slot_a = get_slot_at(&state->board, s->from.x, s->from.y);
+            Bejeweled_Slot *slot_b = get_slot_at(&state->board, s->to.x, s->to.y);
+            
+            real32 t = clampf(0.f, s->t / s->duration, 1.f);
+            slot_a->visual_center = lerp_vector2(s->from_center, t, s->to_center);
+            slot_b->visual_center = lerp_vector2(s->to_center  , t, s->from_center);
+            if (t >= 1.f) {
+                if (s->valid) {
+                    do_swap(state, s);
+                } else if (!s->reversing) {
+                    reverse_swap(s);
+                } else {
+                    clear_swap(s);
+                }
+                return;
+            }
+            s->t += core.time_info.dt;
+            
+        } break;
+        
+        default: {
+            // NOTE(diego): Ignored.
+        } break;
     }
 }
 
@@ -723,22 +915,20 @@ handle_matches(Bejeweled_State *state) {
     Bejeweled_Chain_List horizontal_chains = detect_horizontal_matches(&state->board);
     Bejeweled_Chain_List vertical_chains = detect_vertical_matches(&state->board);
     
-    if (!horizontal_chains.count && !vertical_chains.count) {
+    state->matched_chains = combine_chain_lists(horizontal_chains, vertical_chains);
+    if (!state->matched_chains.count) {
+        // TODO(diego): Move to next turn, which is enable user to interact with the game if there's possible swaps
+        // otherwise shuffle until we have possible swaps
         return;
     }
     
-    // Eat chain
-    for (u32 chain_index = 0; chain_index < horizontal_chains.count; ++chain_index) {
-        eat_chain(&state->board, &horizontal_chains.chains[chain_index]);
+    b32 animated = true;
+    if (!animated) {
+        eat_chains(state);
+    } else {
+        Bejeweled_Board *b = &state->board;
+        prepare_chain_for_eating(b, &state->matched_chains);
     }
-    for (u32 chain_index = 0; chain_index < vertical_chains.count; ++chain_index) {
-        eat_chain(&state->board, &vertical_chains.chains[chain_index]);
-    }
-    
-    if (horizontal_chains.chains)
-        sb_free(horizontal_chains.chains);
-    if (vertical_chains.chains)
-        sb_free(vertical_chains.chains);
 }
 
 internal void
@@ -780,6 +970,13 @@ draw_game_view(Bejeweled_State *state) {
                     z_index -= 0.01f;
                 }
                 
+                Bejeweled_Chain *eating_chain = get_eating_chain(state, slot);
+                if (eating_chain) {
+                    real32 t = smooth_start3(1.f - clampf(0.f, eating_chain->eating_t / eating_chain->eating_duration, 1.f));
+                    slot->width  = BEJEWELED_GEM_WIDTH*t;
+                    slot->height = BEJEWELED_GEM_HEIGHT*t;
+                }
+                
                 // @NOTE(diego): This can be hardcoded to BEJEWELED_GEM_WIDTH and BEJEWELED_GEM_HEIGHT
                 real32 hw = slot->width  / 2.f;
                 real32 hh = slot->height / 2.f;
@@ -797,8 +994,11 @@ draw_game_view(Bejeweled_State *state) {
                     immediate_textured_quad(gem_min, gem_max, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, z_index);
                 }
                 
-                Vector2 tile_min = make_vector2(slot->center.x - hw, slot->center.y - hh);
-                Vector2 tile_max = make_vector2(slot->center.x + hw, slot->center.y + hh);
+                real32 thw = BEJEWELED_GEM_WIDTH  / 2.f;
+                real32 thh = BEJEWELED_GEM_HEIGHT / 2.f;
+                
+                Vector2 tile_min = make_vector2(slot->center.x - thw, slot->center.y - thh);
+                Vector2 tile_max = make_vector2(slot->center.x + thw, slot->center.y + thh);
                 immediate_textured_quad(tile_min, tile_max, sheet->texture_id, assets.tile_uv._00, assets.tile_uv._10, assets.tile_uv._01, assets.tile_uv._11, 0.9f);
             }
         }
