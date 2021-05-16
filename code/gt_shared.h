@@ -240,7 +240,7 @@ consume_next_line(u8 **buffer) {
     
     int count = 0;
     while (*at++) {
-        if (*at == '\n' || *at == '\0') {
+        if (*at == '\n' || *at == '\r' || *at == '\0') {
             line = (char*) *buffer;
             line[++count] = '\0';
             break;
