@@ -10,4 +10,5 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd C:\\Users\\bigde\\Desktop\\work\\game-training\\data\\textures\\sokoban\\sun.jpg
+#NOTE(diego): This cannot be a absolute path!
+map_Kd C:\\Users\\Diego\\Desktop\\work\\game-training\\data\\textures\\sokoban\\sun.jpg
