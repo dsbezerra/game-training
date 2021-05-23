@@ -1,6 +1,7 @@
 
 #include "gt_types.h"
 #include "gt_memory.h"
+#include "gt_serialization.h"
 #include "gt_math.h"
 #include "gt_platform.h"
 #include "gt_shared.h"
