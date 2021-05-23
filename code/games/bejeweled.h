@@ -16,6 +16,14 @@ Variant: Different power ups for matching a particular jewel. Be able to sometim
 #define BEJEWELED_GEM_WIDTH 64.f
 #define BEJEWELED_GEM_HEIGHT 72.f
 
+enum Bejeweled_Control_State {
+    BejeweledControlState_WaitingForSwap,
+    BejeweledControlState_Swapping,
+    BejeweledControlState_Shuffling,
+    BejeweledControlState_HandlingMatches,
+    BejeweledControlState_Count,
+};
+
 enum Bejeweled_Gem {
     BejeweledGem_None,
     BejeweledGem_Purple,
@@ -75,14 +83,12 @@ struct Bejeweled_Gem_List {
 };
 
 enum Bejeweled_Swap_State {
-    BejeweledSwapState_Idle,
-    BejeweledSwapState_From,
-    BejeweledSwapState_To,
+    BejeweledSwapState_None,
     BejeweledSwapState_Prepared,
     BejeweledSwapState_Swapping,
 };
 
-struct Bejeweled_Gem_Swap {
+struct Bejeweled_Swap {
     Bejeweled_Swap_State state;
     Bejeweled_Tile from;
     Bejeweled_Tile to;
@@ -156,6 +162,8 @@ struct Bejeweled_State {
     Bejeweled_Board board;
     Bejeweled_Level current_level;
     
+    Bejeweled_Control_State control_state;
+    
     Playing_Sound *background_music;
     
     Loaded_Sound music;
@@ -164,7 +172,7 @@ struct Bejeweled_State {
     
     Bejeweled_Tile highlighted_tile;
     
-    Bejeweled_Gem_Swap swap;
+    Bejeweled_Swap swap;
     Bejeweled_Chain_List matched_chains;
     
     Vector2i mouse_position;
@@ -179,17 +187,24 @@ internal void clear_board(Bejeweled_Board *board);
 internal void generate_board(Bejeweled_Board *board);
 internal Bejeweled_Gem_List possible_gems_for_slot(Bejeweled_Board *board, u32 x, u32 y);
 
-internal void prepare_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap);
-internal void reverse_swap(Bejeweled_Gem_Swap *swap);
+internal void prepare_swap(Bejeweled_State *state, Bejeweled_Swap *swap);
+internal void reverse_swap(Bejeweled_Swap *swap);
 
 internal void do_swap(Bejeweled_State *state);
-internal void clear_swap(Bejeweled_Gem_Swap *swap);
+internal void clear_swap(Bejeweled_State *state);
+
+internal Bejeweled_Swap make_swap(Bejeweled_Tile tile, s32 dx, s32 dy);
+
 internal void swap_slots(Bejeweled_Board *board, Bejeweled_Slot slot_a, Bejeweled_Slot slot_b);
 internal void swap_slots(Bejeweled_Board *board, s32 ax, s32 ay, s32 bx, s32 by);
 
 internal Bejeweled_Slot copy_slot(Bejeweled_Slot slot_source);
-internal b32 is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap);
-internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap);
+
+internal b32 is_handling_matches(Bejeweled_State *state);
+internal b32 is_waiting_for_swap(Bejeweled_State *state);
+internal b32 is_swapping(Bejeweled_State *state);
+internal b32 is_swap_possible(Bejeweled_Level *level, Bejeweled_Swap swap);
+internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile);
 
 internal Bejeweled_Chain make_chain(Bejeweled_Chain_Type type, s32 x, s32 y, s32 length);
@@ -227,6 +242,8 @@ internal b32 handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *lis
 internal void handle_chains(Bejeweled_State *state);
 internal void handle_swap(Bejeweled_State *state);
 internal void handle_matches(Bejeweled_State *state);
+
+internal void begin_next_turn(Bejeweled_State *state);
 
 internal void draw_game_view(Bejeweled_State *state);
 

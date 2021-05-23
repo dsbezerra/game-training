@@ -107,7 +107,7 @@ possible_gems_for_slot(Bejeweled_Board *board, u32 slot_x, u32 slot_y) {
 }
 
 internal void
-prepare_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
+prepare_swap(Bejeweled_State *state, Bejeweled_Swap *swap) {
     Vector2i dim = state->memory->window_dimensions;
     
     real32 width  = BEJEWELED_GEM_WIDTH;
@@ -124,11 +124,12 @@ prepare_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
     swap->valid = is_swap_valid(&state->board, *swap);
     swap->reversing = false;
     
+    state->control_state = BejeweledControlState_Swapping;
     state->swap = *swap;
 }
 
 internal void
-reverse_swap(Bejeweled_Gem_Swap *swap) {
+reverse_swap(Bejeweled_Swap *swap) {
     Vector2 old_from_center = swap->from_center;
     swap->from_center = swap->to_center;
     swap->to_center = old_from_center;
@@ -136,17 +137,20 @@ reverse_swap(Bejeweled_Gem_Swap *swap) {
     swap->state = BejeweledSwapState_Prepared;
     swap->valid = false;
     swap->reversing = true;
+    swap->t = 0.f;
 }
 
 internal void
-start_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
+start_swap(Bejeweled_State *state, Bejeweled_Swap *swap) {
     swap->state = BejeweledSwapState_Swapping;
     swap->t = .0f;
     swap->duration = 0.3f;
 }
 
 internal void
-do_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
+do_swap(Bejeweled_State *state, Bejeweled_Swap *swap) {
+    assert(is_swapping(state));
+    
     Bejeweled_Board *board = &state->board;
     
     Bejeweled_Slot *slot_a = get_slot_at(board, swap->from.x, swap->from.y);
@@ -154,20 +158,43 @@ do_swap(Bejeweled_State *state, Bejeweled_Gem_Swap *swap) {
     
     assert(slot_a && slot_b);
     swap_slots(board, *slot_a, *slot_b);
-    clear_swap(&state->swap);
+    clear_swap(state);
     
     handle_matches(state);
 }
 
 internal void
-clear_swap(Bejeweled_Gem_Swap *swap) {
-    swap->state = BejeweledSwapState_Idle;
+clear_swap(Bejeweled_State *state) {
+    Bejeweled_Swap *swap = &state->swap;
+    swap->state = BejeweledSwapState_None;
     swap->from.x = -1;
     swap->from.y = -1;
     swap->to.x = -1;
     swap->to.y = -1;
-    swap->state = BejeweledSwapState_Idle;
     swap->t = .0f;
+    
+    state->control_state = BejeweledControlState_WaitingForSwap;
+}
+
+internal Bejeweled_Swap
+make_swap(Bejeweled_Tile from, s32 dx, s32 dy) {
+    Bejeweled_Swap result = {};
+    
+    result.from = from;
+    
+    s32 adx = abs(dx);
+    s32 ady = abs(dy);
+    
+    if (adx > ady) {
+        // Process right/left swipe
+        s32 offset = dx > 0 ? 1 : -1;
+        result.to = Bejeweled_Tile{from.x+offset,from.y};
+    } else if (adx < ady) {
+        s32 offset = dy > 0 ? 1 : -1;
+        result.to = Bejeweled_Tile{from.x,from.y+offset};
+    }
+    
+    return result;
 }
 
 internal void
@@ -197,7 +224,34 @@ swap_slots(Bejeweled_Board *board, Bejeweled_Slot slot_a, Bejeweled_Slot slot_b)
 }
 
 internal b32
-is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap) {
+is_handling_matches(Bejeweled_State *state) {
+    b32 result = false;
+    
+    result = state->control_state == BejeweledControlState_HandlingMatches;
+    
+    return result;
+}
+
+internal b32
+is_waiting_for_swap(Bejeweled_State *state) {
+    b32 result = false;
+    
+    result = state->control_state == BejeweledControlState_WaitingForSwap;
+    
+    return result;
+}
+
+internal b32
+is_swapping(Bejeweled_State *state) {
+    b32 result = false;
+    
+    result = state->control_state == BejeweledControlState_Swapping;
+    
+    return result;
+}
+
+internal b32
+is_swap_possible(Bejeweled_Level *level, Bejeweled_Swap swap) {
     if (level->data[swap.from.x][swap.from.y] == 0) return false;
     if (level->data[swap.to.x][swap.to.y]     == 0) return false;
     
@@ -213,7 +267,7 @@ is_swap_possible(Bejeweled_Level *level, Bejeweled_Gem_Swap swap) {
 }
 
 internal b32
-is_swap_valid(Bejeweled_Board *board, Bejeweled_Gem_Swap swap) {
+is_swap_valid(Bejeweled_Board *board, Bejeweled_Swap swap) {
     Bejeweled_Slot *from = get_slot_at(board, swap.from.x, swap.from.y);
     Bejeweled_Slot *to = get_slot_at(board, swap.to.x, swap.to.y);
     
@@ -399,6 +453,8 @@ eat_chains(Bejeweled_State *state) {
     
     if (state->matched_chains.chains)
         sb_free(state->matched_chains.chains);
+    
+    handle_matches(state);
 }
 
 internal void
@@ -724,6 +780,8 @@ state->highlighted_gems[GEM_TYPE-1].gem = GEM_TYPE
         state->background_music = play_sound("Moonlight", &state->music);
     }
     set_volume(state->background_music, .1f);
+    
+    begin_next_turn(state);
 }
 
 internal void
@@ -738,7 +796,7 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
     platform_get_cursor_position(&state->mouse_position);
     
     state->highlighted_tile = Bejeweled_Tile{-1, -1};
-    if (state->swap.state == BejeweledSwapState_Swapping || state->swap.state == BejeweledSwapState_Prepared) {
+    if (!is_waiting_for_swap(state)) {
         return;
     }
     
@@ -768,30 +826,12 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
         Bejeweled_Tile tile = get_tile_under_xy(state, press_pos.x, press_pos.y);
         if (!is_tile_valid(&state->current_level, tile)) return;
         
-        Bejeweled_Gem_Swap swap = {};
-        swap.from = tile;
-        swap.state = BejeweledSwapState_From;
-        
-        s32 adx = abs(dx);
-        s32 ady = abs(dy);
-        
-        if (adx > ady) {
-            // Process right/left swipe
-            s32 offset = dx > 0 ? 1 : -1;
-            swap.to = Bejeweled_Tile{tile.x+offset,tile.y};
-            swap.state = BejeweledSwapState_To;
-        } else if (adx < ady) {
-            s32 offset = dy > 0 ? 1 : -1;
-            swap.to = Bejeweled_Tile{tile.x,tile.y+offset};
-            swap.state = BejeweledSwapState_To;
-        } else {
-            clear_swap(&swap);
-        }
-        
+        Bejeweled_Swap swap = make_swap(tile, dx, dy);
         if (is_swap_possible(&state->current_level, swap)) {
             prepare_swap(state, &swap);
+        } else {
+            clear_swap(state);
         }
-        
     }
 }
 
@@ -819,11 +859,12 @@ handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *list) {
     
     for (u32 chain_index = 0; chain_index < list->count; ++chain_index) {
         Bejeweled_Chain *chain = &list->chains[chain_index];
+        
+        chain->eating_t += core.time_info.dt;
         if (chain->eating_t >= chain->eating_duration) {
             eat_chain(&state->board, chain);
             list->count--;
         }
-        chain->eating_t += core.time_info.dt;
     }
     // NOTE(diego): All chains will get to eat_chain at the same time!
     b32 handled = list->count == 0;
@@ -837,13 +878,14 @@ internal void
 handle_chains(Bejeweled_State *state) {
     if (handle_chain_list(state, &state->matched_chains)) {
         // TODO: Implement falling gems
+        begin_next_turn(state);
     }
 }
 
 internal void
 handle_swap(Bejeweled_State *state) {
     
-    Bejeweled_Gem_Swap *s = &state->swap;
+    Bejeweled_Swap *s = &state->swap;
     
     switch (s->state) {
         case BejeweledSwapState_Prepared: {
@@ -856,18 +898,17 @@ handle_swap(Bejeweled_State *state) {
         } break;
         
         case BejeweledSwapState_Swapping: {
+            s->t += core.time_info.dt;
             if (s->t >= s->duration) {
                 if (s->valid) {
                     do_swap(state, s);
                 } else if (!s->reversing) {
                     reverse_swap(s);
                 } else {
-                    clear_swap(s);
+                    clear_swap(state);
                 }
                 return;
             }
-            s->t += core.time_info.dt;
-            
         } break;
         
         default: {
@@ -885,8 +926,11 @@ handle_matches(Bejeweled_State *state) {
     if (!state->matched_chains.count) {
         // TODO(diego): Move to next turn, which is enable user to interact with the game if there's possible swaps
         // otherwise shuffle until we have possible swaps
+        begin_next_turn(state);
         return;
     }
+    
+    state->control_state = BejeweledControlState_HandlingMatches;
     
     b32 animated = true;
     if (!animated) {
@@ -895,6 +939,11 @@ handle_matches(Bejeweled_State *state) {
         Bejeweled_Board *b = &state->board;
         prepare_chain_for_eating(b, &state->matched_chains);
     }
+}
+
+internal void
+begin_next_turn(Bejeweled_State *state) {
+    state->control_state = BejeweledControlState_WaitingForSwap;
 }
 
 internal void
@@ -907,7 +956,15 @@ draw_game_view(Bejeweled_State *state) {
     
     game_frame_begin(dim.width, dim.height);
     
+    local_persist b32 old_swapping = is_swapping(state);
+    
     if (state->game_mode == GameMode_Playing) {
+        
+        Bejeweled_Swap *s = &state->swap;
+        Bejeweled_Assets assets = state->assets;
+        
+        Spritesheet *sheet = assets.main_sheet;
+        Vector2 start = get_start_xy(dim, BEJEWELED_GEM_WIDTH, BEJEWELED_GEM_HEIGHT);
         
         //
         // Background
@@ -915,12 +972,6 @@ draw_game_view(Bejeweled_State *state) {
         immediate_begin();
         immediate_quad(0.f, 0.f, (real32) dim.width, (real32) dim.height, make_color(0xff2f3242));
         immediate_flush();
-        
-        Bejeweled_Assets assets = state->assets;
-        Spritesheet *sheet = assets.main_sheet;
-        
-        Vector2 start = get_start_xy(dim, BEJEWELED_GEM_WIDTH, BEJEWELED_GEM_HEIGHT);
-        Bejeweled_Gem_Swap *s = &state->swap;
         
         immediate_begin();
         for (s32 x = 0;
@@ -949,9 +1000,12 @@ draw_game_view(Bejeweled_State *state) {
                 Vector2 center = make_vector2(start.x + BEJEWELED_GEM_WIDTH * x + thw, start.y + BEJEWELED_GEM_HEIGHT * y + thh);
                 Vector2 tile_center = center;
                 
+                
+                b32 is_one_of_swapping_slots = ((s->from.x == x && s->from.y == y) ||
+                                                (s->to.x == x && s->to.y == y));
                 // Make sure our 'from' Gem is in front of the 'to' one
                 real32 z_index = 0.8f;
-                if (s->state == BejeweledSwapState_Swapping && s->t < s->duration) {
+                if (is_swapping(state) && is_one_of_swapping_slots) {
                     real32 t = clampf(0.f, s->t / s->duration, 1.f);
                     if (s->from.x == x && s->from.y == y) {
                         center = lerp_vector2(s->from_center, t, s->to_center);
