@@ -78,6 +78,21 @@ platform_get_cursor_position(Vector2i *position) {
     position->y = point.y;
 }
 
+internal b32
+platform_write_entire_file(char *filepath, void *data, u32 size) {
+    HANDLE file_handle = CreateFileA(filepath, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    if (file_handle == INVALID_HANDLE_VALUE) {
+        CloseHandle(file_handle);
+        return false;
+    }
+    
+    DWORD bytes_written;
+    WriteFile(file_handle, data, size, &bytes_written, 0);
+    CloseHandle(file_handle);
+    
+    return bytes_written == size;
+}
+
 internal File_Contents
 platform_read_entire_file(char *filepath) {
     File_Contents result = {};
@@ -594,12 +609,6 @@ win32_process_pending_messages(HWND window) {
             } break;
         }
     }
-}
-
-void print_quaternion(Quaternion q, int n) {
-    char buf[256];
-    sprintf(buf, "q%d (%f, %f, %f, %f)\n", n, q.w, q.x, q.y, q.z);
-    OutputDebugString(buf);
 }
 
 int CALLBACK

@@ -11,6 +11,7 @@ internal void platform_show_cursor(b32 show);
 internal void platform_set_cursor_position(Vector2i position);
 internal void platform_get_cursor_position(Vector2i *position);
 
+internal b32 platform_write_entire_file(char *filepath, void *data, u32 size);
 internal File_Contents platform_read_entire_file(char *filepath);
 
 internal u64 platform_get_perf_counter();
