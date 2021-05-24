@@ -126,6 +126,132 @@ init_debug_draw_mixer() {
     return result;
 }
 
+#if DRAW_DEBUG_MIXER
+internal void
+draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
+{
+    real32 left_edge = dim.width * 0.02f;
+    real32 bottom_edge = (real32) dim.height;
+    
+    real32 container_w  = dim.width;
+    real32 container_h  = dim.height * 0.03f;
+    
+    real32 bar_w = container_w * .2f;
+    real32 bar_h = container_h * .5f;
+    
+    Vector4 white              = make_color(0xffffffff);
+    Vector4 container_color    = make_color(0xaa003f46);
+    Vector4 bar_color          = make_color(0x20ffffff);
+    Vector4 played_color       = make_color(0xffffffff);
+    
+    real32 container_top    = y - container_h;
+    real32 container_bottom = y;
+    real32 container_cy = (container_top + container_bottom) * .5f;
+    
+    //
+    // Sound text
+    //
+    
+    // Precalculate values
+    char *name = sound->name ? sound->name : "Unnamed";
+    real32 name_width = get_text_width(&debug_draw_mixer.playing_sound_font, name);
+    
+    
+    s32 samples_per_channel = sound->sound->num_samples / sound->sound->num_channels;
+    s32 played_samples_per_channel = sound->position / sound->sound->num_channels;
+    
+    assert(sound->sound->samples_per_second == 44100);
+    
+    s32 seconds_elapsed = played_samples_per_channel / sound->sound->samples_per_second;
+    s32 total_sound_in_seconds = samples_per_channel / sound->sound->samples_per_second;
+    
+    s32 played_minutes = seconds_elapsed / 60;
+    s32 played_seconds = seconds_elapsed % 60;
+    
+    s32 total_minutes = total_sound_in_seconds / 60;
+    s32 total_seconds = total_sound_in_seconds % 60;
+    
+    char played_time[32];
+    sprintf(played_time, "  -  %02d:%02d ", played_minutes, played_seconds);
+    real32 played_text_width = get_text_width(&debug_draw_mixer.playing_sound_font, played_time);
+    
+    char total_time[32];
+    sprintf(total_time, " %02d:%02d | ", total_minutes, total_seconds);
+    real32 total_text_width = get_text_width(&debug_draw_mixer.playing_sound_font, total_time);
+    
+    real32 text_cy = container_cy + debug_draw_mixer.playing_sound_font.line_height * .34f;
+    real32 text_cx = container_w * .01f;
+    
+    immediate_begin();
+    
+    //
+    // Container
+    //
+    
+    {
+        Vector2 min = make_vector2(.0f, container_top);
+        Vector2 max = make_vector2(container_w, container_bottom);
+        immediate_quad(min, max, -1.f, container_color);
+    }
+    
+    real32 bar_padding = bar_h * .5f;
+    
+    real32 bar_left = text_cx + name_width + bar_padding + played_text_width;
+    real32 bar_right = bar_left + bar_w;
+    real32 bar_top    = container_top    + bar_padding;
+    real32 bar_bottom = container_bottom - bar_padding;
+    
+    //
+    // Bar color
+    //
+    {
+        
+        Vector2 min = make_vector2(bar_left,  bar_top);
+        Vector2 max = make_vector2(bar_right, bar_bottom);
+        immediate_quad(min, max, -1.f, bar_color);
+    }
+    
+    //
+    // Played color
+    //
+    {
+        real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
+        Vector2 min = make_vector2(bar_left,                   bar_top);
+        Vector2 max = make_vector2(min.x + bar_w*played_ratio, bar_bottom);
+        immediate_quad(min, max, -1.f, played_color);
+    }
+    
+    immediate_flush();
+    
+    // Draw name
+    draw_text(text_cx, text_cy, (u8 *) name, &debug_draw_mixer.playing_sound_font, white);
+    
+    //
+    // Draw timestamps
+    //
+    
+    // Draw played timestamp
+    {
+        real32 played_timestamp_x = bar_left - played_text_width - bar_padding;
+        draw_text(played_timestamp_x, text_cy, (u8 *) played_time, &debug_draw_mixer.playing_sound_font, white);
+    }
+    
+    // Draw total timestamp
+    {
+        real32 total_timestamp_x = bar_right + bar_padding;
+        draw_text(total_timestamp_x, text_cy, (u8 *) total_time, &debug_draw_mixer.playing_sound_font, white);
+    }
+    
+    b32 looping = sound->flags & PLAYING_SOUND_LOOPING;
+    char buf[256];
+    sprintf(buf, "Looping: %s | Pan: %.2f | Volume: %.2f", looping ? "true" : "false", sound->pan, sound->volume);
+    
+    real32 rest_of_stuff_x = bar_right + bar_padding + total_text_width;
+    draw_text(rest_of_stuff_x, text_cy, (u8 *) buf, &debug_draw_mixer.playing_sound_font, white);
+    y -= container_h;
+}
+#endif
+
 internal void
 draw_debug_draw_mixer(Vector2i dimensions) {
 #if DRAW_DEBUG_MIXER
@@ -138,12 +264,6 @@ draw_debug_draw_mixer(Vector2i dimensions) {
     real32 x = dimensions.width * 0.002f;
     real32 y = (real32) dimensions.height;
     
-    real32 height = dimensions.height * 0.04f;
-    
-    Vector4 played_color = make_color(0xff00d5ed);
-    Vector4 bar_color    = make_color(0xff003f46);
-    Vector4 white        = make_color(0xffffffff);
-    
     u32 count = 0;
     
     for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
@@ -151,66 +271,26 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         if (sound->sound->num_samples == 0) continue;
         
         count++;
-        
-        immediate_begin();
-        //
-        // Bar color
-        //
-        {
-            Vector2 min = make_vector2(.0f, y - height);
-            Vector2 max = make_vector2((real32) dimensions.width, y);
-            immediate_quad(min, max, -1.f, bar_color);
-        }
-        
-        //
-        // Played color
-        //
-        {
-            real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
-            Vector2 min = make_vector2(.0f, y - height);
-            Vector2 max = make_vector2((real32) dimensions.width * played_ratio, y);
-            immediate_quad(min, max, -1.f, played_color);
-        }
-        immediate_flush();
-        
-        //
-        // Draw info about playing sound
-        //
-        {
-            char buf[512];
-            
-            s32 samples_per_channel = sound->sound->num_samples / sound->sound->num_channels;
-            s32 played_samples_per_channel = sound->position / sound->sound->num_channels;
-            
-            assert(sound->sound->samples_per_second == 44100);
-            
-            s32 seconds_elapsed = played_samples_per_channel / sound->sound->samples_per_second;
-            s32 total_sound_in_seconds = samples_per_channel / sound->sound->samples_per_second;
-            
-            s32 played_minutes = seconds_elapsed / 60;
-            s32 played_seconds = seconds_elapsed % 60;
-            
-            s32 total_minutes = total_sound_in_seconds / 60;
-            s32 total_seconds = total_sound_in_seconds % 60;
-            
-            b32 looping = sound->flags & PLAYING_SOUND_LOOPING;
-            sprintf(buf, "%s - Looping: %s - Pan: %.2f - Volume: %.2f - %02d:%02d/%02d:%02d\n", sound->name ? sound->name : "Unnamed", looping ? "true" : "false", sound->pan, sound->volume, played_minutes, played_seconds, total_minutes, total_seconds);
-            
-            real32 cy = y - height * .5f + debug_draw_mixer.playing_sound_font.line_height * .4f;
-            real32 tx = x + 2.f;
-            draw_text(tx, cy, (u8 *) buf, &debug_draw_mixer.playing_sound_font, white);
-        }
-        
-        y -= height;
+        draw_playing_sound(dimensions, sound, y);
     }
     
     if (count > 0) {
-        y -= height * .5f;
+        real32 height = dimensions.height * 0.03f;
+        {
+            Vector4 color = make_color(0xbb003f46);
+            Vector2 min = make_vector2(.0f, y - height);
+            Vector2 max = make_vector2(dimensions.width, y);
+            
+            immediate_begin();
+            immediate_quad(min, max, -1.f, color);
+            immediate_flush();
+        }
+        y -= height*.3f;
         
         char buf[256];
         sprintf(buf, "Playing sounds: %d", count);
         u8 *title = (u8*) buf;
-        draw_text(x, y, title, &debug_draw_mixer.header_font, white);
+        draw_text(x, y, title, &debug_draw_mixer.header_font, make_color(0xffffffff));
     }
 #endif
 }
