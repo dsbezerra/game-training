@@ -74,7 +74,7 @@ __BYTE_BUFFER_WRITE_IMPL(Byte_Buffer *buf, void *data, u32 size) {
     u32 total_write_size = buf->position + size;
     if (total_write_size >= buf->capacity) {
         u32 capacity = buf->capacity ? buf->capacity * 2 : BYTE_BUFFER_DEFAULT_CAPACITY;
-        while (capacity < total_write_size) {
+        while (capacity <= total_write_size) {
             capacity *= 2;
         }
         byte_buffer_resize(buf, capacity);
