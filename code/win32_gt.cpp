@@ -696,24 +696,25 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                 
                 begin_profiler();
                 
-                begin_profiling(ProfilerItem_Input);
-                for (int button_index = 0; button_index < Button_Count; ++button_index) {
-                    input.buttons[button_index].changed = false;
+                {
+                    PROFILING_TIMED_BLOCK(ProfilerItem_Input);
+                    for (int button_index = 0; button_index < Button_Count; ++button_index) {
+                        input.buttons[button_index].changed = false;
+                    }
+                    win32_process_pending_messages(window);
                 }
-                win32_process_pending_messages(window);
-                end_profiling(ProfilerItem_Input);
-                
                 memory.window_center = state.window_center;
                 memory.window_dimensions = state.window_dimensions;
                 
                 // Game Update and render
-                begin_profiling(ProfilerItem_GameUpdateAndRender);
-                game_update_and_render(&state, &memory, &input);
-                end_profiling(ProfilerItem_GameUpdateAndRender);
+                {
+                    PROFILING_TIMED_BLOCK(ProfilerItem_GameUpdateAndRender);
+                    game_update_and_render(&state, &memory, &input);
+                }
                 
                 // Audio
                 {
-                    begin_profiling(ProfilerItem_Audio);
+                    PROFILING_TIMED_BLOCK(ProfilerItem_Audio);
                     DWORD play_cursor, write_cursor;
                     if (win32_sound_buffer->GetCurrentPosition(&play_cursor, &write_cursor) == DS_OK) {
                         
@@ -755,7 +756,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
                     } else {
                         invalid_code_path;
                     }
-                    end_profiling(ProfilerItem_Audio);
                 }
                 
                 render_profiler(state.window_dimensions, last_dt);

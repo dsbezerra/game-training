@@ -2,21 +2,6 @@
 
 #include <stdio.h> // For sprintf
 
-global_variable Profiling_Data global_back_profiling_data[ProfilerItem_Count];
-global_variable Profiling_Data global_writing_profiling_data[ProfilerItem_Count];
-global_variable Profiling_Font global_profiling_font;
-
-inline void
-begin_profiling(Profiler_Item item) {
-    global_writing_profiling_data[item].begin_timer = platform_get_perf_counter();
-    global_writing_profiling_data[item].hit_count++;
-}
-
-inline void
-end_profiling(Profiler_Item item) {
-    global_writing_profiling_data[item].timer += platform_seconds_elapsed(global_writing_profiling_data[item].begin_timer) * 1000.f;
-}
-
 inline void
 render_profiler(Vector2i dim, real32 dt) {
     glDisable(GL_DEPTH_TEST); // Prevent overlapping the profiler.
