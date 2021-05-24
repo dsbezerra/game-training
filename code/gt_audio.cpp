@@ -107,7 +107,11 @@ internal Loaded_Sound
 load_sound(char *soundpath) {
     Loaded_Sound result = {};
     
-    result = load_wav_file(soundpath);
+    if (string_ends_with(soundpath, ".wav")) {
+        result = load_wav_file(soundpath);
+    } else if (string_ends_with(soundpath, ".ogg")) {
+        result = load_ogg_file(soundpath);
+    }
     
     return result;
 }

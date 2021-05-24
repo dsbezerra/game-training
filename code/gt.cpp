@@ -6,6 +6,7 @@
 #include "gt_opengl.cpp"
 #include "gt_shader.cpp"
 #include "gt_draw.cpp"
+#include "gt_ogg_loader.cpp"
 #include "gt_audio.cpp"
 #include "gt_profiler.cpp"
 #include "gt_mesh.cpp"

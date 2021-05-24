@@ -1070,7 +1070,7 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         
         state->swap_sound = load_sound("./data/sounds/bejeweled/swap.wav");
         state->invalid_swap_sound = load_sound("./data/sounds/bejeweled/error.wav");
-        state->music = load_sound("./data/sounds/bejeweled/Mining by Moonlight.wav");
+        state->music = load_sound("./data/sounds/bejeweled/Mining by Moonlight.ogg");
         
         Bejeweled_Assets assets = {};
         Spritesheet *s = load_spritesheet("./data/textures/bejeweled/cookie/sprites.txt");
