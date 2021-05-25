@@ -142,6 +142,10 @@ struct Bejeweled_Assets {
     // Spritesheet
     Spritesheet *main_sheet;
     
+    Loaded_Sound music;
+    Loaded_Sound swap_sound;
+    Loaded_Sound invalid_swap_sound;
+    
     Sprite *tile_sprite;
     Bejeweled_Sprite_UV tile_uv;
     
@@ -165,10 +169,6 @@ struct Bejeweled_State {
     Bejeweled_Control_State control_state;
     
     Playing_Sound *background_music;
-    
-    Loaded_Sound music;
-    Loaded_Sound swap_sound;
-    Loaded_Sound invalid_swap_sound;
     
     Bejeweled_Tile highlighted_tile;
     

@@ -611,58 +611,90 @@ win32_process_pending_messages(HWND window) {
     }
 }
 
-struct Work_Queue_Entry {
-    char *string_to_print;
+struct Platform_Work_Queue_Entry
+{
+    Platform_Work_Queue_Callback *callback;
+    void *data;
 };
 
-global_variable u32 volatile entry_completion_count;
-global_variable u32 volatile next_entry_to_do;
-global_variable u32 volatile entry_count;
-Work_Queue_Entry entries[256];
-
-#define complete_past_writes_before_future_writes _WriteBarrier(); _mm_sfence()
-#define complete_past_reads_before_future_reads _ReadBarrier()
-
-internal void
-push_string(HANDLE semaphore_handle, char *string) {
-    assert(entry_count < array_count(entries));
+struct Platform_Work_Queue
+{
+    u32 volatile completion_goal;
+    u32 volatile completion_count;
     
-    Work_Queue_Entry *entry = entries + entry_count;
-    entry->string_to_print = string;
+    u32 volatile next_entry_to_write;
+    u32 volatile next_entry_to_read;
+    HANDLE semaphore_handle;
     
-    complete_past_writes_before_future_writes;
-    
-    ++entry_count;
-    
-    ReleaseSemaphore(semaphore_handle, 1, 0);
-}
+    Platform_Work_Queue_Entry entries[256];
+};
 
 struct Win32_Thread_Info {
-    HANDLE semaphore_handle;
     int logical_thread_index;
+    Platform_Work_Queue *queue;
 };
+
+
+internal void
+win32_add_entry(Platform_Work_Queue *queue, Platform_Work_Queue_Callback *callback, void *data) {
+    uint32 new_next_entry_to_write = (queue->next_entry_to_write + 1) % array_count(queue->entries);
+    assert(new_next_entry_to_write != queue->next_entry_to_read);
+    Platform_Work_Queue_Entry *entry = queue->entries + queue->next_entry_to_write;
+    entry->callback = callback;
+    entry->data = data;
+    ++queue->completion_goal;
+    _WriteBarrier();
+    _mm_sfence();
+    queue->next_entry_to_write = new_next_entry_to_write;
+    ReleaseSemaphore(queue->semaphore_handle, 1, 0);
+}
+
+internal b32
+win32_do_next_work_queue_entry(Platform_Work_Queue *queue) {
+    b32 should_sleep = false;
+    
+    u32 next_entry_to_read = queue->next_entry_to_read;
+    u32 new_next_entry_to_read = (next_entry_to_read + 1) % array_count(queue->entries);
+    if (next_entry_to_read != queue->next_entry_to_write) {
+        u32 index = InterlockedCompareExchange((LONG volatile *) &queue->next_entry_to_read,
+                                               new_next_entry_to_read,
+                                               next_entry_to_read);
+        if (index == next_entry_to_read) {
+            Platform_Work_Queue_Entry entry = queue->entries[index];
+            entry.callback(queue, entry.data);
+            InterlockedIncrement((LONG volatile *) &queue->completion_count);
+        }
+    } else {
+        should_sleep = true;
+    }
+    
+    return should_sleep;
+}
+
+internal void
+win32_complete_all_work(Platform_Work_Queue *queue) {
+    while (queue->completion_goal != queue->completion_count) {
+        win32_do_next_work_queue_entry(queue);
+    }
+    queue->completion_goal = 0;
+    queue->completion_count = 0;
+}
 
 DWORD WINAPI
 thread_proc(LPVOID lpParameter) {
     Win32_Thread_Info *thread_info = (Win32_Thread_Info *) lpParameter;
     
     for (;;) {
-        if (next_entry_to_do < entry_count) {
-            int entry_index = InterlockedIncrement((LONG volatile *) &next_entry_to_do) - 1; // NOTE: We need the value before the increment.
-            complete_past_reads_before_future_reads;
-            Work_Queue_Entry *entry = entries + entry_index;
-            
-            char buffer[256];
-            wsprintf(buffer, "Thread %u: %s\n", thread_info->logical_thread_index, entry->string_to_print);
-            OutputDebugStringA(buffer);
-            
-            InterlockedIncrement((LONG volatile *) &entry_completion_count);
-        } else {
-            WaitForSingleObjectEx(thread_info->semaphore_handle, INFINITE, FALSE);
+        if (win32_do_next_work_queue_entry(thread_info->queue)) {
+            WaitForSingleObjectEx(thread_info->queue->semaphore_handle, INFINITE, FALSE);
         }
     }
     
     // return 0;
+}
+
+internal PLATFORM_WORK_QUEUE_CALLBACK(do_worker_work) {
+    
 }
 
 int CALLBACK
@@ -670,17 +702,19 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
     
     Win32_Thread_Info thread_info[4]; // NOTE(diego): My CPU has only 8 cores. Pick half to reduce usage.
     
+    Platform_Work_Queue queue = {};
+    
     u32 initial_count = 0;
     u32 thread_count = array_count(thread_info);
-    HANDLE semaphore_handle = CreateSemaphoreEx(0,
-                                                initial_count,
-                                                thread_count,
-                                                0, 0, SEMAPHORE_ALL_ACCESS);
+    queue.semaphore_handle = CreateSemaphoreEx(0,
+                                               initial_count,
+                                               thread_count,
+                                               0, 0, SEMAPHORE_ALL_ACCESS);
     for (u32 thread_index = 0;
          thread_index < thread_count;
          ++thread_index) {
         Win32_Thread_Info *info = thread_info + thread_index;
-        info->semaphore_handle = semaphore_handle;
+        info->queue = &queue;
         info->logical_thread_index = thread_index;
         
         DWORD thread_id;
@@ -688,21 +722,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
         CloseHandle(thread_handle);
     }
     
-    push_string(semaphore_handle, "String A0");
-    push_string(semaphore_handle, "String A1");
-    push_string(semaphore_handle, "String A2");
-    push_string(semaphore_handle, "String A3");
-    push_string(semaphore_handle, "String A4");
-    
-    Sleep(5000);
-    
-    push_string(semaphore_handle, "String B0");
-    push_string(semaphore_handle, "String B1");
-    push_string(semaphore_handle, "String B2");
-    push_string(semaphore_handle, "String B3");
-    push_string(semaphore_handle, "String B4");
-    
-    while (entry_count != entry_completion_count);
+    win32_complete_all_work(&queue);
     
     LARGE_INTEGER perf_count_freq_res;
     QueryPerformanceFrequency(&perf_count_freq_res);
@@ -767,6 +787,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int sho
             global_running = true;
             
             Game_Memory memory = {};
+            memory.high_priority_queue = &queue;
+            memory.platform_add_entry = win32_add_entry;
+            memory.platform_complete_all_work = win32_complete_all_work;
+            
             state.memory = &memory;
             
             init_texture_catalog();

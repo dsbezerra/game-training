@@ -545,6 +545,10 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         state->current_game = Game_None;
         state->game_title_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 32.f);
         
+        // NOTE(diego): Added to handle multithreaded work.
+        platform_add_entry = memory->platform_add_entry;
+        platform_complete_all_work = memory->platform_complete_all_work;
+        
         // @Cleanup
         //
         // Pass these inside App_State?

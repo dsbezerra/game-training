@@ -777,7 +777,7 @@ state->highlighted_gems[GEM_TYPE-1].gem = GEM_TYPE
     clear_and_generate_board(&state->board);
     
     if (!state->background_music) {
-        state->background_music = play_sound("Moonlight", &state->music);
+        state->background_music = play_sound("Moonlight", &state->assets.music);
     }
     set_volume(state->background_music, .1f);
     
@@ -891,9 +891,9 @@ handle_swap(Bejeweled_State *state) {
         case BejeweledSwapState_Prepared: {
             start_swap(state, s);
             if (s->valid) {
-                play_sound("Swap", &state->swap_sound, false);
+                play_sound("Swap", &state->assets.swap_sound, false);
             } else if (s->reversing) {
-                play_sound("Error", &state->invalid_swap_sound, false);
+                play_sound("Error", &state->assets.invalid_swap_sound, false);
             }
         } break;
         
@@ -1049,6 +1049,24 @@ bejeweled_game_restart(Bejeweled_State *state) {
     init_game(state);
 }
 
+internal PLATFORM_WORK_QUEUE_CALLBACK(load_asset) {
+    Asset_Work *work = (Asset_Work *) data;
+    if (work) {
+        u64 begin_timer = platform_get_perf_counter();
+        if (string_ends_with(work->name, ".wav") || string_ends_with(work->name, ".ogg")) {
+            *((Loaded_Sound *) work->data) = load_sound(work->name);
+        } else if (string_ends_with(work->name, "sprites.txt")) {
+            *((Spritesheet **) work->data) = load_spritesheet(work->name);
+        }
+        
+        real32 tooks_ms = platform_seconds_elapsed(begin_timer) * 1000.f;
+        
+        char buf[256];
+        sprintf(buf, "Work with name '%s' took %.2fms to complete!\n", work->name, tooks_ms);
+        OutputDebugStringA(buf);
+    }
+}
+
 internal void
 bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
     Bejeweled_State *state = (Bejeweled_State *) memory->permanent_storage;
@@ -1068,16 +1086,27 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state = (Bejeweled_State *) game_alloc(memory, total_memory_size);
         state->memory = memory;
         
-        state->swap_sound = load_sound("./data/sounds/bejeweled/swap.wav");
-        state->invalid_swap_sound = load_sound("./data/sounds/bejeweled/error.wav");
-        state->music = load_sound("./data/sounds/bejeweled/Mining by Moonlight.ogg");
-        
         Bejeweled_Assets assets = {};
-        Spritesheet *s = load_spritesheet("./data/textures/bejeweled/cookie/sprites.txt");
-        assets.main_sheet = s;
+        
+        Asset_Work work_array[4] = {
+            {"./data/sounds/bejeweled/swap.wav", (void *) &assets.swap_sound},
+            {"./data/sounds/bejeweled/error.wav", (void *) &assets.invalid_swap_sound},
+            {"./data/sounds/bejeweled/Mining by Moonlight.wav", (void *) &assets.music},
+            {"./data/textures/bejeweled/cookie/sprites.txt", (void *) &assets.main_sheet},
+        };
+        
+        for (u32 asset_index = 0;
+             asset_index < array_count(work_array);
+             ++asset_index) {
+            Asset_Work *work = &work_array[asset_index];
+            platform_add_entry(memory->high_priority_queue, load_asset, work);
+        }
+        
+        platform_complete_all_work(memory->high_priority_queue);
+        
         state->assets = assets;
         
-        init_spritesheet(s, UPLOAD_SPRITESHEET);
+        init_spritesheet(assets.main_sheet, UPLOAD_SPRITESHEET);
         init_arena(&state->board_arena, total_available_size, (u8 *) memory->permanent_storage + sizeof(Bejeweled_State));
         init_game(state);
     }

@@ -1,18 +1,44 @@
 /* date = September 7th 2020 5:44 pm */
 
+//
+// File I/O
+//
 struct File_Contents {
     u32 file_size;
     u8 *contents;
 };
 
+internal b32 platform_write_entire_file(char *filepath, void *data, u32 size);
+internal File_Contents platform_read_entire_file(char *filepath);
+
+//
+// Memory
+//
+
 internal void *platform_alloc(u64 size);
 internal void platform_free(void *memory);
+
+//
+// Cursor
+//
 internal void platform_show_cursor(b32 show);
 internal void platform_set_cursor_position(Vector2i position);
 internal void platform_get_cursor_position(Vector2i *position);
 
-internal b32 platform_write_entire_file(char *filepath, void *data, u32 size);
-internal File_Contents platform_read_entire_file(char *filepath);
+//
+// Timing
+//
 
 internal u64 platform_get_perf_counter();
 internal real32 platform_seconds_elapsed(u64 last_counter);
+
+//
+// Threading
+//
+
+struct Platform_Work_Queue;
+#define PLATFORM_WORK_QUEUE_CALLBACK(name) void name(Platform_Work_Queue *queue, void *data)
+typedef PLATFORM_WORK_QUEUE_CALLBACK(Platform_Work_Queue_Callback);
+
+typedef void Platform_Add_Entry(Platform_Work_Queue *queue, Platform_Work_Queue_Callback *callback, void *data);
+typedef void Platform_Complete_All_Work(Platform_Work_Queue *queue);

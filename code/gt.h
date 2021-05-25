@@ -154,6 +154,11 @@ enum App_Mode {
     Mode_Count,
 };
 
+struct Asset_Work {
+    char *name;
+    void *data;
+};
+
 struct Game_Memory {
     Game_Mode game_mode;
     
@@ -163,6 +168,12 @@ struct Game_Memory {
     b32 initialized;
     b32 asked_to_quit;
     b32 quit_was_selected;
+    
+    Platform_Work_Queue *high_priority_queue;
+    
+    Platform_Add_Entry *platform_add_entry;
+    Platform_Complete_All_Work *platform_complete_all_work;
+    
     
     s8 menu_selected_item;
     
@@ -248,3 +259,6 @@ global_variable b32 global_vsync = false;
 global_variable b32 global_lock_fps = false;
 
 global_variable Opengl *open_gl;
+
+global_variable Platform_Add_Entry *platform_add_entry;
+global_variable Platform_Complete_All_Work *platform_complete_all_work;
