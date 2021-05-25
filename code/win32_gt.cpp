@@ -611,8 +611,98 @@ win32_process_pending_messages(HWND window) {
     }
 }
 
+struct Work_Queue_Entry {
+    char *string_to_print;
+};
+
+global_variable u32 volatile entry_completion_count;
+global_variable u32 volatile next_entry_to_do;
+global_variable u32 volatile entry_count;
+Work_Queue_Entry entries[256];
+
+#define complete_past_writes_before_future_writes _WriteBarrier(); _mm_sfence()
+#define complete_past_reads_before_future_reads _ReadBarrier()
+
+internal void
+push_string(HANDLE semaphore_handle, char *string) {
+    assert(entry_count < array_count(entries));
+    
+    Work_Queue_Entry *entry = entries + entry_count;
+    entry->string_to_print = string;
+    
+    complete_past_writes_before_future_writes;
+    
+    ++entry_count;
+    
+    ReleaseSemaphore(semaphore_handle, 1, 0);
+}
+
+struct Win32_Thread_Info {
+    HANDLE semaphore_handle;
+    int logical_thread_index;
+};
+
+DWORD WINAPI
+thread_proc(LPVOID lpParameter) {
+    Win32_Thread_Info *thread_info = (Win32_Thread_Info *) lpParameter;
+    
+    for (;;) {
+        if (next_entry_to_do < entry_count) {
+            int entry_index = InterlockedIncrement((LONG volatile *) &next_entry_to_do) - 1; // NOTE: We need the value before the increment.
+            complete_past_reads_before_future_reads;
+            Work_Queue_Entry *entry = entries + entry_index;
+            
+            char buffer[256];
+            wsprintf(buffer, "Thread %u: %s\n", thread_info->logical_thread_index, entry->string_to_print);
+            OutputDebugStringA(buffer);
+            
+            InterlockedIncrement((LONG volatile *) &entry_completion_count);
+        } else {
+            WaitForSingleObjectEx(thread_info->semaphore_handle, INFINITE, FALSE);
+        }
+    }
+    
+    // return 0;
+}
+
 int CALLBACK
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR command_line, int show_code) {
+    
+    Win32_Thread_Info thread_info[4]; // NOTE(diego): My CPU has only 8 cores. Pick half to reduce usage.
+    
+    u32 initial_count = 0;
+    u32 thread_count = array_count(thread_info);
+    HANDLE semaphore_handle = CreateSemaphoreEx(0,
+                                                initial_count,
+                                                thread_count,
+                                                0, 0, SEMAPHORE_ALL_ACCESS);
+    for (u32 thread_index = 0;
+         thread_index < thread_count;
+         ++thread_index) {
+        Win32_Thread_Info *info = thread_info + thread_index;
+        info->semaphore_handle = semaphore_handle;
+        info->logical_thread_index = thread_index;
+        
+        DWORD thread_id;
+        HANDLE thread_handle = CreateThread(0, 0, thread_proc, info, 0, &thread_id);
+        CloseHandle(thread_handle);
+    }
+    
+    push_string(semaphore_handle, "String A0");
+    push_string(semaphore_handle, "String A1");
+    push_string(semaphore_handle, "String A2");
+    push_string(semaphore_handle, "String A3");
+    push_string(semaphore_handle, "String A4");
+    
+    Sleep(5000);
+    
+    push_string(semaphore_handle, "String B0");
+    push_string(semaphore_handle, "String B1");
+    push_string(semaphore_handle, "String B2");
+    push_string(semaphore_handle, "String B3");
+    push_string(semaphore_handle, "String B4");
+    
+    while (entry_count != entry_completion_count);
     
     LARGE_INTEGER perf_count_freq_res;
     QueryPerformanceFrequency(&perf_count_freq_res);
