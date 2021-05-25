@@ -1049,21 +1049,47 @@ bejeweled_game_restart(Bejeweled_State *state) {
     init_game(state);
 }
 
+
+enum Timed_Item {
+    TimedItem_LoadAsset,
+};
+
+#define TIMED_BLOCK(NAME, TAG) Timed_Block TimedBlock##NAME(##TAG)
+
+struct Timed_Block {
+    char *tag;
+    u64 begin_timer;
+    real32 timer;
+    
+    Timed_Block(char *tag_init) {
+        tag = tag_init;
+        begin_timer = platform_get_perf_counter();
+        timer = 0.0f;
+    }
+    
+    ~Timed_Block() {
+        timer += platform_seconds_elapsed(begin_timer) * 1000.f; // Convert to ms
+        print();
+    }
+    
+    void print() {
+        char buf[256];
+        sprintf(buf, "%s: took %.2fms.\n", tag, timer);
+        OutputDebugStringA(buf);
+    }
+};
+
 internal PLATFORM_WORK_QUEUE_CALLBACK(load_asset) {
     Asset_Work *work = (Asset_Work *) data;
     if (work) {
-        u64 begin_timer = platform_get_perf_counter();
+        char buf[256];
+        sprintf(buf, "load_asset '%s'", work->name);
+        TIMED_BLOCK(Work, buf);
         if (string_ends_with(work->name, ".wav") || string_ends_with(work->name, ".ogg")) {
             *((Loaded_Sound *) work->data) = load_sound(work->name);
         } else if (string_ends_with(work->name, "sprites.txt")) {
             *((Spritesheet **) work->data) = load_spritesheet(work->name);
         }
-        
-        real32 tooks_ms = platform_seconds_elapsed(begin_timer) * 1000.f;
-        
-        char buf[256];
-        sprintf(buf, "Work with name '%s' took %.2fms to complete!\n", work->name, tooks_ms);
-        OutputDebugStringA(buf);
     }
 }
 
@@ -1095,15 +1121,18 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
             {"./data/textures/bejeweled/cookie/sprites.txt", (void *) &assets.main_sheet},
         };
         
-        for (u32 asset_index = 0;
-             asset_index < array_count(work_array);
-             ++asset_index) {
-            Asset_Work *work = &work_array[asset_index];
-            platform_add_entry(memory->high_priority_queue, load_asset, work);
+        {
+            TIMED_BLOCK(LoadAsset, "complete_load_asset");
+            
+            for (u32 asset_index = 0;
+                 asset_index < array_count(work_array);
+                 ++asset_index) {
+                Asset_Work *work = &work_array[asset_index];
+                platform_add_entry(memory->high_priority_queue, load_asset, work);
+            }
+            
+            platform_complete_all_work(memory->high_priority_queue);
         }
-        
-        platform_complete_all_work(memory->high_priority_queue);
-        
         state->assets = assets;
         
         init_spritesheet(assets.main_sheet, UPLOAD_SPRITESHEET);
