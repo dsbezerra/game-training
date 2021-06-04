@@ -34,6 +34,10 @@ typedef real64 r64;
 typedef real32 f32;
 typedef real64 f64;
 
+#define MIN_S16 -32768
+#define MAX_S16 32767
+
+#define MAX_U16 UINT16_MAX
 #define MAX_U32 UINT32_MAX
 
 #if !defined(internal) 

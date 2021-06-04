@@ -204,6 +204,7 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     //
     // Bar color
     //
+#if 1
     {
         
         Vector2 min = make_vector2(bar_left,  bar_top);
@@ -220,7 +221,55 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
         Vector2 max = make_vector2(min.x + bar_w*played_ratio, bar_bottom);
         immediate_quad(min, max, -1.f, played_color);
     }
+#else
+    u32 samples_per_pixel = 128;
+    u32 bytes_per_sample = 24 / 8 * sound->sound->num_channels;
     
+    u32 position = 0;
+    
+    real32 sample_width = bar_w / samples_per_pixel;
+    for (real32 x = bar_left;
+         x < bar_right;
+         x += sample_width)
+    {
+        s16 low = 0;
+        u32 sample_position = 0;
+        s16 high = 0;
+        
+        for (u32 sample_index = position;
+             sample_index < position + samples_per_pixel;
+             sample_index += 2)
+        {
+            u32 index = sample_index * samples_per_pixel * bytes_per_sample;
+            if (index >= sound->sound->num_samples || index == 0) break;
+            
+            sample_position = index;
+            
+            s16 sample = sound->sound->samples[index];
+            if (sample < low)  low  = sample;
+            if (sample > high) high = sample;
+        }
+        
+        position += samples_per_pixel;
+        
+        real32 l_percent = ((real32)low  - MIN_S16) / MAX_U16;
+        real32 h_percent = ((real32)high - MIN_S16) / MAX_U16;
+        
+        real32 low_height  = bar_h * l_percent;
+        real32 high_height = bar_h * h_percent;
+        
+        Vector4 color = bar_color;
+        if (sample_position < sound->position) {
+            color = played_color;
+        }
+        
+        real32 half_sample_width = sample_width *.5f;
+        real32 bar_center = bar_bottom - bar_h *.5f;
+        Vector2 min = make_vector2(x - half_sample_width, bar_center - high_height);
+        Vector2 max = make_vector2(x + half_sample_width, bar_center + low_height);
+        immediate_quad(min, max, -1.f, color);
+    }
+#endif
     immediate_flush();
     
     // Draw name
