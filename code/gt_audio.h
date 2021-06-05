@@ -11,8 +11,6 @@ struct Debug_Draw_Mixer {
     u32 flags;
     Loaded_Font playing_sound_font;
     Loaded_Font header_font;
-    
-    Vector2i mouse_p;
 };
 
 struct Loaded_Sound {
@@ -86,10 +84,9 @@ make_waveform(real32 start_x, real32 start_y, real32 width, real32 height, real3
     real32 right = left + width;
     real32 center = (top + bottom) * .5f;
     
-    result.left = left;
-    result. top = top;
-    
-    result.width = width;
+    result.left   = left;
+    result.top    = top;
+    result.width  = width;
     result.height = height;
     result.center = center;
     
@@ -104,12 +101,7 @@ make_waveform(real32 start_x, real32 start_y, real32 width, real32 height, real3
         s16 low  = 0;
         s16 high = 0;
         
-        int position = x * samples_per_pixel*sound->num_channels;
-        
-        char buf[256];
-        wsprintf(buf, "Position: %d\n", position);
-        OutputDebugStringA(buf);
-        
+        u32 position = x * samples_per_pixel*sound->num_channels;
         for (u32 s = 0; s < samples_per_pixel; s += 2) {
             u32 min_offset = position + s * sound->num_channels;
             u32 max_offset = position + s * sound->num_channels + 1;

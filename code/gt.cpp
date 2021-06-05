@@ -534,8 +534,10 @@ update_debug(Game_Input *input) {
         if (pressed(Button_F1)) {
             debug_draw.draw_shadow_map = !debug_draw.draw_shadow_map;
         }
+        if (pressed(Button_F2)) {
+            debug_draw.draw_mixer = !debug_draw.draw_mixer;
+        }
     }
-    update_debug_draw_mixer(input);
 }
 
 internal void
@@ -585,7 +587,10 @@ game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input)
         immediate_flush();
         
         draw_framebuffer(state->window_dimensions);
-        draw_debug_draw_mixer(state->window_dimensions);
+        
+        if (debug_draw.draw_mixer) {
+            draw_debug_draw_mixer(state->window_dimensions);
+        }
     }
 }
 

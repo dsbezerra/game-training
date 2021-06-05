@@ -27,6 +27,7 @@
 
 struct Debug_Draw {
     b32 draw_shadow_map;
+    b32 draw_mixer;
 };
 
 struct Game_Time_Info {

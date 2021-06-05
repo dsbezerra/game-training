@@ -127,7 +127,6 @@ init_debug_draw_mixer() {
     return result;
 }
 
-#if DRAW_DEBUG_MIXER
 internal void
 draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
 {
@@ -228,7 +227,6 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
             if (x_percent <= played_ratio) {
                 color = played_color;
             }
-            if (sound->waveform.is_mouse_over) color = make_color(0xffff0000);
             immediate_quad(min, max, -1.f, color);
         }
     }
@@ -285,70 +283,35 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     draw_text(rest_of_stuff_x, text_cy, (u8 *) buf, &debug_draw_mixer.playing_sound_font, white);
     y -= container_h;
 }
-#endif
-
-internal void
-update_debug_draw_mixer(Game_Input *input) {
-#if DRAW_DEBUG_MIXER
-    platform_get_cursor_position(&debug_draw_mixer.mouse_p);
-    
-    
-    if (debug_draw_mixer.flags & DEBUG_DRAW_MIXER_WAVEFORM)
-    {
-        for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
-            if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
-            if (sound->sound->num_samples == 0) continue;
-            if (sound->waveform.ready) {
-                // NOTE(diego): Garbage test.
-                Vector2i mouse_p = debug_draw_mixer.mouse_p;
-                b32 mouse_over = false;
-                if (mouse_p.x >= sound->waveform.left && mouse_p.x <= sound->waveform.left + sound->waveform.width &&
-                    mouse_p.y >= sound->waveform.top &&
-                    mouse_p.y <= sound->waveform.top + sound->waveform.height) {
-                    mouse_over = true;
-                }
-                sound->waveform.is_mouse_over = mouse_over;
-                
-                if (mouse_over && pressed(Button_Mouse1)) {
-                    real32 press_x = mouse_p.x - sound->waveform.left;
-                    real32 press_ratio = press_x / sound->waveform.width;
-                    u32 new_sound_position = sound->sound->num_samples*press_ratio;
-                    sound->position = new_sound_position;
-                }
-            }
-        }
-    }
-#endif
-}
 
 internal void
 draw_debug_draw_mixer(Vector2i dimensions) {
-#if DRAW_DEBUG_MIXER
     if (!debug_draw_mixer.header_font.texture) {
         debug_draw_mixer = init_debug_draw_mixer();
     }
     
-    render_2d_right_handed(dimensions.width, dimensions.height);
+    Vector2i dim = dimensions;
+    render_2d_right_handed(dim.width, dim.height);
     
-    real32 x = dimensions.width * 0.002f;
-    real32 y = (real32) dimensions.height;
+    real32 left_edge = dim.width * 0.002f;
+    real32 bottom_edge = (real32) dim.height;
     
     u32 count = 0;
     
     for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
         if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
         if (sound->sound->num_samples == 0) continue;
-        
-        count++;
-        draw_playing_sound(dimensions, sound, y);
+        draw_playing_sound(dimensions, sound, bottom_edge);
+        ++count;
     }
     
+    real32 y = bottom_edge;
     if (count > 0) {
-        real32 height = dimensions.height * 0.03f;
+        real32 height = dim.height * 0.03f;
         {
             Vector4 color = make_color(0xbb003f46);
             Vector2 min = make_vector2(.0f, y - height);
-            Vector2 max = make_vector2(dimensions.width, y);
+            Vector2 max = make_vector2(dim.width, y);
             
             immediate_begin();
             immediate_quad(min, max, -1.f, color);
@@ -357,9 +320,8 @@ draw_debug_draw_mixer(Vector2i dimensions) {
         y -= height*.3f;
         
         char buf[256];
-        sprintf(buf, "Playing sounds: %d", count);
+        sprintf(buf, "[MIXER] - Playing sounds: %d", count);
         u8 *title = (u8*) buf;
-        draw_text(x, y, title, &debug_draw_mixer.header_font, make_color(0xffffffff));
+        draw_text(left_edge, y, title, &debug_draw_mixer.header_font, make_color(0xffffffff));
     }
-#endif
 }
