@@ -537,12 +537,32 @@ update_debug(Game_Input *input) {
         if (pressed(Button_F2)) {
             debug_draw.draw_mixer = !debug_draw.draw_mixer;
         }
+        
+#define SEEK_STEP 44100 // 1 sec per press
+        
+        if (debug_draw.draw_mixer) {
+            s32 seek_amount = 0;
+            if (is_down(Button_Left)) {
+                seek_amount = -SEEK_STEP;
+            }
+            if (is_down(Button_Right)) {
+                seek_amount = SEEK_STEP;
+            }
+            // NOTE(diego): Seek all playing sounds for now just for testing.
+            if (seek_amount != 0) {
+                for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
+                    if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
+                    if (sound->sound->num_samples == 0) continue;
+                    
+                    sound->position = clamp(0, sound->position + seek_amount, sound->sound->num_samples);
+                }
+            }
+        }
     }
 }
 
 internal void
 game_update_and_render(App_State *state, Game_Memory *memory, Game_Input *input) {
-    
     if (!state->initialized) {
         state->current_mode = Mode_SelectingGame;
         state->current_game = Game_None;

@@ -136,7 +136,7 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     real32 container_w  = dim.width;
     real32 container_h  = dim.height * 0.03f;
     
-    real32 bar_w = container_w * .2f;
+    real32 bar_w = container_w * .65f;
     real32 bar_h = container_h * .5f;
     
     Vector4 white              = make_color(0xffffffff);
@@ -203,7 +203,7 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     if (debug_draw_mixer.flags & DEBUG_DRAW_MIXER_WAVEFORM)
     {
         if (!sound->waveform.ready) {
-            real32 scale = 2.f;
+            real32 scale = (bar_h*3.f) / container_h;
             sound->waveform = make_waveform(bar_left, bar_top, bar_w, bar_h, scale, sound->sound);
         }
         
@@ -215,11 +215,11 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
             real32 low_y  = bar_h * item.low_percent;
             real32 high_y = bar_h * item.high_percent;
             
-            real32 center_y = center_vertically(bar_h, low_y - high_y);
+            real32 offset_to_center_y = center_vertically(bar_h, low_y - high_y);
+            offset_to_center_y -= offset_to_center_y*.5f;
             
-            Vector2 min = make_vector2(item.x - 0.5f, bar_top - center_y + low_y);
-            Vector2 max = make_vector2(item.x + 0.5f, bar_top - center_y + high_y);
-            
+            Vector2 min = make_vector2(item.x - 0.5f, bar_top - offset_to_center_y + low_y);
+            Vector2 max = make_vector2(item.x + 0.5f, bar_top - offset_to_center_y + high_y);
             
             real32 x_percent = (item.x - bar_left) / sound->waveform.width;
             real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
