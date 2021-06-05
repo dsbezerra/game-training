@@ -535,6 +535,7 @@ update_debug(Game_Input *input) {
             debug_draw.draw_shadow_map = !debug_draw.draw_shadow_map;
         }
     }
+    update_debug_draw_mixer(input);
 }
 
 internal void

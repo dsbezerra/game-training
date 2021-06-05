@@ -376,7 +376,7 @@ default_proc(HWND window,
             state.window_dimensions.y = height;
             
             if (input.mouse.lock) {
-                platform_set_cursor_position(state.window_center);
+                //platform_set_cursor_position(state.window_center);
             } 
             input.mouse.position = state.window_center;
             

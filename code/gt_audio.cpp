@@ -120,6 +120,7 @@ internal Debug_Draw_Mixer
 init_debug_draw_mixer() {
     Debug_Draw_Mixer result = {};
     
+    result.flags = DEBUG_DRAW_MIXER_WAVEFORM;
     result.playing_sound_font = load_font("./data/fonts/Inconsolata-Regular.ttf", 16.f);
     result.header_font = load_font("./data/fonts/Inconsolata-Bold.ttf", 18.f);
     
@@ -187,7 +188,6 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     //
     // Container
     //
-    
     {
         Vector2 min = make_vector2(.0f, container_top);
         Vector2 max = make_vector2(container_w, container_bottom);
@@ -197,79 +197,65 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     real32 bar_padding = bar_h * .5f;
     
     real32 bar_left = text_cx + name_width + bar_padding + played_text_width;
-    real32 bar_right = bar_left + bar_w;
+    real32 bar_right = bar_left + bar_w  - bar_padding;
     real32 bar_top    = container_top    + bar_padding;
     real32 bar_bottom = container_bottom - bar_padding;
     
-    //
-    // Bar color
-    //
-#if 1
+    if (debug_draw_mixer.flags & DEBUG_DRAW_MIXER_WAVEFORM)
     {
+        if (!sound->waveform.ready) {
+            real32 scale = 2.f;
+            sound->waveform = make_waveform(bar_left, bar_top, bar_w, bar_h, scale, sound->sound);
+        }
         
-        Vector2 min = make_vector2(bar_left,  bar_top);
-        Vector2 max = make_vector2(bar_right, bar_bottom);
-        immediate_quad(min, max, -1.f, bar_color);
+        u32 num_samples = sound->waveform.num_samples;
+        for (u32 sample_index = 0; sample_index < num_samples; ++sample_index) {
+            
+            Debug_Waveform_Sample item = sound->waveform.samples[sample_index];
+            
+            real32 low_y  = bar_h * item.low_percent;
+            real32 high_y = bar_h * item.high_percent;
+            
+            real32 center_y = center_vertically(bar_h, low_y - high_y);
+            
+            Vector2 min = make_vector2(item.x - 0.5f, bar_top - center_y + low_y);
+            Vector2 max = make_vector2(item.x + 0.5f, bar_top - center_y + high_y);
+            
+            
+            real32 x_percent = (item.x - bar_left) / sound->waveform.width;
+            real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
+            Vector4 color = bar_color;
+            if (x_percent <= played_ratio) {
+                color = played_color;
+            }
+            if (sound->waveform.is_mouse_over) color = make_color(0xffff0000);
+            immediate_quad(min, max, -1.f, color);
+        }
     }
-    
-    //
-    // Played color
-    //
+    else
     {
-        real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
-        Vector2 min = make_vector2(bar_left,                   bar_top);
-        Vector2 max = make_vector2(min.x + bar_w*played_ratio, bar_bottom);
-        immediate_quad(min, max, -1.f, played_color);
-    }
-#else
-    u32 samples_per_pixel = 128;
-    u32 bytes_per_sample = 24 / 8 * sound->sound->num_channels;
-    
-    u32 position = 0;
-    
-    real32 sample_width = bar_w / samples_per_pixel;
-    for (real32 x = bar_left;
-         x < bar_right;
-         x += sample_width)
-    {
-        s16 low = 0;
-        u32 sample_position = 0;
-        s16 high = 0;
+        //
+        // Bar color
+        //
         
-        for (u32 sample_index = position;
-             sample_index < position + samples_per_pixel;
-             sample_index += 2)
         {
-            u32 index = sample_index * samples_per_pixel * bytes_per_sample;
-            if (index >= sound->sound->num_samples || index == 0) break;
             
-            sample_position = index;
-            
-            s16 sample = sound->sound->samples[index];
-            if (sample < low)  low  = sample;
-            if (sample > high) high = sample;
+            Vector2 min = make_vector2(bar_left,  bar_top);
+            Vector2 max = make_vector2(bar_right, bar_bottom);
+            immediate_quad(min, max, -1.f, bar_color);
         }
         
-        position += samples_per_pixel;
-        
-        real32 l_percent = ((real32)low  - MIN_S16) / MAX_U16;
-        real32 h_percent = ((real32)high - MIN_S16) / MAX_U16;
-        
-        real32 low_height  = bar_h * l_percent;
-        real32 high_height = bar_h * h_percent;
-        
-        Vector4 color = bar_color;
-        if (sample_position < sound->position) {
-            color = played_color;
+        //
+        // Played color
+        //
+        {
+            real32 played_ratio = (real32) sound->position / (real32) sound->sound->num_samples;
+            Vector2 min = make_vector2(bar_left,                   bar_top);
+            Vector2 max = make_vector2(min.x + bar_w*played_ratio, bar_bottom);
+            immediate_quad(min, max, -1.f, played_color);
         }
-        
-        real32 half_sample_width = sample_width *.5f;
-        real32 bar_center = bar_bottom - bar_h *.5f;
-        Vector2 min = make_vector2(x - half_sample_width, bar_center - high_height);
-        Vector2 max = make_vector2(x + half_sample_width, bar_center + low_height);
-        immediate_quad(min, max, -1.f, color);
     }
-#endif
+    
     immediate_flush();
     
     // Draw name
@@ -300,6 +286,40 @@ draw_playing_sound(Vector2i dim, Playing_Sound *sound, real32 &y)
     y -= container_h;
 }
 #endif
+
+internal void
+update_debug_draw_mixer(Game_Input *input) {
+#if DRAW_DEBUG_MIXER
+    platform_get_cursor_position(&debug_draw_mixer.mouse_p);
+    
+    
+    if (debug_draw_mixer.flags & DEBUG_DRAW_MIXER_WAVEFORM)
+    {
+        for (Playing_Sound *sound = mixer.playing_sounds; sound != mixer.playing_sounds + array_count(mixer.playing_sounds); sound++) {
+            if (!(sound->flags & PLAYING_SOUND_ACTIVE)) continue;
+            if (sound->sound->num_samples == 0) continue;
+            if (sound->waveform.ready) {
+                // NOTE(diego): Garbage test.
+                Vector2i mouse_p = debug_draw_mixer.mouse_p;
+                b32 mouse_over = false;
+                if (mouse_p.x >= sound->waveform.left && mouse_p.x <= sound->waveform.left + sound->waveform.width &&
+                    mouse_p.y >= sound->waveform.top &&
+                    mouse_p.y <= sound->waveform.top + sound->waveform.height) {
+                    mouse_over = true;
+                }
+                sound->waveform.is_mouse_over = mouse_over;
+                
+                if (mouse_over && pressed(Button_Mouse1)) {
+                    real32 press_x = mouse_p.x - sound->waveform.left;
+                    real32 press_ratio = press_x / sound->waveform.width;
+                    u32 new_sound_position = sound->sound->num_samples*press_ratio;
+                    sound->position = new_sound_position;
+                }
+            }
+        }
+    }
+#endif
+}
 
 internal void
 draw_debug_draw_mixer(Vector2i dimensions) {
