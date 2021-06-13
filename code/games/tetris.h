@@ -27,6 +27,11 @@ enum Tetromino {
     Tetromino_Count,
 };
 
+struct Tetromino_Stack {
+    Tetromino data[Tetromino_Count-1];
+    u32 size;
+};
+
 enum Tetris_Move_Direction {
     TetrisMoveDirection_Up, // Not used.
     TetrisMoveDirection_Down,
@@ -68,6 +73,8 @@ struct Tetris_State {
     Tetris_Piece next_piece;
     Tetris_Block grid[TETRIS_GRID_Y_COUNT][TETRIS_GRID_X_COUNT];
     
+    Tetromino_Stack next_piece_stack;
+    
     u64 score;
     u8 level; // Not used.
     
@@ -89,6 +96,10 @@ internal b32 is_move_allowed(Tetris_State *state, s8 x, s8 y);
 internal b32 is_inside_grid(s8 x, s8 y);
 internal b32 is_row_complete(Tetris_State *state, s8 row);
 
+internal void push_tetromino(Tetromino_Stack *stack, Tetromino value);
+internal Tetromino pop_tetromino(Tetromino_Stack *stack);
+internal void reset_tetromino_stack(Tetromino_Stack *stack);
+
 internal Tetris_Piece rotate_I(Tetris_Piece *piece);
 internal Tetris_Piece rotate_T(Tetris_Piece *piece);
 internal Tetris_Piece rotate_S(Tetris_Piece *piece);
@@ -97,7 +108,7 @@ internal Tetris_Piece rotate_L(Tetris_Piece *piece);
 internal Tetris_Piece rotate_J(Tetris_Piece *piece);
 
 internal Tetris_Piece make_piece(Tetromino kind, s8 offset);
-internal Tetris_Piece random_piece();
+internal Tetris_Piece random_piece(Tetris_State *state);
 
 internal void rotate_piece(Tetris_State *state);
 internal void spawn_piece(Tetris_State *state, b32 make_current);

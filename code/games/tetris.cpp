@@ -113,41 +113,18 @@ make_piece(Tetromino kind, s8 offset = -4) {
 }
 
 internal Tetris_Piece
-random_piece() {
-    Tetromino kind = Tetromino_None;
-    while (kind == Tetromino_None) {
-        if (random_choice(1)) {
-            kind = Tetromino_I;
-        } 
-        if (random_choice(2)) {
-            kind = Tetromino_O;
-        } 
-        if (random_choice(3)) {
-            kind = Tetromino_T;
-        }
-        if (random_choice(4)) {
-            kind = Tetromino_S;
-        }
-        if (random_choice(5)) {
-            kind = Tetromino_Z;
-        }
-        if (random_choice(6)) {
-            kind = Tetromino_J;
-        }
-        if (random_choice(7)) {
-            kind = Tetromino_L;
-        }
-    }
-    return make_piece(kind);
+random_piece(Tetris_State *state) {
+    Tetromino tetromino = pop_tetromino(&state->next_piece_stack);
+    return make_piece(tetromino);
 }
 
 internal void
 spawn_piece(Tetris_State *state, b32 make_current) {
     if (make_current) {
-        state->current_piece = random_piece();
+        state->current_piece = random_piece(state);
     }
     
-    state->next_piece = random_piece();
+    state->next_piece = random_piece(state);
 }
 
 internal void
@@ -167,14 +144,46 @@ init_game(Tetris_State *state) {
         }
     }
     
+    Tetromino_Stack stack = {};
+    reset_tetromino_stack(&stack);
+    state->next_piece_stack = stack;
+    
     spawn_piece(state, true);
 }
 
 internal b32
-is_row_complete(Tetris_State *state, s8 row) {
+is_piece_position_valid(Tetris_State *state, Tetris_Piece *piece) {
     b32 result = true;
-    for (u8 col = 0; col < TETRIS_GRID_X_COUNT; ++col) {
-        if (!state->grid[row][col].placed) {
+    for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
+        Tetris_Block block = piece->blocks[block_index];
+        if (!is_inside_grid(block.x, block.y) || state->grid[block.y][block.x].placed) {
+            result = false;
+            break;
+        }
+    }
+    return result;
+}
+
+
+internal b32
+is_valid_position(Tetris_State *state, s8 x, s8 y, s8 adx, s8 ady) {
+    x = x + adx;
+    y = y + ady;
+    if (adx != 0 && (x < 0 || x >= TETRIS_GRID_X_COUNT))
+        return false;
+    if (ady != 0 && (y < 0 || y >= TETRIS_GRID_Y_COUNT))
+        return false;
+    
+    return !state->grid[y][x].placed;
+}
+
+internal b32
+is_move_allowed(Tetris_State *state, s8 x, s8 y) {
+    b32 result = true;
+    
+    for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
+        Tetris_Block block = state->current_piece.blocks[block_index];
+        if (!is_valid_position(state, block.x, block.y, x, y)) {
             result = false;
             break;
         }
@@ -193,11 +202,10 @@ is_inside_grid(s8 x, s8 y) {
 }
 
 internal b32
-is_piece_position_valid(Tetris_State *state, Tetris_Piece *piece) {
+is_row_complete(Tetris_State *state, s8 row) {
     b32 result = true;
-    for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        Tetris_Block block = piece->blocks[block_index];
-        if (!is_inside_grid(block.x, block.y) || state->grid[block.y][block.x].placed) {
+    for (u8 col = 0; col < TETRIS_GRID_X_COUNT; ++col) {
+        if (!state->grid[row][col].placed) {
             result = false;
             break;
         }
@@ -205,16 +213,47 @@ is_piece_position_valid(Tetris_State *state, Tetris_Piece *piece) {
     return result;
 }
 
-internal b32
-is_valid_position(Tetris_State *state, s8 x, s8 y, s8 adx, s8 ady) {
-    x = x + adx;
-    y = y + ady;
-    if (adx != 0 && (x < 0 || x >= TETRIS_GRID_X_COUNT))
-        return false;
-    if (ady != 0 && (y < 0 || y >= TETRIS_GRID_Y_COUNT))
-        return false;
+internal void
+push_tetromino(Tetromino_Stack *stack, Tetromino tetromino) {
+    assert(stack->size < array_count(stack->data));
     
-    return !state->grid[y][x].placed;
+    stack->data[stack->size++] = tetromino;
+}
+
+internal Tetromino
+pop_tetromino(Tetromino_Stack *stack) {
+    if (stack->size == 0) {
+        reset_tetromino_stack(stack);
+    }
+    
+    Tetromino result = stack->data[stack->size--];
+    
+    return result;
+}
+
+internal void
+reset_tetromino_stack(Tetromino_Stack *stack) {
+    u32 num_table[Tetromino_Count-1] = {};
+    stack->size = 0;
+    while (stack->size < array_count(num_table)) {
+        u32 random_num = random_int_in_range(1, array_count(num_table));
+        
+        u32 first_available_index = -1;
+        b32 exists = false;
+        
+        for (u32 num_index = 0; num_index < array_count(num_table); ++num_index) {
+            if (!num_table[num_index] && first_available_index == -1) first_available_index = num_index;
+            if (num_table[num_index] == random_num) {
+                exists = true;
+                break;
+            }
+        }
+        
+        if (first_available_index >= 0 && !exists) {
+            num_table[first_available_index] = random_num;
+            push_tetromino(stack, (Tetromino) random_num);
+        }
+    }
 }
 
 internal b32
@@ -253,20 +292,6 @@ place_piece(Tetris_State *state) {
     spawn_piece(state, false);
     
     return false;
-}
-
-internal b32
-is_move_allowed(Tetris_State *state, s8 x, s8 y) {
-    b32 result = true;
-    
-    for (s8 block_index = 0; block_index < TETRIS_PIECE_BLOCK_COUNT; ++block_index) {
-        Tetris_Block block = state->current_piece.blocks[block_index];
-        if (!is_valid_position(state, block.x, block.y, x, y)) {
-            result = false;
-            break;
-        }
-    }
-    return result;
 }
 
 internal b32
