@@ -176,6 +176,16 @@ clear_swap(Bejeweled_State *state) {
     state->control_state = BejeweledControlState_WaitingForSwap;
 }
 
+internal void
+clear_fall(Bejeweled_State *state) {
+    Bejeweled_Fall *fall = &state->fall;
+    fall->t = .0f;
+    if (fall->entries) {
+        sb_free(fall->entries);
+    }
+    zero_array(fall->slots);
+}
+
 internal Bejeweled_Swap
 make_swap(Bejeweled_Tile from, s32 dx, s32 dy) {
     Bejeweled_Swap result = {};
@@ -412,6 +422,19 @@ get_eating_chain(Bejeweled_State *state, Bejeweled_Slot *slot) {
     return result;
 }
 
+internal void
+fall_gems(Bejeweled_State *state) {
+    // DO SOMETHING WITH fall_slots
+    b32 animated = true;
+    for (u32 slot_index = 0; slot_index < array_count(state->fall.slots); ++slot_index) {
+        u32 slots_to_move = state->fall.slots[slot_index];
+        if (!slots_to_move) continue;
+        
+        move_down_by(&state->board, slot_index, slots_to_move, animated);
+    }
+    
+    if (!animated) clear_fall(state);
+}
 
 internal void
 prepare_chain_for_eating(Bejeweled_Board *board, Bejeweled_Chain_List *list) {
@@ -471,7 +494,7 @@ eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain) {
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->chain_index = -1; 
         }
-        
+        board->state->fall.slots[chain->x] = chain->length;
     } else if (chain->type == BejeweledChainType_Horizontal) {
         for (u32 x = 0; x < chain->length; ++x) {
             Bejeweled_Slot *slot = get_slot_at(board, chain->x + x, chain->y);
@@ -479,6 +502,7 @@ eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain) {
             slot->width = BEJEWELED_GEM_WIDTH;
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->chain_index = -1;
+            board->state->fall.slots[chain->x+x] = 1;
         }
     }
 }
@@ -645,34 +669,6 @@ get_start_xy(Vector2i dim, real32 width, real32 height) {
     real32 sy = center_vertically((real32) dim.height, height);
     
     return make_vector2(sx, sy);
-}
-
-internal Bejeweled_Tile *
-get_dropping_tiles(Bejeweled_State *state) {
-    
-    Bejeweled_Tile *result = 0;
-    
-    for (u32 y = BEJEWELED_GRID_COUNT - 1;
-         y >= 0;
-         y--)
-    {
-        for (u32 x = 0;
-             x < BEJEWELED_GRID_COUNT;
-             x++)
-        {
-            Bejeweled_Slot *slot = get_slot_at(&state->board, x, y);
-            if (slot->type == BejeweledSlotType_Gem && slot->gem == BejeweledGem_None)
-            {
-                Bejeweled_Tile tile = {};
-                tile.x = x;
-                tile.y = y;
-                sb_push(result, tile);
-            }
-        }
-        if (sb_count(result) > 0) break;
-    }
-    
-    return result;
 }
 
 internal Bejeweled_Level 
@@ -877,7 +873,7 @@ handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *list) {
 internal void
 handle_chains(Bejeweled_State *state) {
     if (handle_chain_list(state, &state->matched_chains)) {
-        // TODO: Implement falling gems
+        fall_gems(state);
         begin_next_turn(state);
     }
 }
@@ -940,6 +936,50 @@ handle_matches(Bejeweled_State *state) {
         prepare_chain_for_eating(b, &state->matched_chains);
     }
 }
+
+internal void
+move_down_by(Bejeweled_Board *board, u32 x, u32 slots, b32 animated) {
+    assert(x >= 0 && x < BEJEWELED_GRID_COUNT);
+    
+    u32 lowest_gem_y = -1;
+    
+    for (u32 y = BEJEWELED_GRID_COUNT - 1; y >= 0; --y) {
+        Bejeweled_Slot *slot = get_slot_at(board, x, y);
+        if (slot->gem == BejeweledGem_None) continue;
+        if (slot->type == BejeweledSlotType_Gem) {
+            lowest_gem_y = y;
+            break;
+        }
+    }
+    
+    while (lowest_gem_y >= 0) {
+        Bejeweled_Slot *slot = get_slot_at(board, x, lowest_gem_y);
+        if (!slot) break;
+        if (slot->gem == BejeweledGem_None) {
+            lowest_gem_y--;
+            continue;
+        }
+        
+        u32 moved = 0;
+        u32 offset = 1;
+        while (moved < slots) {
+            Bejeweled_Slot *move_to_slot = get_slot_at(board, x, lowest_gem_y + offset);
+            if (!move_to_slot) break;
+            
+            if (move_to_slot->type == BejeweledSlotType_Gem && move_to_slot->gem == BejeweledGem_None) {
+                
+                swap_slots(board, *slot, *move_to_slot);
+                moved++;
+                slot = move_to_slot;
+            }
+            
+            offset++;
+        }
+        lowest_gem_y--;
+    }
+    
+}
+
 
 internal void
 begin_next_turn(Bejeweled_State *state) {

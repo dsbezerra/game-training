@@ -150,7 +150,19 @@ struct Bejeweled_Assets {
     Bejeweled_Sprite_UV tile_uv;
     
     Bejeweled_Sprite_UV gem_uvs[BejeweledGem_Count-1];
-    Bejeweled_Sprite_UV highlighted_gem_uvs[BejeweledGem_Count-1]; 
+    Bejeweled_Sprite_UV highlighted_gem_uvs[BejeweledGem_Count-1];
+};
+
+struct Bejeweled_Fall_Entry {
+    u32 x;
+    u32 start_y;
+    u32 end_y;
+};
+
+struct Bejeweled_Fall {
+    real32 t;
+    u32 slots[BEJEWELED_GRID_COUNT];
+    Bejeweled_Fall_Entry *entries;
 };
 
 struct Bejeweled_State {
@@ -175,6 +187,8 @@ struct Bejeweled_State {
     Bejeweled_Swap swap;
     Bejeweled_Chain_List matched_chains;
     
+    Bejeweled_Fall fall;
+    
     Vector2i mouse_position;
     
     // Swipe stuff
@@ -192,6 +206,7 @@ internal void reverse_swap(Bejeweled_Swap *swap);
 
 internal void do_swap(Bejeweled_State *state);
 internal void clear_swap(Bejeweled_State *state);
+internal void clear_fall(Bejeweled_State *state);
 
 internal Bejeweled_Swap make_swap(Bejeweled_Tile tile, s32 dx, s32 dy);
 
@@ -214,6 +229,8 @@ internal Bejeweled_Chain_List detect_vertical_matches(Bejeweled_Board *board);
 internal Bejeweled_Chain * get_chain(Bejeweled_Chain_List *list, u32 index);
 internal Bejeweled_Chain * get_eating_chain(Bejeweled_State *state, Bejeweled_Slot *slot);
 
+internal void fall_gems(Bejeweled_State *state);
+
 internal void prepare_chain_for_eating(Bejeweled_Board *board, Bejeweled_Chain *chain);
 internal void eat_chains(Bejeweled_Board *board);
 internal void eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain);
@@ -229,8 +246,6 @@ internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
 internal Bejeweled_Tile get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y);
 internal Vector2 get_start_xy(Vector2i dim, real32 width, real32 height);
 
-internal Bejeweled_Tile * get_dropping_tiles(Bejeweled_State *state);
-
 internal Bejeweled_Level load_level(char *levelname);
 
 internal void init_game(Bejeweled_State *state);
@@ -243,6 +258,7 @@ internal void handle_chains(Bejeweled_State *state);
 internal void handle_swap(Bejeweled_State *state);
 internal void handle_matches(Bejeweled_State *state);
 
+internal void move_down_by(Bejeweled_Board *board, u32 x, u32 slots, b32 animated = true);
 internal void begin_next_turn(Bejeweled_State *state);
 
 internal void draw_game_view(Bejeweled_State *state);
