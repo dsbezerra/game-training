@@ -21,6 +21,7 @@ enum Bejeweled_Control_State {
     BejeweledControlState_Swapping,
     BejeweledControlState_Shuffling,
     BejeweledControlState_HandlingMatches,
+    BejeweledControlState_Falling,
     BejeweledControlState_Count,
 };
 
@@ -153,16 +154,9 @@ struct Bejeweled_Assets {
     Bejeweled_Sprite_UV highlighted_gem_uvs[BejeweledGem_Count-1];
 };
 
-struct Bejeweled_Fall_Entry {
-    u32 x;
-    u32 start_y;
-    u32 end_y;
-};
-
 struct Bejeweled_Fall {
     real32 t;
     u32 slots[BEJEWELED_GRID_COUNT];
-    Bejeweled_Fall_Entry *entries;
 };
 
 struct Bejeweled_State {
@@ -229,7 +223,7 @@ internal Bejeweled_Chain_List detect_vertical_matches(Bejeweled_Board *board);
 internal Bejeweled_Chain * get_chain(Bejeweled_Chain_List *list, u32 index);
 internal Bejeweled_Chain * get_eating_chain(Bejeweled_State *state, Bejeweled_Slot *slot);
 
-internal void fall_gems(Bejeweled_State *state);
+internal void fall_gems(Bejeweled_State *state, b32 animated = true);
 
 internal void prepare_chain_for_eating(Bejeweled_Board *board, Bejeweled_Chain *chain);
 internal void eat_chains(Bejeweled_Board *board);
@@ -258,7 +252,7 @@ internal void handle_chains(Bejeweled_State *state);
 internal void handle_swap(Bejeweled_State *state);
 internal void handle_matches(Bejeweled_State *state);
 
-internal void move_down_by(Bejeweled_Board *board, u32 x, u32 slots, b32 animated = true);
+internal void move_down_by(Bejeweled_Board *board, u32 x, u32 slots);
 internal void begin_next_turn(Bejeweled_State *state);
 
 internal void draw_game_view(Bejeweled_State *state);

@@ -180,9 +180,6 @@ internal void
 clear_fall(Bejeweled_State *state) {
     Bejeweled_Fall *fall = &state->fall;
     fall->t = .0f;
-    if (fall->entries) {
-        sb_free(fall->entries);
-    }
     zero_array(fall->slots);
 }
 
@@ -423,17 +420,18 @@ get_eating_chain(Bejeweled_State *state, Bejeweled_Slot *slot) {
 }
 
 internal void
-fall_gems(Bejeweled_State *state) {
-    // DO SOMETHING WITH fall_slots
-    b32 animated = true;
-    for (u32 slot_index = 0; slot_index < array_count(state->fall.slots); ++slot_index) {
-        u32 slots_to_move = state->fall.slots[slot_index];
-        if (!slots_to_move) continue;
-        
-        move_down_by(&state->board, slot_index, slots_to_move, animated);
+fall_gems(Bejeweled_State *state, b32 animated) {
+    if (!animated) {
+        for (u32 slot_index = 0; slot_index < array_count(state->fall.slots); ++slot_index) {
+            u32 slots_to_move = state->fall.slots[slot_index];
+            if (!slots_to_move) continue;
+            
+            move_down_by(&state->board, slot_index, slots_to_move);
+        }
+        clear_fall(state);
+    } else {
+        state->control_state = BejeweledControlState_Falling;
     }
-    
-    if (!animated) clear_fall(state);
 }
 
 internal void
@@ -473,9 +471,6 @@ eat_chains(Bejeweled_State *state) {
     for (u32 chain_index = 0; chain_index < state->matched_chains.count; ++chain_index) {
         eat_chain(&state->board, &state->matched_chains.chains[chain_index]);
     }
-    
-    if (state->matched_chains.chains)
-        sb_free(state->matched_chains.chains);
     
     handle_matches(state);
 }
@@ -832,19 +827,30 @@ handle_mouse(Bejeweled_State *state, Game_Input *input) {
 }
 
 internal Bejeweled_Chain_List
-combine_chain_lists(Bejeweled_Chain_List first, Bejeweled_Chain_List second) {
+combine_chain_lists(Memory_Arena *arena, Bejeweled_Chain_List first, Bejeweled_Chain_List second) {
     Bejeweled_Chain_List combined = {};
     
-    for (u32 chain_index = 0; chain_index < first.count; ++chain_index) {
-        sb_push(combined.chains, first.chains[chain_index]);
-    }
-    for (u32 chain_index = 0; chain_index < second.count; ++chain_index) {
-        sb_push(combined.chains, second.chains[chain_index]);
-    }
-    combined.count = first.count + second.count;
+    u32 size = first.count + second.count;
+    if (size == 0) return combined;
     
-    sb_free(first.chains);
-    sb_free(second.chains);
+    Temporary_Memory combine_memory = begin_temporary_memory(arena);
+    combined.chains = push_array(arena, size, Bejeweled_Chain);
+    combined.count = size;
+    
+    Bejeweled_Chain *at = combined.chains;
+    for (u32 chain_index = 0; chain_index < first.count; ++chain_index) {
+        *at++ = first.chains[chain_index];
+    }
+    
+    for (u32 chain_index = 0; chain_index < second.count; ++chain_index) {
+        *at++ = second.chains[chain_index];
+    }
+    
+    // NOTE(diego): First and second chains were allocated with sb_push!
+    if (first.chains)  sb_free(first.chains);
+    if (second.chains) sb_free(second.chains);
+    
+    end_temporary_memory(combine_memory);
     
     return combined;
 }
@@ -865,8 +871,6 @@ handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *list) {
     // NOTE(diego): All chains will get to eat_chain at the same time!
     b32 handled = list->count == 0;
     
-    if (handled) sb_free(state->matched_chains.chains);
-    
     return handled;
 }
 
@@ -874,7 +878,7 @@ internal void
 handle_chains(Bejeweled_State *state) {
     if (handle_chain_list(state, &state->matched_chains)) {
         fall_gems(state);
-        begin_next_turn(state);
+        begin_next_turn(state); // TODO(diego): Remove once fall gems animated is done
     }
 }
 
@@ -915,30 +919,36 @@ handle_swap(Bejeweled_State *state) {
 
 internal void
 handle_matches(Bejeweled_State *state) {
+    Memory_Arena *arena = &state->board_arena;
+    Temporary_Memory chain_memory = begin_temporary_memory(arena);
+    
+    // TODO(diego): Pass arena to these and use it to store our detected chains!
     Bejeweled_Chain_List horizontal_chains = detect_horizontal_matches(&state->board);
     Bejeweled_Chain_List vertical_chains = detect_vertical_matches(&state->board);
     
-    state->matched_chains = combine_chain_lists(horizontal_chains, vertical_chains);
+    state->matched_chains = combine_chain_lists(arena, horizontal_chains, vertical_chains);
     if (!state->matched_chains.count) {
         // TODO(diego): Move to next turn, which is enable user to interact with the game if there's possible swaps
         // otherwise shuffle until we have possible swaps
         begin_next_turn(state);
-        return;
-    }
-    
-    state->control_state = BejeweledControlState_HandlingMatches;
-    
-    b32 animated = true;
-    if (!animated) {
-        eat_chains(state);
     } else {
-        Bejeweled_Board *b = &state->board;
-        prepare_chain_for_eating(b, &state->matched_chains);
+        
+        state->control_state = BejeweledControlState_HandlingMatches;
+        
+        b32 animated = true;
+        if (!animated) {
+            eat_chains(state);
+        } else {
+            Bejeweled_Board *b = &state->board;
+            prepare_chain_for_eating(b, &state->matched_chains);
+        }
     }
+    
+    end_temporary_memory(chain_memory);
 }
 
 internal void
-move_down_by(Bejeweled_Board *board, u32 x, u32 slots, b32 animated) {
+move_down_by(Bejeweled_Board *board, u32 x, u32 slots) {
     assert(x >= 0 && x < BEJEWELED_GRID_COUNT);
     
     u32 lowest_gem_y = -1;
@@ -1176,7 +1186,10 @@ bejeweled_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         state->assets = assets;
         
         init_spritesheet(assets.main_sheet, UPLOAD_SPRITESHEET);
-        init_arena(&state->board_arena, total_available_size, (u8 *) memory->permanent_storage + sizeof(Bejeweled_State));
+        
+        u8 *memory_offset = (u8 *) memory->permanent_storage + sizeof(Bejeweled_State);
+        init_arena(&state->board_arena, total_available_size, memory_offset);
+        
         init_game(state);
     }
     

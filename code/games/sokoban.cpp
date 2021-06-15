@@ -1231,7 +1231,7 @@ sokoban_game_update_and_render(Game_Memory *memory, Game_Input *input) {
         memory->initialized = true;
         
         
-        // NOTE(diego): Currently there's not limit memory for undo/redo.
+        // NOTE(diego): Currently there's no limit memory for undo/redo.
         // Be aware that the game may crash if we make too much moves.
         
         Memory_Index world_size = kilobytes(16); // This size depends on World data.
