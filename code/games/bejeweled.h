@@ -154,9 +154,14 @@ struct Bejeweled_Assets {
     Bejeweled_Sprite_UV highlighted_gem_uvs[BejeweledGem_Count-1];
 };
 
+struct Bejeweled_Fall_Slot {
+    u32 move_offset;
+    u32 start_y;
+};
+
 struct Bejeweled_Fall {
     real32 t;
-    u32 slots[BEJEWELED_GRID_COUNT];
+    Bejeweled_Fall_Slot slots[BEJEWELED_GRID_COUNT];
 };
 
 struct Bejeweled_State {

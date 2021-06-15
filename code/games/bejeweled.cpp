@@ -294,8 +294,8 @@ is_swap_valid(Bejeweled_Board *board, Bejeweled_Swap swap) {
 
 internal b32
 is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile) {
-    if (tile.x < 0 || tile.x > BEJEWELED_GRID_COUNT) return false;
-    if (tile.y < 0 || tile.y > BEJEWELED_GRID_COUNT) return false;
+    if (tile.x < 0 || tile.x >= BEJEWELED_GRID_COUNT) return false;
+    if (tile.y < 0 || tile.y >= BEJEWELED_GRID_COUNT) return false;
     
     if (level->data[tile.x][tile.y] == 0) return false;
     
@@ -423,10 +423,10 @@ internal void
 fall_gems(Bejeweled_State *state, b32 animated) {
     if (!animated) {
         for (u32 slot_index = 0; slot_index < array_count(state->fall.slots); ++slot_index) {
-            u32 slots_to_move = state->fall.slots[slot_index];
-            if (!slots_to_move) continue;
+            Bejeweled_Fall_Slot slots_to_move = state->fall.slots[slot_index];
+            if (!slots_to_move.move_offset) continue;
             
-            move_down_by(&state->board, slot_index, slots_to_move);
+            move_down_by(&state->board, slot_index, slots_to_move.move_offset);
         }
         clear_fall(state);
     } else {
@@ -489,7 +489,11 @@ eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain) {
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->chain_index = -1; 
         }
-        board->state->fall.slots[chain->x] = chain->length;
+        
+        Bejeweled_Fall_Slot fall_slot = {};
+        fall_slot.move_offset = chain->length;
+        fall_slot.start_y = chain->y;
+        board->state->fall.slots[chain->x] = fall_slot;
     } else if (chain->type == BejeweledChainType_Horizontal) {
         for (u32 x = 0; x < chain->length; ++x) {
             Bejeweled_Slot *slot = get_slot_at(board, chain->x + x, chain->y);
@@ -497,7 +501,11 @@ eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain) {
             slot->width = BEJEWELED_GEM_WIDTH;
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->chain_index = -1;
-            board->state->fall.slots[chain->x+x] = 1;
+            
+            Bejeweled_Fall_Slot fall_slot = {};
+            fall_slot.move_offset = 1;
+            fall_slot.start_y = chain->y;
+            board->state->fall.slots[chain->x+x] = fall_slot;
         }
     }
 }
@@ -778,6 +786,15 @@ state->highlighted_gems[GEM_TYPE-1].gem = GEM_TYPE
 internal void
 update_game(Bejeweled_State *state, Game_Input *input) {
     handle_mouse(state, input);
+    
+    if (state->control_state == BejeweledControlState_Falling) {
+        state->fall.t += core.time_info.dt*5.f;
+        if (state->fall.t >= 1.f) {
+            fall_gems(state, false);
+            handle_matches(state);
+        }
+    }
+    
     handle_swap(state);
     handle_chains(state);
 }
@@ -877,8 +894,7 @@ handle_chain_list(Bejeweled_State *state, Bejeweled_Chain_List *list) {
 internal void
 handle_chains(Bejeweled_State *state) {
     if (handle_chain_list(state, &state->matched_chains)) {
-        fall_gems(state);
-        begin_next_turn(state); // TODO(diego): Remove once fall gems animated is done
+        fall_gems(state, true);
     }
 }
 
@@ -1062,6 +1078,15 @@ draw_game_view(Bejeweled_State *state) {
                         z_index -= 0.01f;
                     } else if (s->to.x == x && s->to.y == y) {
                         center = lerp_vector2(s->to_center, t, s->from_center);
+                    }
+                }
+                
+                if (state->fall.slots[x].move_offset > 0) {
+                    s32 start_y = state->fall.slots[x].start_y;
+                    s32 land_y = y + state->fall.slots[x].move_offset;
+                    if (y < start_y) {
+                        Vector2 land_center = make_vector2(center.x, start.y + BEJEWELED_GEM_HEIGHT*land_y + thh);
+                        center = lerp_vector2(center, state->fall.t, land_center);
                     }
                 }
                 
