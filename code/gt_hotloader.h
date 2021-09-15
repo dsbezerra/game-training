@@ -1,5 +1,9 @@
 /* date = January 8th 2021 4:18 pm */
 
+//
+// Borrowed from jblow streams
+//
+
 #define NOTIFY_LEN 8000
 
 #define RELOAD_DELAY 0.1f

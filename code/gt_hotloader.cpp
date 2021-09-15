@@ -1,3 +1,6 @@
+//
+// Borrowed from jblow streams
+//
 
 global_variable StringArray *directory_names;
 global_variable Directory_Info *directories = 0;
