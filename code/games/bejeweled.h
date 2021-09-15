@@ -154,13 +154,21 @@ struct Bejeweled_Assets {
     Bejeweled_Sprite_UV highlighted_gem_uvs[BejeweledGem_Count-1];
 };
 
+struct Bejeweled_Fall_Gem {
+    Bejeweled_Gem gem;
+    s32 x;
+    s32 y;
+};
+
 struct Bejeweled_Fall_Slot {
+    real32 t;
     u32 move_offset;
     u32 start_y;
+    
+    Bejeweled_Fall_Gem spawning_gems[BEJEWELED_GRID_COUNT]; // NOTE(diego): Avoid dynamic allocations!
 };
 
 struct Bejeweled_Fall {
-    real32 t;
     Bejeweled_Fall_Slot slots[BEJEWELED_GRID_COUNT];
 };
 
@@ -221,6 +229,8 @@ internal b32 is_swap_possible(Bejeweled_Level *level, Bejeweled_Swap swap);
 internal b32 is_swap_valid(Bejeweled_Board *board, Bejeweled_Swap swap);
 internal b32 is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile);
 
+internal Bejeweled_Fall_Slot make_fall_slot(Bejeweled_State *state, s32 offset, s32 x, s32 start_y);
+
 internal Bejeweled_Chain make_chain(Bejeweled_Chain_Type type, s32 x, s32 y, s32 length);
 internal Bejeweled_Chain_List detect_horizontal_matches(Bejeweled_Board *board);
 internal Bejeweled_Chain_List detect_vertical_matches(Bejeweled_Board *board);
@@ -241,6 +251,7 @@ internal Bejeweled_Gem get_random_gem(Bejeweled_State *state);
 internal Sprite * get_sprite(Bejeweled_State *state, Bejeweled_Gem gem);
 internal Bejeweled_Gem get_gem_at(Bejeweled_Board *board, s32 x, s32 y);
 internal Bejeweled_Slot * get_slot_at(Bejeweled_Board *board, s32 x, s32 y);
+internal void convert_spawning_gem(Bejeweled_Board *board, s32 move_offset, Bejeweled_Fall_Gem spawned);
 internal void random_gem_for_slot(Bejeweled_Board *board, Bejeweled_Slot *slot);
 internal Bejeweled_Tile get_tile_under_xy(Bejeweled_State *state, s32 x, s32 y);
 internal Vector2 get_start_xy(Vector2i dim, real32 width, real32 height);
@@ -260,6 +271,7 @@ internal void handle_matches(Bejeweled_State *state);
 internal void move_down_by(Bejeweled_Board *board, u32 x, u32 slots);
 internal void begin_next_turn(Bejeweled_State *state);
 
+internal void draw_falling_gems(Bejeweled_State *state);
 internal void draw_game_view(Bejeweled_State *state);
 
 internal void bejeweled_menu_art(App_State *state, Vector2 min, Vector2 max);

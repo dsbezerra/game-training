@@ -22,6 +22,18 @@ clear_and_generate_board(Bejeweled_Board *board) {
 }
 
 internal void
+convert_spawning_gem(Bejeweled_Board *board, s32 move_offset, Bejeweled_Fall_Gem spawned) {
+    Bejeweled_Slot *slot = get_slot_at(board, spawned.x, spawned.y + move_offset);
+    assert(slot);
+    
+    slot->type = BejeweledSlotType_Gem;
+    slot->gem = spawned.gem;
+    slot->width = BEJEWELED_GEM_WIDTH;
+    slot->height = BEJEWELED_GEM_HEIGHT;
+    slot->chain_index = -1;
+}
+
+internal void
 clear_board(Bejeweled_Board *board) {
     Bejeweled_State *state = board->state;
     for (u32 x = 0; x < BEJEWELED_GRID_COUNT; ++x) {
@@ -179,7 +191,6 @@ clear_swap(Bejeweled_State *state) {
 internal void
 clear_fall(Bejeweled_State *state) {
     Bejeweled_Fall *fall = &state->fall;
-    fall->t = .0f;
     zero_array(fall->slots);
 }
 
@@ -300,6 +311,37 @@ is_tile_valid(Bejeweled_Level *level, Bejeweled_Tile tile) {
     if (level->data[tile.x][tile.y] == 0) return false;
     
     return true;
+}
+
+internal u32
+get_highest_y(Bejeweled_State *state, u32 x) {
+    u32 result = 0;
+    for (u32 y = 0; y < BEJEWELED_GRID_COUNT; ++y) {
+        if (state->current_level.data[x][y] == 1) {
+            result = y;
+            break;
+        }
+    }
+    
+    return result;
+}
+
+internal Bejeweled_Fall_Slot
+make_fall_slot(Bejeweled_State *state, s32 offset, s32 x, s32 start_y) {
+    Bejeweled_Fall_Slot result = {};
+    result.move_offset = offset;
+    result.start_y = start_y;
+    
+    s32 y = get_highest_y(state, x) - 1;
+    for (s32 index = 0; index < offset; ++index) {
+        Bejeweled_Fall_Gem falling_gem = {};
+        falling_gem.gem = get_random_gem(state);
+        falling_gem.x = x;
+        falling_gem.y = y--;
+        result.spawning_gems[index] = falling_gem; 
+    }
+    
+    return result;
 }
 
 internal Bejeweled_Chain
@@ -427,6 +469,12 @@ fall_gems(Bejeweled_State *state, b32 animated) {
             if (!slots_to_move.move_offset) continue;
             
             move_down_by(&state->board, slot_index, slots_to_move.move_offset);
+            
+            for (u32 spawn_index = 0; spawn_index < array_count(slots_to_move.spawning_gems); ++spawn_index) {
+                Bejeweled_Fall_Gem fg = slots_to_move.spawning_gems[spawn_index];
+                if (fg.gem == BejeweledGem_None) break; // NOTE(diego): First none means we reach the end of the array.
+                convert_spawning_gem(&state->board, slots_to_move.move_offset, fg);
+            }
         }
         clear_fall(state);
     } else {
@@ -489,23 +537,18 @@ eat_chain(Bejeweled_Board *board, Bejeweled_Chain *chain) {
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->chain_index = -1; 
         }
-        
-        Bejeweled_Fall_Slot fall_slot = {};
-        fall_slot.move_offset = chain->length;
-        fall_slot.start_y = chain->y;
-        board->state->fall.slots[chain->x] = fall_slot;
+        board->state->fall.slots[chain->x] = make_fall_slot(board->state, chain->length, chain->x, chain->y);
     } else if (chain->type == BejeweledChainType_Horizontal) {
         for (u32 x = 0; x < chain->length; ++x) {
-            Bejeweled_Slot *slot = get_slot_at(board, chain->x + x, chain->y);
+            u32 final_x = chain->x + x;
+            
+            Bejeweled_Slot *slot = get_slot_at(board, final_x, chain->y);
             slot->gem = BejeweledGem_None;
             slot->width = BEJEWELED_GEM_WIDTH;
             slot->height = BEJEWELED_GEM_HEIGHT;
             slot->chain_index = -1;
             
-            Bejeweled_Fall_Slot fall_slot = {};
-            fall_slot.move_offset = 1;
-            fall_slot.start_y = chain->y;
-            board->state->fall.slots[chain->x+x] = fall_slot;
+            board->state->fall.slots[final_x] = make_fall_slot(board->state, 1, final_x, chain->y);
         }
     }
 }
@@ -788,8 +831,15 @@ update_game(Bejeweled_State *state, Game_Input *input) {
     handle_mouse(state, input);
     
     if (state->control_state == BejeweledControlState_Falling) {
-        state->fall.t += core.time_info.dt*5.f;
-        if (state->fall.t >= 1.f) {
+        b32 all_finished = false;
+        for (u32 column = 0; column < array_count(state->fall.slots); ++column) {
+            Bejeweled_Fall_Slot *fs = &state->fall.slots[column];
+            if (fs->move_offset > 0) {
+                fs->t = clampf(0.f, fs->t + core.time_info.dt*0.5f, 1.f);
+                all_finished |= fs->t >= 1.f;
+            }
+        }
+        if (all_finished) {
             fall_gems(state, false);
             handle_matches(state);
         }
@@ -1013,6 +1063,54 @@ begin_next_turn(Bejeweled_State *state) {
 }
 
 internal void
+draw_falling_gems(Bejeweled_State *state) {
+    Vector2i dim = state->memory->window_dimensions;
+    real32 size = (real32) dim.width;
+    if (size > dim.height)
+        size = (real32) dim.height;
+    
+    Spritesheet *sheet = state->assets.main_sheet;
+    Vector2 start = get_start_xy(dim, BEJEWELED_GEM_WIDTH, BEJEWELED_GEM_HEIGHT);
+    
+    immediate_begin();
+    
+    real32 gem_half_width  = BEJEWELED_GEM_WIDTH  / 2.f;
+    real32 gem_half_height = BEJEWELED_GEM_HEIGHT / 2.f;
+    
+    for (u32 column = 0; column < array_count(state->fall.slots); ++column) {
+        Bejeweled_Fall_Slot fs = state->fall.slots[column];
+        if (fs.move_offset > 0) {
+            
+            for (u32 spawn_index = 0; spawn_index < array_count(fs.spawning_gems); ++spawn_index) {
+                Bejeweled_Fall_Gem fg = fs.spawning_gems[spawn_index];
+                if (fg.gem == BejeweledGem_None) break; // NOTE(diego): If we get no gem that means we reach the end of the spawning gems!
+                
+                Vector2 center = make_vector2(start.x + BEJEWELED_GEM_WIDTH  * column + gem_half_width, start.y + BEJEWELED_GEM_HEIGHT * fg.y   + gem_half_height);
+                
+                s32 start_y = fs.start_y;
+                s32 land_y  = fg.y + fs.move_offset;
+                while (land_y < BEJEWELED_GRID_COUNT && state->current_level.data[column][land_y] == 0) {
+                    land_y++;
+                }
+                
+                Vector2 land_center = make_vector2(center.x, start.y + BEJEWELED_GEM_HEIGHT*land_y + gem_half_height);
+                center = lerp_vector2(center, fs.t, land_center);
+                
+                u32 index = ((u32) fg.gem) - 1;
+                Bejeweled_Sprite_UV uvs = state->assets.gem_uvs[index];
+                
+                Vector2 gem_min = make_vector2(center.x - gem_half_width, center.y - gem_half_height);
+                Vector2 gem_max = make_vector2(center.x + gem_half_width, center.y + gem_half_height);
+                immediate_textured_quad(gem_min, gem_max, sheet->texture_id, uvs._00, uvs._10, uvs._01, uvs._11, 0.9f);
+            }
+            
+        }
+    }
+    
+    immediate_flush();
+}
+
+internal void
 draw_game_view(Bejeweled_State *state) {
     
     Vector2i dim = state->memory->window_dimensions;
@@ -1081,12 +1179,17 @@ draw_game_view(Bejeweled_State *state) {
                     }
                 }
                 
-                if (state->fall.slots[x].move_offset > 0) {
-                    s32 start_y = state->fall.slots[x].start_y;
-                    s32 land_y = y + state->fall.slots[x].move_offset;
+                Bejeweled_Fall_Slot fs = state->fall.slots[x];
+                if (fs.move_offset > 0) {
+                    s32 start_y = fs.start_y;
+                    s32 land_y = y + fs.move_offset;
                     if (y < start_y) {
+                        while (land_y < BEJEWELED_GRID_COUNT && state->current_level.data[x][land_y] == 0) {
+                            land_y++;
+                        }
+                        
                         Vector2 land_center = make_vector2(center.x, start.y + BEJEWELED_GEM_HEIGHT*land_y + thh);
-                        center = lerp_vector2(center, state->fall.t, land_center);
+                        center = lerp_vector2(center, fs.t, land_center);
                     }
                 }
                 
@@ -1109,6 +1212,11 @@ draw_game_view(Bejeweled_State *state) {
             }
         }
         immediate_flush();
+        
+        if (state->control_state == BejeweledControlState_Falling) {
+            draw_falling_gems(state);
+        }
+        
     } else {
         draw_menu(BEJEWELED_TITLE, state->memory);
     }
